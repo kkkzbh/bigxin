@@ -33,12 +33,19 @@ find_package(Threads REQUIRED)
 find_package(ftxui CONFIG REQUIRED)
 
 
-# Local Qt setup (follow code/CppSQL style)
-# Keep vcpkg-configuration.json search paths intact; append Qt path instead of overriding
-#list(APPEND CMAKE_PREFIX_PATH "/opt/Qt/6.9.0/gcc_64")
-#set(CMAKE_AUTOMOC ON)
-#
-#find_package(Qt6 REQUIRED COMPONENTS Qml)
+# Qt (for GUI/QML)
+# 使用者通过 -DCMAKE_PREFIX_PATH=... 指向本机 Qt 安装
+set(CMAKE_AUTOMOC ON)
+set(CMAKE_AUTORCC ON)
+set(CMAKE_AUTOUIC ON)
+
+set(CMAKE_PREFIX_PATH "/opt/Qt/6.9.0/gcc_64")
+find_package(Qt6 COMPONENTS Quick Qml QuickControls2 REQUIRED)
+qt_policy(SET QTP0001 NEW)
+qt_standard_project_setup()
+set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} "/opt/Qt/6.9.0/gcc_64/plugins")
+
+find_package(Protobuf CONFIG REQUIRED)
 
 add_library(libchat)
 
@@ -92,4 +99,37 @@ target_link_libraries(client PRIVATE
         ftxui::component
         ftxui::dom
         ftxui::screen
+)
+
+# GUI (Qt/QML) — entry: src/client/gui/client.cpp
+add_executable(client_gui
+        src/client/gui/client.cpp
+        src/client/gui/chat_client_proxy.h
+        src/client/gui/chat_client_proxy.cpp
+)
+
+qt_add_qml_module(client_gui
+        URI chat.gui
+        VERSION 1.0
+        QML_FILES
+            src/client/gui/qml/App.qml
+            src/client/gui/qml/Theme.qml
+            src/client/gui/qml/NavRail.qml
+            src/client/gui/qml/ConversationList.qml
+            src/client/gui/qml/ConversationItem.qml
+            src/client/gui/qml/ChatPane.qml
+            src/client/gui/qml/ChatHeader.qml
+            src/client/gui/qml/MessageList.qml
+            src/client/gui/qml/MessageBubble.qml
+            src/client/gui/qml/ComposerBar.qml
+        RESOURCES
+            JX_CUT.png
+            JX_CUT.svg
+)
+
+target_link_libraries(client_gui PRIVATE
+        libchat
+        Qt6::Quick
+        Qt6::Qml
+        Qt6::QuickControls2
 )
