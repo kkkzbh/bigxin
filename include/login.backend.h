@@ -5,6 +5,8 @@
 #include <QByteArray>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QJsonArray>
+#include <QDateTime>
 
 #include <print>
 
@@ -56,6 +58,12 @@ public:
     auto displayName() const -> QString
     {
         return display_name_;
+    }
+
+    /// \brief 默认“世界”会话的 ID。
+    auto worldConversationId() const -> QString
+    {
+        return world_conversation_id_;
     }
 
     /// \brief 发起登录请求。
@@ -122,6 +130,76 @@ public:
         setErrorMessage(QString{});
     }
 
+    /// \brief 向默认“世界”会话发送一条文本消息。
+    /// \param text 要发送的消息内容。
+    /// \note 仅在已登录且 socket 仍保持连接时有效。
+    Q_INVOKABLE void sendWorldTextMessage(QString const& text)
+    {
+        if(text.isEmpty()) {
+            return;
+        }
+        if(user_id_.isEmpty()) {
+            setErrorMessage(QStringLiteral("请先登录后再发送消息"));
+            return;
+        }
+        if(socket_.state() != QAbstractSocket::ConnectedState) {
+            setErrorMessage(QStringLiteral("与服务器的连接已断开"));
+            return;
+        }
+
+        QJsonObject obj;
+        auto const client_id =
+            QString::number(QDateTime::currentMSecsSinceEpoch());
+
+        obj.insert("conversationId", world_conversation_id_);
+        obj.insert("conversationType", QStringLiteral("GROUP"));
+        obj.insert("senderId", user_id_);
+        obj.insert("clientMsgId", client_id);
+        obj.insert("msgType", QStringLiteral("TEXT"));
+        obj.insert("content", text);
+
+        QJsonDocument doc{ obj };
+        auto payload = doc.toJson(QJsonDocument::Compact);
+
+        QByteArray line;
+        line.reserve(8 + 1 + payload.size() + 1);
+        line.append("SEND_MSG");
+        line.append(':');
+        line.append(payload);
+        line.append('\n');
+
+        socket_.write(line);
+    }
+
+    /// \brief 向服务器请求一页默认“世界”会话的历史消息。
+    /// \note 当前实现从最新开始向前拉取一页，大小固定为 50 条。
+    Q_INVOKABLE void requestInitialWorldHistory()
+    {
+        if(world_conversation_id_.isEmpty()) {
+            return;
+        }
+        if(socket_.state() != QAbstractSocket::ConnectedState) {
+            return;
+        }
+
+        QJsonObject obj;
+        obj.insert("conversationId", world_conversation_id_);
+        obj.insert("beforeSeq", 0);
+        obj.insert("limit", 50);
+
+        QJsonDocument doc{ obj };
+        auto payload = doc.toJson(QJsonDocument::Compact);
+
+        QByteArray line;
+        line.reserve(11 + 1 + payload.size() + 1);
+        line.append("HISTORY_REQ");
+        line.append(':');
+        line.append(payload);
+        line.append('\n');
+
+        socket_.write(line);
+    }
+
 signals:
     /// \brief busy 状态变化时发出。
     void busyChanged();
@@ -135,6 +213,23 @@ signals:
     void loginSucceeded();
     /// \brief 注册成功时发出，参数为注册成功的账号。
     void registrationSucceeded(QString account);
+
+    /// \brief 收到服务器推送的聊天消息时发出。
+    /// \param conversationId 会话 ID，目前为“世界”群的 ID。
+    /// \param senderId 发送者用户 ID。
+    /// \param content 消息文本内容。
+    /// \param serverTimeMs 服务器时间戳（毫秒）。
+    /// \param seq 会话内消息序号。
+    void messageReceived(
+        QString conversationId,
+        QString senderId,
+        QString content,
+        qint64 serverTimeMs,
+        qint64 seq
+    );
+
+    /// \brief 收到历史消息响应时发出一批消息。
+    /// \details 当前实现中直接复用 messageReceived 信号，不再单独定义新的信号。
 
 private slots:
     /// \brief socket 连接建立后的回调。
@@ -270,6 +365,10 @@ private:
             handleLoginResponse(obj);
         } else if(command == "REGISTER_RESP") {
             handleRegisterResponse(obj);
+        } else if(command == "MSG_PUSH") {
+            handleMessagePush(obj);
+        } else if(command == "HISTORY_RESP") {
+            handleHistoryResponse(obj);
         }
     }
 
@@ -289,6 +388,7 @@ private:
 
         auto const id = obj.value("userId").toString();
         auto const name = obj.value("displayName").toString();
+        auto const world_id = obj.value("worldConversationId").toString();
 
         if(user_id_ != id) {
             user_id_ = id;
@@ -298,6 +398,10 @@ private:
         if(display_name_ != name) {
             display_name_ = name;
             emit displayNameChanged();
+        }
+
+        if(!world_id.isEmpty()) {
+            world_conversation_id_ = world_id;
         }
 
         emit loginSucceeded();
@@ -322,12 +426,47 @@ private:
         emit registrationSucceeded(pending_account_);
     }
 
+    /// \brief 处理服务器推送的聊天消息。
+    /// \param obj MSG_PUSH 的 JSON 对象。
+    auto handleMessagePush(QJsonObject const& obj) -> void
+    {
+        auto const conversation_id = obj.value("conversationId").toString();
+        auto const sender_id = obj.value("senderId").toString();
+        auto const content = obj.value("content").toString();
+        auto const server_time_ms =
+            static_cast<qint64>(obj.value("serverTimeMs").toDouble(0.0));
+        auto const seq = static_cast<qint64>(obj.value("seq").toDouble(0.0));
+
+        emit messageReceived(conversation_id, sender_id, content, server_time_ms, seq);
+    }
+
+    /// \brief 处理历史消息响应，将其中每条消息转发为 messageReceived 信号。
+    /// \param obj HISTORY_RESP 的 JSON 对象。
+    auto handleHistoryResponse(QJsonObject const& obj) -> void
+    {
+        auto const conversation_id = obj.value("conversationId").toString();
+        auto const messages = obj.value("messages").toArray();
+
+        for(auto const& item : messages) {
+            auto const message_obj = item.toObject();
+            auto const sender_id = message_obj.value("senderId").toString();
+            auto const content = message_obj.value("content").toString();
+            auto const server_time_ms =
+                static_cast<qint64>(message_obj.value("serverTimeMs").toDouble(0.0));
+            auto const seq =
+                static_cast<qint64>(message_obj.value("seq").toDouble(0.0));
+
+            emit messageReceived(conversation_id, sender_id, content, server_time_ms, seq);
+        }
+    }
+
     QTcpSocket socket_{};
     QByteArray buffer_{};
     bool busy_{ false };
     QString error_message_{};
     QString user_id_{};
     QString display_name_{};
+    QString world_conversation_id_{};
 
     PendingCommand pending_command_{ PendingCommand::None };
     QString pending_account_{};

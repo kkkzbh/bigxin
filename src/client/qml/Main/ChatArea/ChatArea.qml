@@ -29,13 +29,14 @@ Rectangle {
             Layout.fillHeight: true
             color: theme.chatAreaBackground
 
-            ListView {
-                id: messageList
-                anchors.fill: parent
-                anchors.margins: 16
-                spacing: 16
-                model: messageModel
-                clip: true
+                ListView {
+                    id: messageList
+                    anchors.fill: parent
+                    anchors.margins: 16
+                    spacing: 16
+                    model: messageModel
+                    clip: true
+                    Component.onCompleted: positionViewAtEnd()
 
                 delegate: Item {
                     width: ListView.view.width
@@ -175,6 +176,32 @@ Rectangle {
                         radius: 4
                         color: theme.chatAreaBackground
                     }
+
+                    Keys.onReturnPressed: function(event) {
+                        if (event.modifiers & Qt.ShiftModifier) {
+                            inputArea.text = inputArea.text + "\n"
+                            inputArea.cursorPosition = inputArea.text.length
+                        } else {
+                            if (inputArea.text.length > 0) {
+                                loginBackend.sendWorldTextMessage(inputArea.text)
+                                inputArea.text = ""
+                            }
+                        }
+                        event.accepted = true
+                    }
+
+                    Keys.onEnterPressed: function(event) {
+                        if (event.modifiers & Qt.ShiftModifier) {
+                            inputArea.text = inputArea.text + "\n"
+                            inputArea.cursorPosition = inputArea.text.length
+                        } else {
+                            if (inputArea.text.length > 0) {
+                                loginBackend.sendWorldTextMessage(inputArea.text)
+                                inputArea.text = ""
+                            }
+                        }
+                        event.accepted = true
+                    }
                 }
 
                 RowLayout {
@@ -192,6 +219,10 @@ Rectangle {
                         background: Rectangle {
                             radius: 4
                             color: enabled ? theme.sendButtonEnabled : theme.sendButtonDisabled
+                        }
+                        onClicked: {
+                            loginBackend.sendWorldTextMessage(inputArea.text)
+                            inputArea.text = ""
                         }
                     }
                 }
@@ -217,21 +248,19 @@ Rectangle {
     ListModel {
         id: messageModel
 
-        ListElement {
-            sender: "me"
-            content: "还行 仍需努力，需要奔着满分"
-        }
-        ListElement {
-            sender: "other"
-            content: "收到"
-        }
-        ListElement {
-            sender: "other"
-            content: "我尽力"
-        }
-        ListElement {
-            sender: "me"
-            content: "好的好的～"
+        // 初始为空，由服务器推送的 MSG_PUSH 填充。
+    }
+
+    Connections {
+        target: loginBackend
+
+        function onMessageReceived(conversationId, senderId, content, serverTimeMs, seq) {
+            const mine = senderId === loginBackend.userId
+            messageModel.append({
+                sender: mine ? "me" : "other",
+                content: content
+            })
+            messageList.positionViewAtEnd()
         }
     }
 }

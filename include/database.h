@@ -2,10 +2,12 @@
 
 #include <pqxx/pqxx>
 
+#include <chrono>
 #include <mutex>
 #include <random>
+#include <stdexcept>
 #include <string>
-#include <chrono>
+#include <vector>
 
 #include <utility.h>
 
@@ -48,6 +50,38 @@ namespace database
         std::string error_msg{};
         /// \brief 成功时的用户信息。
         UserInfo user{};
+    };
+
+    /// \brief 已持久化消息的简要信息。
+    struct StoredMessage
+    {
+        /// \brief 所属会话 ID。
+        i64 conversation_id{};
+        /// \brief 消息主键 ID，作为 serverMsgId。
+        i64 id{};
+        /// \brief 会话内递增序号。
+        i64 seq{};
+        /// \brief 服务器时间戳（毫秒）。
+        i64 server_time_ms{};
+    };
+
+    /// \brief 已加载消息的完整信息，用于构建历史消息响应。
+    struct LoadedMessage
+    {
+        /// \brief 消息主键 ID。
+        i64 id{};
+        /// \brief 所属会话 ID。
+        i64 conversation_id{};
+        /// \brief 发送者用户 ID。
+        i64 sender_id{};
+        /// \brief 会话内递增序号。
+        i64 seq{};
+        /// \brief 消息类型，例如 TEXT。
+        std::string msg_type{};
+        /// \brief 消息内容。
+        std::string content{};
+        /// \brief 服务器时间戳（毫秒）。
+        i64 server_time_ms{};
     };
 
     /// \brief 创建到 PostgreSQL 的连接。
@@ -111,11 +145,31 @@ namespace database
             return res;
         }
         auto row = result[0];
+
+        auto const user_id = row[0].as<i64>();
+
+        auto const world_query =
+            "SELECT id FROM conversations "
+            "WHERE type = " + tx.quote("GROUP") + " AND name = " + tx.quote("世界") + " "
+            "LIMIT 1";
+
+        auto world_rows = tx.exec(world_query);
+        if(!world_rows.empty()) {
+            auto const world_id = world_rows[0][0].as<i64>();
+
+            auto const member_insert =
+                "INSERT INTO conversation_members (conversation_id, user_id, role) "
+                "VALUES (" + tx.quote(world_id) + ", " + tx.quote(user_id) + ", 'MEMBER') "
+                "ON CONFLICT DO NOTHING";
+
+            tx.exec(member_insert);
+        }
+
         tx.commit();
 
         RegisterResult res{};
         res.ok = true;
-        res.user.id = row[0].as<i64>();
+        res.user.id = user_id;
         res.user.account = row[1].as<std::string>();
         res.user.display_name = row[2].as<std::string>();
         return res;
@@ -164,5 +218,124 @@ namespace database
         res.user.account = account;
         res.user.display_name = row[2].as<std::string>();
         return res;
+    }
+
+    /// \brief 获取默认“世界”会话的 ID。
+    /// \return conversations 表中 type='GROUP' 且 name='世界' 的会话 ID。
+    /// \throws std::runtime_error 当会话不存在时抛出。
+    auto inline get_world_conversation_id() -> i64
+    {
+        auto conn = make_connection();
+        pqxx::work tx{ conn };
+
+        auto const query =
+            "SELECT id FROM conversations "
+            "WHERE type = " + tx.quote("GROUP") + " AND name = " + tx.quote("世界") + " "
+            "LIMIT 1";
+
+        auto rows = tx.exec(query);
+        if(rows.empty()) {
+            throw std::runtime_error{ "世界会话不存在" };
+        }
+
+        auto const id = rows[0][0].as<i64>();
+        tx.commit();
+        return id;
+    }
+
+    /// \brief 在“世界”会话中追加一条文本消息。
+    /// \param sender_id 发送者用户 ID。
+    /// \param content 消息文本内容。
+    /// \return 已写入消息的简要信息。
+    auto inline append_world_text_message(i64 sender_id, std::string const& content) -> StoredMessage
+    {
+        auto conn = make_connection();
+        pqxx::work tx{ conn };
+
+        auto const conversation_id = get_world_conversation_id();
+
+        auto const seq_query =
+            "SELECT COALESCE(MAX(seq), 0) + 1 FROM messages "
+            "WHERE conversation_id = " + tx.quote(conversation_id);
+
+        auto seq_rows = tx.exec(seq_query);
+        auto const seq = seq_rows[0][0].as<i64>();
+
+        auto const now_ms = std::chrono::duration_cast<std::chrono::milliseconds>(
+                                std::chrono::system_clock::now().time_since_epoch()
+                            )
+                                .count();
+
+        auto const insert =
+            "INSERT INTO messages (conversation_id, sender_id, seq, msg_type, content, server_time_ms) "
+            "VALUES (" + tx.quote(conversation_id) + ", "
+            + tx.quote(sender_id) + ", "
+            + tx.quote(seq) + ", "
+            + tx.quote(std::string{ "TEXT" }) + ", "
+            + tx.quote(content) + ", "
+            + tx.quote(now_ms) + ") "
+            "RETURNING id";
+
+        auto result = tx.exec(insert);
+        if(result.empty()) {
+            throw std::runtime_error{ "插入消息失败" };
+        }
+
+        auto const id = result[0][0].as<i64>();
+        tx.commit();
+
+        StoredMessage stored{};
+        stored.conversation_id = conversation_id;
+        stored.id = id;
+        stored.seq = seq;
+        stored.server_time_ms = now_ms;
+        return stored;
+    }
+
+    /// \brief 拉取“世界”会话的一批历史消息。
+    /// \param before_seq 当为 0 或以下时表示从最新开始，否则拉取 seq 小于该值的消息。
+    /// \param limit 最大返回条数，建议为正数。
+    /// \return 按 seq 递增排序的消息列表。
+    auto inline load_world_history(i64 before_seq, i64 limit) -> std::vector<LoadedMessage>
+    {
+        if(limit <= 0) {
+            limit = 50;
+        }
+
+        auto conn = make_connection();
+        pqxx::work tx{ conn };
+
+        auto const conversation_id = get_world_conversation_id();
+
+        std::string query =
+            "SELECT id, conversation_id, sender_id, seq, msg_type, content, server_time_ms "
+            "FROM messages WHERE conversation_id = " + tx.quote(conversation_id);
+
+        if(before_seq > 0) {
+            query += " AND seq < " + tx.quote(before_seq);
+        }
+
+        query += " ORDER BY seq DESC LIMIT " + tx.quote(limit);
+
+        auto rows = tx.exec(query);
+
+        std::vector<LoadedMessage> messages{};
+        messages.reserve(rows.size());
+
+        for(auto it = rows.rbegin(); it != rows.rend(); ++it) {
+            auto const& row = *it;
+            LoadedMessage msg{};
+            msg.id = row[0].as<i64>();
+            msg.conversation_id = row[1].as<i64>();
+            msg.sender_id = row[2].as<i64>();
+            msg.seq = row[3].as<i64>();
+            msg.msg_type = row[4].as<std::string>();
+            msg.content = row[5].as<std::string>();
+            msg.server_time_ms = row[6].as<i64>();
+            messages.push_back(std::move(msg));
+        }
+
+        tx.commit();
+        return messages;
     }
 } // namespace database

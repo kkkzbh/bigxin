@@ -12,3 +12,12 @@ CREATE TABLE IF NOT EXISTS conversations (
     -- 创建时间。
     created_at    TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+
+-- 唯一索引：保证同一类型和名称的会话只有一条记录。
+CREATE UNIQUE INDEX IF NOT EXISTS conversations_type_name_idx
+    ON conversations (type, name);
+
+-- 初始化默认“世界”会话，所有用户共享的群聊。
+INSERT INTO conversations (type, name, owner_user_id)
+VALUES ('GROUP', '世界', NULL)
+ON CONFLICT DO NOTHING;

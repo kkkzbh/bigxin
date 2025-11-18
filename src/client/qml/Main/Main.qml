@@ -26,6 +26,10 @@ ApplicationWindow {
     // 是否有选中的会话：用于控制标题栏右侧和对话区显示
     property bool hasSelection: chatList.currentIndex >= 0
 
+    Component.onCompleted: {
+        loginBackend.requestInitialWorldHistory()
+    }
+
     ColumnLayout {
         anchors.fill: parent
         spacing: 0
