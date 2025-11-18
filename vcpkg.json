@@ -1,0 +1,9 @@
+{
+  "version": "1.0",
+  "name": "chat",
+  "dependencies" : [
+    "asio",
+    "libpqxx",
+    "nlohmann-json"
+  ]
+}
