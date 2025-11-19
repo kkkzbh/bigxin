@@ -3,7 +3,7 @@ import QtQuick.Controls
 import QtQuick.Layouts
 import QtQuick.Window
 
-import ".." as AppTheme
+import WeChatClient as AppTheme
 
 // 登录主界面：账号密码登录 + 注册弹窗
 ApplicationWindow {
@@ -11,16 +11,17 @@ ApplicationWindow {
 
     // 注册窗口实例（避免重复创建）。
     property var registerWindow: null
+    // 主界面窗口实例（避免重复创建，并防止被 GC 回收）。
+    property Window mainWindow: null
     width: 420
     height: 360
     visible: true
+
+    // 全局主题单例
+    readonly property var theme: AppTheme.Theme
+
     color: theme.windowBackground
     title: qsTr("WeChat 登录")
-
-    // 使用暗色主题
-    AppTheme.Theme {
-        id: theme
-    }
 
     // 无边框窗口，后续可按需加入自定义标题栏
     flags: Qt.FramelessWindowHint | Qt.Window
@@ -44,9 +45,9 @@ ApplicationWindow {
             anchors.leftMargin: 8
             anchors.rightMargin: 8
 
-            Label {
-                text: qsTr("微信登录")
-                color: theme.textPrimary
+                Label {
+                    text: qsTr("微信登录")
+                    color: theme.textPrimary
                 font.pixelSize: 14
                 Layout.alignment: Qt.AlignVCenter
             }
@@ -151,7 +152,8 @@ ApplicationWindow {
 
                     background: Rectangle {
                         radius: 4
-                        color: loginButton.enabled ? theme.sendButtonEnabled : theme.sendButtonDisabled
+                        color: loginButton.enabled ? theme.sendButtonEnabled
+                                                   : theme.sendButtonDisabled
                     }
 
                     contentItem: Label {
@@ -209,14 +211,23 @@ ApplicationWindow {
         target: loginBackend
 
         function onLoginSucceeded() {
-            const component = Qt.createComponent("../Main/Main.qml")
-            if (component.status === Component.Ready) {
-                const win = component.createObject(null)
-                if (win) {
-                    win.show()
+            if (!window.mainWindow) {
+                const component = Qt.createComponent("../Main/Main.qml")
+                if (component.status === Component.Ready) {
+                    // 将 Main 窗口的 QObject 父对象设置为登录窗口，
+                    // 并保存在属性中，避免被 QML 垃圾回收提前销毁。
+                    window.mainWindow = component.createObject(window)
                 }
             }
-            window.close()
+
+            if (window.mainWindow) {
+                window.mainWindow.show()
+                window.mainWindow.raise()
+                window.mainWindow.requestActivate()
+            }
+
+            // 隐藏登录窗口，而不是销毁根对象。
+            window.visible = false
         }
     }
 }

@@ -3,7 +3,7 @@ import QtQuick.Controls
 import QtQuick.Layouts
 import QtQuick.Window
 
-import ".." as AppTheme
+import WeChatClient as AppTheme
 
 // 注册窗口：独立大窗，应用级模态，注册成功后弹出提示并自动关闭。
 ApplicationWindow {
@@ -14,16 +14,16 @@ ApplicationWindow {
     width: 640
     height: 480
     visible: true
+
+    // 全局主题单例
+    readonly property var theme: AppTheme.Theme
+
     color: theme.windowBackground
     title: qsTr("注册微信账号")
 
     // 应用级模态，冻结登录窗口，但保持其可见。
     modality: Qt.ApplicationModal
     flags: Qt.FramelessWindowHint | Qt.Window
-
-    AppTheme.Theme {
-        id: theme
-    }
 
     // 顶部标题栏，可拖动。
     Rectangle {

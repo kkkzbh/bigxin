@@ -3,7 +3,7 @@ import QtQuick.Controls
 import QtQuick.Layouts
 import QtQuick.Window
 
-import ".." as AppTheme
+import WeChatClient as AppTheme
 import "Sidebar"
 import "ChatList"
 import "ChatArea"
@@ -13,12 +13,12 @@ ApplicationWindow {
     width: 1400
     height: 900
     visible: true
+
+    // 全局主题单例
+    readonly property var theme: AppTheme.Theme
+
     color: theme.windowBackground
     title: qsTr("WeChat")
-
-    AppTheme.Theme {
-        id: theme
-    }
 
     // 无边框窗口，使用自绘标题栏
     flags: Qt.FramelessWindowHint | Qt.Window
@@ -27,7 +27,7 @@ ApplicationWindow {
     property bool hasSelection: chatList.currentIndex >= 0
 
     Component.onCompleted: {
-        loginBackend.requestInitialWorldHistory()
+        loginBackend.requestConversationList()
     }
 
     ColumnLayout {
@@ -125,6 +125,14 @@ ApplicationWindow {
                                 background: Rectangle {
                                     radius: 4
                                     color: addButton.hovered ? "#2f3035" : "transparent"
+                                }
+                                onClicked: {
+                                    const point = addButton.mapToItem(window.contentItem,
+                                                                     addButton.width / 2,
+                                                                     addButton.height)
+                                    addMenu.x = point.x - addMenu.implicitWidth / 2
+                                    addMenu.y = topBar.height - 6
+                                    addMenu.open()
                                 }
                             }
                         }
@@ -273,6 +281,17 @@ ApplicationWindow {
             }
         }
 
+        // 顶部 + 号下拉菜单
+        AppTheme.PlusMenu {
+            id: addMenu
+            parent: window.contentItem
+        }
+
+        // 添加好友独立窗口（非模态）
+        AppTheme.AddFriendDialog {
+            id: addFriendDialog
+        }
+
         // 主体区域：侧边栏 / 会话列表 / 分隔线 / 对话区域
         RowLayout {
             Layout.fillWidth: true
@@ -299,6 +318,8 @@ ApplicationWindow {
 
             ChatArea {
                 hasSelection: window.hasSelection
+                 conversationId: chatList.currentConversationId
+                 conversationType: chatList.currentConversationType
                 Layout.fillWidth: true
                 Layout.fillHeight: true
             }

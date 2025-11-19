@@ -74,6 +74,10 @@ namespace server
                         auto payload = handle_history_req(frame.payload);
                         auto msg = protocol::make_line("HISTORY_RESP", payload);
                         send_text(std::move(msg));
+                    } else if(frame.command == "CONV_LIST_REQ") {
+                        auto payload = handle_conv_list_req(frame.payload);
+                        auto msg = protocol::make_line("CONV_LIST_RESP", payload);
+                        send_text(std::move(msg));
                     } else {
                         // 默认 echo，方便用 nc 观察未知命令。
                         auto payload = std::string{ "{\"command\":\"" + frame.command + "\"}" };
@@ -171,6 +175,10 @@ namespace server
         /// \brief 处理历史消息请求，返回 HISTORY_RESP 的 JSON 串。
         /// \param payload HISTORY_REQ 的 JSON 文本。
         auto handle_history_req(std::string const& payload) -> std::string;
+
+        /// \brief 处理会话列表请求，返回 CONV_LIST_RESP 的 JSON 串。
+        /// \param payload CONV_LIST_REQ 的 JSON 文本。
+        auto handle_conv_list_req(std::string const& payload) -> std::string;
 
         /// \brief 构造带错误码的通用错误响应 JSON 串。
         auto make_error_payload(std::string const& code, std::string const& msg) const -> std::string
@@ -311,7 +319,7 @@ namespace server
             sessions_.erase(it, sessions_.end());
         }
 
-        /// \brief 在“世界”会话中广播一条消息。
+        /// \brief 在指定会话中广播一条消息（群聊 / 单聊通用）。
         /// \param stored 已持久化的消息信息。
         /// \param sender_id 发送者用户 ID。
         /// \param content 消息文本内容。
@@ -325,7 +333,23 @@ namespace server
 
             json push;
             push["conversationId"] = std::to_string(stored.conversation_id);
-            push["conversationType"] = "GROUP";
+            // 会话类型用于前端展示，不影响路由逻辑。
+            std::string conv_type{ "GROUP" };
+            try {
+                auto conn = database::make_connection();
+                pqxx::work tx{ conn };
+                auto const query =
+                    "SELECT type FROM conversations WHERE id = "
+                    + tx.quote(stored.conversation_id) + " LIMIT 1";
+                auto rows = tx.exec(query);
+                if(!rows.empty()) {
+                    conv_type = rows[0][0].as<std::string>();
+                }
+                tx.commit();
+            } catch(std::exception const&) {
+                // 保底使用 GROUP。
+            }
+            push["conversationType"] = conv_type;
             push["serverMsgId"] = std::to_string(stored.id);
             push["senderId"] = std::to_string(sender_id);
             push["msgType"] = "TEXT";
@@ -335,8 +359,35 @@ namespace server
 
             auto const line = protocol::make_line("MSG_PUSH", push.dump());
 
+            // 仅向会话成员中在线的用户广播。
+            std::vector<i64> member_ids;
+            try {
+                auto conn = database::make_connection();
+                pqxx::work tx{ conn };
+                auto const query =
+                    "SELECT user_id FROM conversation_members WHERE conversation_id = "
+                    + tx.quote(stored.conversation_id);
+                auto rows = tx.exec(query);
+                member_ids.reserve(rows.size());
+                for(auto const& row : rows) {
+                    member_ids.push_back(row[0].as<i64>());
+                }
+                tx.commit();
+            } catch(std::exception const&) {
+                // 如果查询失败，退化为广播给所有在线用户。
+                member_ids.clear();
+            }
+
+            auto const is_target = [&member_ids](i64 uid) -> bool {
+                if(member_ids.empty()) {
+                    return true;
+                }
+                return std::find(member_ids.begin(), member_ids.end(), uid)
+                       != member_ids.end();
+            };
+
             for(auto const& session : sessions_) {
-                if(session && session->is_authenticated()) {
+                if(session && session->is_authenticated() && is_target(session->user_id())) {
                     session->send_text(line);
                 }
             }
@@ -364,11 +415,22 @@ inline auto server::Session::handle_send_msg(std::string const& payload) -> void
             return;
         }
 
+        auto conversation_id = i64{};
+        if(j.contains("conversationId")) {
+            auto const conv_str = j.at("conversationId").get<std::string>();
+            if(!conv_str.empty()) {
+                conversation_id = std::stoll(conv_str);
+            }
+        }
+        if(conversation_id <= 0) {
+            conversation_id = database::get_world_conversation_id();
+        }
+
         auto const content = j.at("content").get<std::string>();
         auto const client_msg_id =
             j.contains("clientMsgId") ? j.at("clientMsgId").get<std::string>() : "";
 
-        auto const stored = database::append_world_text_message(user_id_, content);
+        auto const stored = database::append_text_message(conversation_id, user_id_, content);
 
         json ack;
         ack["clientMsgId"] = client_msg_id;
@@ -405,24 +467,40 @@ inline auto server::Session::handle_history_req(std::string const& payload) -> s
         auto j = json::parse(payload);
 
         auto before_seq = i64{};
+        auto after_seq = i64{};
         auto limit = i64{ 50 };
 
         if(j.contains("beforeSeq")) {
             before_seq = j.at("beforeSeq").get<i64>();
         }
+        if(j.contains("afterSeq")) {
+            after_seq = j.at("afterSeq").get<i64>();
+        }
         if(j.contains("limit")) {
             limit = j.at("limit").get<i64>();
         }
 
-        auto const messages = database::load_world_history(before_seq, limit);
+        auto conversation_id = i64{};
+        if(j.contains("conversationId")) {
+            auto const conv_str = j.at("conversationId").get<std::string>();
+            if(!conv_str.empty()) {
+                conversation_id = std::stoll(conv_str);
+            }
+        }
+        if(conversation_id <= 0) {
+            conversation_id = database::get_world_conversation_id();
+        }
+
+        std::vector<database::LoadedMessage> messages;
+        if(after_seq > 0) {
+            messages = database::load_user_conversation_since(conversation_id, after_seq, limit);
+        } else {
+            messages =
+                database::load_user_conversation_history(conversation_id, before_seq, limit);
+        }
 
         json resp;
-        if(!messages.empty()) {
-            resp["conversationId"] = std::to_string(messages.front().conversation_id);
-        } else {
-            auto const world_id = database::get_world_conversation_id();
-            resp["conversationId"] = std::to_string(world_id);
-        }
+        resp["conversationId"] = std::to_string(conversation_id);
 
         json items = json::array();
         for(auto const& msg : messages) {
@@ -440,6 +518,45 @@ inline auto server::Session::handle_history_req(std::string const& payload) -> s
         resp["hasMore"] = static_cast<i64>(messages.size()) >= limit;
         resp["nextBeforeSeq"] = messages.empty() ? 0 : messages.front().seq;
 
+        return resp.dump();
+    } catch(json::parse_error const&) {
+        return make_error_payload("INVALID_JSON", "请求 JSON 解析失败");
+    } catch(std::exception const& ex) {
+        return make_error_payload("SERVER_ERROR", ex.what());
+    }
+}
+
+inline auto server::Session::handle_conv_list_req(std::string const& payload) -> std::string
+{
+    using json = nlohmann::json;
+
+    if(!authenticated_) {
+        return make_error_payload("NOT_AUTHENTICATED", "请先登录");
+    }
+
+    try {
+        if(!payload.empty() && payload != "{}") {
+            // 预留将来扩展过滤参数，目前仅校验 JSON 格式。
+            (void)json::parse(payload);
+        }
+
+        auto const conversations = database::load_user_conversations(user_id_);
+
+        json resp;
+        resp["ok"] = true;
+
+        json items = json::array();
+        for(auto const& conv : conversations) {
+            json c;
+            c["conversationId"] = std::to_string(conv.id);
+            c["conversationType"] = conv.type;
+            c["title"] = conv.title;
+            c["lastSeq"] = conv.last_seq;
+            c["lastServerTimeMs"] = conv.last_server_time_ms;
+            items.push_back(std::move(c));
+        }
+
+        resp["conversations"] = std::move(items);
         return resp.dump();
     } catch(json::parse_error const&) {
         return make_error_payload("INVALID_JSON", "请求 JSON 解析失败");

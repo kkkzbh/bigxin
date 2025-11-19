@@ -2,19 +2,22 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 
-import "../.." as AppTheme
+import WeChatClient as AppTheme
 
 Rectangle {
     id: root
 
-    AppTheme.Theme {
-        id: theme
-    }
+    // 全局主题单例
+    readonly property var theme: AppTheme.Theme
 
     color: theme.chatAreaBackground
 
     // 外部通过 Main.qml 传入是否有选中会话
     property bool hasSelection: true
+    // 当前选中的会话 ID，用于按会话显示消息。
+    property string conversationId: ""
+    // 当前选中的会话类型（GROUP / SINGLE）。
+    property string conversationType: ""
 
     // 正常聊天界面，仅在有选中会话时显示
     ColumnLayout {
@@ -183,7 +186,7 @@ Rectangle {
                             inputArea.cursorPosition = inputArea.text.length
                         } else {
                             if (inputArea.text.length > 0) {
-                                loginBackend.sendWorldTextMessage(inputArea.text)
+                                loginBackend.sendMessage(root.conversationId, inputArea.text)
                                 inputArea.text = ""
                             }
                         }
@@ -196,7 +199,7 @@ Rectangle {
                             inputArea.cursorPosition = inputArea.text.length
                         } else {
                             if (inputArea.text.length > 0) {
-                                loginBackend.sendWorldTextMessage(inputArea.text)
+                                loginBackend.sendMessage(root.conversationId, inputArea.text)
                                 inputArea.text = ""
                             }
                         }
@@ -218,10 +221,11 @@ Rectangle {
                         enabled: inputArea.text.length > 0
                         background: Rectangle {
                             radius: 4
-                            color: enabled ? theme.sendButtonEnabled : theme.sendButtonDisabled
+                            color: enabled ? theme.sendButtonEnabled
+                                            : theme.sendButtonDisabled
                         }
                         onClicked: {
-                            loginBackend.sendWorldTextMessage(inputArea.text)
+                            loginBackend.sendMessage(root.conversationId, inputArea.text)
                             inputArea.text = ""
                         }
                     }
@@ -251,10 +255,20 @@ Rectangle {
         // 初始为空，由服务器推送的 MSG_PUSH 填充。
     }
 
+    // 当会话发生变化时，清空当前消息，并通过后端打开会话（先尝试从本地缓存加载，再必要时请求服务器历史）。
+    onConversationIdChanged: {
+        messageModel.clear()
+        if (conversationId !== "") {
+            loginBackend.openConversation(conversationId)
+        }
+    }
+
     Connections {
         target: loginBackend
 
         function onMessageReceived(conversationId, senderId, content, serverTimeMs, seq) {
+            if (conversationId !== root.conversationId)
+                return
             const mine = senderId === loginBackend.userId
             messageModel.append({
                 sender: mine ? "me" : "other",

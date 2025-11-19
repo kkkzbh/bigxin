@@ -27,16 +27,24 @@ add_executable(client
         client/client.cpp
 )
 
-qt_add_qml_module(client
-        URI WeChatClient
-        VERSION 1.0
-        QML_FILES
-        client/qml/Theme.qml
-        client/qml/Login/Login.qml
-        client/qml/Login/RegisterWindow.qml
-        client/qml/Main/Main.qml
-        client/qml/Main/Sidebar/Sidebar.qml
-        client/qml/Main/ChatList/ChatList.qml
+# 让 Theme.qml 在 QML 模块中以 singleton 形式注册
+set_source_files_properties(client/qml/Theme.qml
+        PROPERTIES
+        QT_QML_SINGLETON_TYPE TRUE
+)
+
+ qt_add_qml_module(client
+         URI WeChatClient
+         VERSION 1.0
+         QML_FILES
+         client/qml/Theme.qml
+         client/qml/Main/Dialogs/AddFriendDialog.qml
+         client/qml/Main/Dialogs/PlusMenu.qml
+         client/qml/Login/Login.qml
+         client/qml/Login/RegisterWindow.qml
+         client/qml/Main/Main.qml
+         client/qml/Main/Sidebar/Sidebar.qml
+         client/qml/Main/ChatList/ChatList.qml
         client/qml/Main/ChatArea/ChatArea.qml
         SOURCES
         ${CMAKE_SOURCE_DIR}/include/login.backend.h

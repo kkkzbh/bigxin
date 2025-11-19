@@ -1,10 +1,9 @@
+pragma Singleton
 import QtQml
 import QtQuick
 
-// 集中管理应用的常用主题颜色与尺寸
+// 集中管理应用的常用主题颜色与尺寸（全局单例）
 QtObject {
-    id: theme
-
     // 窗口与顶栏
     property color windowBackground: "#111111"
     property color topBarBackground: "#111111"
@@ -45,4 +44,12 @@ QtObject {
     property color bubbleMineText: "#ffffff"
     property color sendButtonEnabled: "#1aad19"
     property color sendButtonDisabled: "#252525"
+
+    // 卡片与面板
+    property color cardBackground: "#18191c"
+    property color cardBorder: "#2a2b2f"
+    property color panelBackground: "#202124"
+
+    // 主按钮
+    property color primaryButton: sendButtonEnabled
 }

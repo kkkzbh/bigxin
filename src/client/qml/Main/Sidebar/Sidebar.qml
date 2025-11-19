@@ -2,14 +2,13 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 
-import "../.." as AppTheme
+import WeChatClient as AppTheme
 
 Rectangle {
     id: root
 
-    AppTheme.Theme {
-        id: theme
-    }
+    // 全局主题单例
+    readonly property var theme: AppTheme.Theme
 
     color: theme.sidebarBackground
     implicitWidth: 72

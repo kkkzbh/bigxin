@@ -52,6 +52,21 @@ namespace database
         UserInfo user{};
     };
 
+    /// \brief 会话基础信息，用于会话列表展示。
+    struct ConversationInfo
+    {
+        /// \brief 会话 ID。
+        i64 id{};
+        /// \brief 会话类型：GROUP / SINGLE。
+        std::string type{};
+        /// \brief 对当前用户的显示标题。
+        std::string title{};
+        /// \brief 当前会话最新消息的 seq，若尚无消息则为 0。
+        i64 last_seq{};
+        /// \brief 当前会话最新消息的服务器时间戳（毫秒），若尚无消息则为 0。
+        i64 last_server_time_ms{};
+    };
+
     /// \brief 已持久化消息的简要信息。
     struct StoredMessage
     {
@@ -165,6 +180,51 @@ namespace database
             tx.exec(member_insert);
         }
 
+        // 注册成功后，尝试自动与账号 "kkkzbh" 建立单聊会话。
+        auto const friend_query =
+            "SELECT id FROM users WHERE account = " + tx.quote(std::string{ "kkkzbh" }) + " "
+            "LIMIT 1";
+
+        auto friend_rows = tx.exec(friend_query);
+        if(!friend_rows.empty()) {
+            auto const friend_id = friend_rows[0][0].as<i64>();
+            if(friend_id != user_id) {
+                // 在同一事务中确保存在一个 SINGLE 会话。
+                auto const conv_check =
+                    "SELECT c.id "
+                    "FROM conversations c "
+                    "JOIN conversation_members m1 ON m1.conversation_id = c.id AND m1.user_id = "
+                    + tx.quote(user_id) + " "
+                    "JOIN conversation_members m2 ON m2.conversation_id = c.id AND m2.user_id = "
+                    + tx.quote(friend_id) + " "
+                    "WHERE c.type = " + tx.quote("SINGLE") + " "
+                    "LIMIT 1";
+
+                auto conv_rows = tx.exec(conv_check);
+                if(conv_rows.empty()) {
+                    auto const insert_conv =
+                        "INSERT INTO conversations (type, name, owner_user_id) "
+                        "VALUES (" + tx.quote("SINGLE") + ", '', " + tx.quote(user_id) + ") "
+                        "RETURNING id";
+
+                    auto conv_result = tx.exec(insert_conv);
+                    if(!conv_result.empty()) {
+                        auto const conv_id = conv_result[0][0].as<i64>();
+
+                        auto const insert_members =
+                            "INSERT INTO conversation_members (conversation_id, user_id, role) "
+                            "VALUES (" + tx.quote(conv_id) + ", " + tx.quote(user_id)
+                            + ", 'MEMBER'), ("
+                            + tx.quote(conv_id) + ", " + tx.quote(friend_id)
+                            + ", 'MEMBER') "
+                            "ON CONFLICT DO NOTHING";
+
+                        tx.exec(insert_members);
+                    }
+                }
+            }
+        }
+
         tx.commit();
 
         RegisterResult res{};
@@ -243,16 +303,19 @@ namespace database
         return id;
     }
 
-    /// \brief 在“世界”会话中追加一条文本消息。
+    /// \brief 在指定会话中追加一条文本消息。
+    /// \param conversation_id 目标会话 ID。
     /// \param sender_id 发送者用户 ID。
     /// \param content 消息文本内容。
     /// \return 已写入消息的简要信息。
-    auto inline append_world_text_message(i64 sender_id, std::string const& content) -> StoredMessage
+    auto inline append_text_message(
+        i64 conversation_id,
+        i64 sender_id,
+        std::string const& content
+    ) -> StoredMessage
     {
         auto conn = make_connection();
         pqxx::work tx{ conn };
-
-        auto const conversation_id = get_world_conversation_id();
 
         auto const seq_query =
             "SELECT COALESCE(MAX(seq), 0) + 1 FROM messages "
@@ -291,12 +354,23 @@ namespace database
         stored.server_time_ms = now_ms;
         return stored;
     }
+    /// \brief 在“世界”会话中追加一条文本消息。
+    /// \param sender_id 发送者用户 ID。
+    /// \param content 消息文本内容。
+    /// \return 已写入消息的简要信息。
+    auto inline append_world_text_message(i64 sender_id, std::string const& content) -> StoredMessage
+    {
+        auto const conversation_id = get_world_conversation_id();
+        return append_text_message(conversation_id, sender_id, content);
+    }
 
-    /// \brief 拉取“世界”会话的一批历史消息。
+    /// \brief 拉取指定会话的一批历史消息（向上翻旧消息）。
+    /// \param conversation_id 会话 ID。
     /// \param before_seq 当为 0 或以下时表示从最新开始，否则拉取 seq 小于该值的消息。
     /// \param limit 最大返回条数，建议为正数。
     /// \return 按 seq 递增排序的消息列表。
-    auto inline load_world_history(i64 before_seq, i64 limit) -> std::vector<LoadedMessage>
+    auto inline load_user_conversation_history(i64 conversation_id, i64 before_seq, i64 limit)
+        -> std::vector<LoadedMessage>
     {
         if(limit <= 0) {
             limit = 50;
@@ -304,8 +378,6 @@ namespace database
 
         auto conn = make_connection();
         pqxx::work tx{ conn };
-
-        auto const conversation_id = get_world_conversation_id();
 
         std::string query =
             "SELECT id, conversation_id, sender_id, seq, msg_type, content, server_time_ms "
@@ -337,5 +409,130 @@ namespace database
 
         tx.commit();
         return messages;
+    }
+
+    /// \brief 拉取指定会话中 seq 大于给定值的一批新消息（用于增量同步）。
+    /// \param conversation_id 会话 ID。
+    /// \param after_seq 仅返回 seq 大于该值的消息。
+    /// \param limit 最大返回条数，建议为正数。
+    /// \return 按 seq 递增排序的消息列表。
+    auto inline load_user_conversation_since(i64 conversation_id, i64 after_seq, i64 limit)
+        -> std::vector<LoadedMessage>
+    {
+        if(limit <= 0) {
+            limit = 100;
+        }
+
+        auto conn = make_connection();
+        pqxx::work tx{ conn };
+
+        std::string query =
+            "SELECT id, conversation_id, sender_id, seq, msg_type, content, server_time_ms "
+            "FROM messages WHERE conversation_id = " + tx.quote(conversation_id);
+
+        if(after_seq > 0) {
+            query += " AND seq > " + tx.quote(after_seq);
+        }
+
+        query += " ORDER BY seq ASC LIMIT " + tx.quote(limit);
+
+        auto rows = tx.exec(query);
+
+        std::vector<LoadedMessage> messages{};
+        messages.reserve(rows.size());
+
+        for(auto const& row : rows) {
+            LoadedMessage msg{};
+            msg.id = row[0].as<i64>();
+            msg.conversation_id = row[1].as<i64>();
+            msg.sender_id = row[2].as<i64>();
+            msg.seq = row[3].as<i64>();
+            msg.msg_type = row[4].as<std::string>();
+            msg.content = row[5].as<std::string>();
+            msg.server_time_ms = row[6].as<i64>();
+            messages.push_back(std::move(msg));
+        }
+
+        tx.commit();
+        return messages;
+    }
+
+    /// \brief 拉取“世界”会话的一批历史消息。
+    /// \param before_seq 当为 0 或以下时表示从最新开始，否则拉取 seq 小于该值的消息。
+    /// \param limit 最大返回条数，建议为正数。
+    /// \return 按 seq 递增排序的消息列表。
+    auto inline load_world_history(i64 before_seq, i64 limit) -> std::vector<LoadedMessage>
+    {
+        auto const conversation_id = get_world_conversation_id();
+        return load_user_conversation_history(conversation_id, before_seq, limit);
+    }
+
+    /// \brief 加载某个用户所属的全部会话（群聊 + 单聊）。
+    /// \param user_id 当前用户 ID。
+    /// \return 会话列表，包含类型和对当前用户的标题。
+    auto inline load_user_conversations(i64 user_id) -> std::vector<ConversationInfo>
+    {
+        auto conn = make_connection();
+        pqxx::work tx{ conn };
+
+        auto const query =
+            "SELECT c.id, c.type, c.name "
+            "FROM conversations c "
+            "JOIN conversation_members cm ON cm.conversation_id = c.id "
+            "WHERE cm.user_id = " + tx.quote(user_id) + " "
+            "ORDER BY c.id ASC";
+
+        auto rows = tx.exec(query);
+
+        std::vector<ConversationInfo> result{};
+        result.reserve(rows.size());
+
+        for(auto const& row : rows) {
+            ConversationInfo info{};
+            info.id = row[0].as<i64>();
+            info.type = row[1].as<std::string>();
+            auto const stored_name = row[2].as<std::string>();
+
+            if(info.type == "GROUP") {
+                info.title = stored_name;
+            } else if(info.type == "SINGLE") {
+                auto const conv_id = info.id;
+
+                auto const peer_query =
+                    "SELECT u.display_name "
+                    "FROM conversation_members cm "
+                    "JOIN users u ON u.id = cm.user_id "
+                    "WHERE cm.conversation_id = " + tx.quote(conv_id) + " "
+                    "AND cm.user_id <> " + tx.quote(user_id) + " "
+                    "LIMIT 1";
+
+                auto peer_rows = tx.exec(peer_query);
+                if(!peer_rows.empty()) {
+                    info.title = peer_rows[0][0].as<std::string>();
+                } else {
+                    info.title = stored_name;
+                }
+            } else {
+                info.title = stored_name;
+            }
+
+            // 加载该会话当前最新消息的 seq 和时间戳。
+            {
+                auto const msg_query =
+                    "SELECT COALESCE(MAX(seq), 0), COALESCE(MAX(server_time_ms), 0) "
+                    "FROM messages WHERE conversation_id = " + tx.quote(info.id);
+
+                auto msg_rows = tx.exec(msg_query);
+                if(!msg_rows.empty()) {
+                    info.last_seq = msg_rows[0][0].as<i64>();
+                    info.last_server_time_ms = msg_rows[0][1].as<i64>();
+                }
+            }
+
+            result.push_back(std::move(info));
+        }
+
+        tx.commit();
+        return result;
     }
 } // namespace database

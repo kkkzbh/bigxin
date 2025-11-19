@@ -2,20 +2,31 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 
-import "../.." as AppTheme
+import WeChatClient as AppTheme
 
 Rectangle {
     id: root
     // 恢复原先的会话栏背景色，偏深灰
 
-    AppTheme.Theme {
-        id: theme
-    }
+    // 全局主题单例
+    readonly property var theme: AppTheme.Theme
 
     color: theme.chatListBackground
 
     // 导出当前选中下标，便于标题栏 / 对话区判断是否有选中会话
     property alias currentIndex: listView.currentIndex
+    // 当前选中会话的 ID（索引非法时返回空字符串，避免访问越界）。
+    property string currentConversationId: {
+        if (currentIndex < 0 || currentIndex >= chatModel.count)
+            return ""
+        return chatModel.get(currentIndex).conversationId
+    }
+    // 当前选中会话的类型（索引非法时返回空字符串，避免访问越界）。
+    property string currentConversationType: {
+        if (currentIndex < 0 || currentIndex >= chatModel.count)
+            return ""
+        return chatModel.get(currentIndex).conversationType
+    }
 
     ColumnLayout {
         anchors.fill: parent
@@ -44,8 +55,10 @@ Rectangle {
                 // 选中：#202124
                 // 选中 + hover：略亮一点 #2a2c30
                 color: ListView.isCurrentItem
-                       ? (hovered ? theme.chatListItemSelectedHover : theme.chatListItemSelected)
-                       : (hovered ? theme.chatListItemHover : theme.chatListItemNormal)
+                       ? (hovered ? theme.chatListItemSelectedHover
+                                  : theme.chatListItemSelected)
+                       : (hovered ? theme.chatListItemHover
+                                  : theme.chatListItemNormal)
 
                 MouseArea {
                     anchors.fill: parent
@@ -135,46 +148,20 @@ Rectangle {
 
     ListModel {
         id: chatModel
+    }
 
-        ListElement {
-            title: "吴呐小琪。"
-            preview: "还行 仍需努力，需要奔着满分"
-            time: "14:16"
-            unreadCount: 1
-            initials: "吴"
-            avatarColor: "#f2c24f"
-        }
-        ListElement {
-            title: "美团沙河..."
-            preview: "团购领券福利自..."
-            time: "13:29"
-            unreadCount: 2
-            initials: "团"
-            avatarColor: "#f8674f"
-        }
-        ListElement {
-            title: "服务号"
-            preview: "小姐姐辣辣拌麻辣烫"
-            time: "13:17"
-            unreadCount: 0
-            initials: "服"
-            avatarColor: "#4f90f2"
-        }
-        ListElement {
-            title: "江南无所有"
-            preview: "[动画表情] 加油"
-            time: "13:00"
-            unreadCount: 0
-            initials: "江"
-            avatarColor: "#4fbf73"
-        }
-        ListElement {
-            title: "默默"
-            preview: "[图片]"
-            time: "11:09"
-            unreadCount: 0
-            initials: "默"
-            avatarColor: "#9b75f2"
+    // 监听后端会话列表变更，重建模型。
+    Connections {
+        target: loginBackend
+
+        function onConversationsReset(conversations) {
+            chatModel.clear()
+            for (var i = 0; i < conversations.length; ++i) {
+                chatModel.append(conversations[i])
+            }
+            if (chatModel.count > 0 && listView.currentIndex === -1) {
+                listView.currentIndex = 0
+            }
         }
     }
 }

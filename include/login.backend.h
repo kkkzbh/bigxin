@@ -7,8 +7,16 @@
 #include <QJsonObject>
 #include <QJsonArray>
 #include <QDateTime>
+#include <QVariant>
+#include <QVariantList>
+#include <QVariantMap>
+#include <QCoreApplication>
+#include <QDir>
+#include <QFile>
+#include <QHash>
 
 #include <print>
+#include <algorithm>
 
 /// \brief 登录 / 注册相关的前端网络适配层。
 /// \details 使用 QTcpSocket 与后端 Asio 服务器通过文本协议交互。
@@ -135,6 +143,14 @@ public:
     /// \note 仅在已登录且 socket 仍保持连接时有效。
     Q_INVOKABLE void sendWorldTextMessage(QString const& text)
     {
+        sendMessage(world_conversation_id_, text);
+    }
+
+    /// \brief 向指定会话发送一条文本消息。
+    /// \param conversationId 会话 ID。
+    /// \param text 要发送的消息内容。
+    Q_INVOKABLE void sendMessage(QString const& conversationId, QString const& text)
+    {
         if(text.isEmpty()) {
             return;
         }
@@ -146,12 +162,16 @@ public:
             setErrorMessage(QStringLiteral("与服务器的连接已断开"));
             return;
         }
+        if(conversationId.isEmpty()) {
+            setErrorMessage(QStringLiteral("未选择会话"));
+            return;
+        }
 
         QJsonObject obj;
         auto const client_id =
             QString::number(QDateTime::currentMSecsSinceEpoch());
 
-        obj.insert("conversationId", world_conversation_id_);
+        obj.insert("conversationId", conversationId);
         obj.insert("conversationType", QStringLiteral("GROUP"));
         obj.insert("senderId", user_id_);
         obj.insert("clientMsgId", client_id);
@@ -178,12 +198,34 @@ public:
         if(world_conversation_id_.isEmpty()) {
             return;
         }
+        requestHistory(world_conversation_id_);
+    }
+
+    /// \brief 向服务器请求当前用户的会话列表（群聊 + 单聊）。
+    Q_INVOKABLE void requestConversationList()
+    {
+        if(socket_.state() != QAbstractSocket::ConnectedState) {
+            return;
+        }
+
+        QByteArray line;
+        line.append("CONV_LIST_REQ:{}\n");
+        socket_.write(line);
+    }
+
+    /// \brief 请求指定会话的一页历史消息。
+    /// \param conversationId 会话 ID。
+    Q_INVOKABLE void requestHistory(QString const& conversationId)
+    {
+        if(conversationId.isEmpty()) {
+            return;
+        }
         if(socket_.state() != QAbstractSocket::ConnectedState) {
             return;
         }
 
         QJsonObject obj;
-        obj.insert("conversationId", world_conversation_id_);
+        obj.insert("conversationId", conversationId);
         obj.insert("beforeSeq", 0);
         obj.insert("limit", 50);
 
@@ -198,6 +240,46 @@ public:
         line.append('\n');
 
         socket_.write(line);
+    }
+
+    /// \brief 打开指定会话：先尝试从本地缓存加载，再在必要时向服务器请求历史。
+    /// \param conversationId 会话 ID。
+    Q_INVOKABLE void openConversation(QString const& conversationId)
+    {
+        if(conversationId.isEmpty()) {
+            return;
+        }
+        if(user_id_.isEmpty()) {
+            // 尚未登录，不加载会话。
+            return;
+        }
+
+        auto const loaded = load_conversation_cache(conversationId);
+        auto const local_seq = local_last_seq_.value(conversationId, 0);
+        auto const server_seq = conv_last_seq_.value(conversationId, 0);
+
+        if(!loaded) {
+            // 没有本地缓存：拉最新一页历史。
+            requestHistory(conversationId);
+        } else if(server_seq > local_seq && socket_.state() == QAbstractSocket::ConnectedState) {
+            // 有本地缓存但落后：请求 afterSeq 增量历史。
+            QJsonObject obj;
+            obj.insert("conversationId", conversationId);
+            obj.insert("afterSeq", local_seq);
+            obj.insert("limit", 100);
+
+            QJsonDocument doc{ obj };
+            auto payload = doc.toJson(QJsonDocument::Compact);
+
+            QByteArray line;
+            line.reserve(11 + 1 + payload.size() + 1);
+            line.append("HISTORY_REQ");
+            line.append(':');
+            line.append(payload);
+            line.append('\n');
+
+            socket_.write(line);
+        }
     }
 
 signals:
@@ -228,8 +310,9 @@ signals:
         qint64 seq
     );
 
-    /// \brief 收到历史消息响应时发出一批消息。
-    /// \details 当前实现中直接复用 messageReceived 信号，不再单独定义新的信号。
+    /// \brief 会话列表发生变化时发出，QML 通过该信号重建模型。
+    /// \param conversations 由 QVariantMap 组成的列表，每个元素代表一个会话。
+    void conversationsReset(QVariantList conversations);
 
 private slots:
     /// \brief socket 连接建立后的回调。
@@ -369,6 +452,8 @@ private:
             handleMessagePush(obj);
         } else if(command == "HISTORY_RESP") {
             handleHistoryResponse(obj);
+        } else if(command == "CONV_LIST_RESP") {
+            handleConversationListResponse(obj);
         }
     }
 
@@ -437,7 +522,19 @@ private:
             static_cast<qint64>(obj.value("serverTimeMs").toDouble(0.0));
         auto const seq = static_cast<qint64>(obj.value("seq").toDouble(0.0));
 
+        // 检测是否存在 seq 间隙（短暂离线），如有需要可以在此触发一次增量 HISTORY_REQ。
+        auto const local_seq = local_last_seq_.value(conversation_id, 0);
+        if(seq > local_seq + 1) {
+            // TODO: 后续可在这里触发一次补拉历史。
+        }
+
         emit messageReceived(conversation_id, sender_id, content, server_time_ms, seq);
+
+        // 追加写入本地缓存。
+        cache_append_message(conversation_id, sender_id, content, server_time_ms, seq);
+
+        // 更新已知的最新 seq。
+        conv_last_seq_[conversation_id] = std::max(conv_last_seq_.value(conversation_id, 0), seq);
     }
 
     /// \brief 处理历史消息响应，将其中每条消息转发为 messageReceived 信号。
@@ -447,6 +544,7 @@ private:
         auto const conversation_id = obj.value("conversationId").toString();
         auto const messages = obj.value("messages").toArray();
 
+        qint64 max_seq = local_last_seq_.value(conversation_id, 0);
         for(auto const& item : messages) {
             auto const message_obj = item.toObject();
             auto const sender_id = message_obj.value("senderId").toString();
@@ -457,7 +555,268 @@ private:
                 static_cast<qint64>(message_obj.value("seq").toDouble(0.0));
 
             emit messageReceived(conversation_id, sender_id, content, server_time_ms, seq);
+
+            if(seq > max_seq) {
+                max_seq = seq;
+            }
         }
+
+        if(max_seq > 0) {
+            local_last_seq_[conversation_id] = max_seq;
+            conv_last_seq_[conversation_id] =
+                std::max(conv_last_seq_.value(conversation_id, 0), max_seq);
+        }
+
+        // 将这一页历史写入本地缓存，方便下次快速加载。
+        cache_write_messages(conversation_id, messages);
+    }
+
+    /// \brief 处理会话列表响应，转为 QVariantList 通知 QML。
+    /// \param obj CONV_LIST_RESP 的 JSON 对象。
+    auto handleConversationListResponse(QJsonObject const& obj) -> void
+    {
+        auto const ok = obj.value("ok").toBool(true);
+        if(!ok) {
+            auto const msg = obj.value("errorMsg").toString();
+            if(!msg.isEmpty()) {
+                setErrorMessage(msg);
+            }
+            return;
+        }
+
+        auto const array = obj.value("conversations").toArray();
+
+        QVariantList list;
+        list.reserve(array.size());
+
+        for(auto const& item : array) {
+            auto const conv = item.toObject();
+
+            auto const id = conv.value("conversationId").toString();
+            auto const type = conv.value("conversationType").toString();
+            auto const title = conv.value("title").toString();
+             auto const last_seq =
+                static_cast<qint64>(conv.value("lastSeq").toDouble(0.0));
+            auto const last_time_ms =
+                static_cast<qint64>(conv.value("lastServerTimeMs").toDouble(0.0));
+
+            QVariantMap map;
+            map.insert(QStringLiteral("conversationId"), id);
+            map.insert(QStringLiteral("conversationType"), type);
+            map.insert(QStringLiteral("title"), title);
+            map.insert(QStringLiteral("lastSeq"), last_seq);
+            map.insert(QStringLiteral("lastServerTimeMs"), last_time_ms);
+
+            map.insert(QStringLiteral("preview"), conv.value("preview").toString());
+            map.insert(QStringLiteral("time"), conv.value("time").toString());
+            map.insert(QStringLiteral("unreadCount"), conv.value("unreadCount").toInt());
+
+            QString initials;
+            if(!title.isEmpty()) {
+                initials = title.left(1);
+            }
+            map.insert(QStringLiteral("initials"), initials);
+
+            QString avatarColor;
+            if(type == QStringLiteral("GROUP")) {
+                avatarColor = QStringLiteral("#4fbf73");
+            } else {
+                avatarColor = QStringLiteral("#4f90f2");
+            }
+            map.insert(QStringLiteral("avatarColor"), avatarColor);
+
+            list.push_back(map);
+
+            // 更新服务器端已知的该会话最新 seq。
+            conv_last_seq_[id] = last_seq;
+        }
+
+        emit conversationsReset(list);
+    }
+
+    /// \brief 返回当前用户的缓存基础目录。
+    /// \details 目录结构为：
+    /// - <appDir>/../cache/user_<userId>/conv_<conversationId>.json
+    auto cache_base_dir() const -> QDir
+    {
+        auto dir = QDir{ QCoreApplication::applicationDirPath() };
+        dir.cdUp();
+
+        if(!dir.exists(QStringLiteral("cache"))) {
+            static_cast<void>(dir.mkdir(QStringLiteral("cache")));
+        }
+        dir.cd(QStringLiteral("cache"));
+
+        if(!user_id_.isEmpty()) {
+            auto const sub = QStringLiteral("user_%1").arg(user_id_);
+            if(!dir.exists(sub)) {
+                static_cast<void>(dir.mkdir(sub));
+            }
+            dir.cd(sub);
+        }
+
+        return dir;
+    }
+
+    /// \brief 生成指定会话的缓存文件路径。
+    auto cache_file_path(QString const& conversationId) const -> QString
+    {
+        auto dir = cache_base_dir();
+        return dir.filePath(QStringLiteral("conv_%1.json").arg(conversationId));
+    }
+
+    /// \brief 将一页历史消息写入本地缓存文件，覆盖旧内容。
+    /// \param conversationId 会话 ID。
+    /// \param messages 服务端 HISTORY_RESP 中的 messages 数组。
+    auto cache_write_messages(
+        QString const& conversationId,
+        QJsonArray const& messages
+    ) -> void
+    {
+        if(user_id_.isEmpty()) {
+            return;
+        }
+
+        auto const path = cache_file_path(conversationId);
+
+        // 计算本页中最大 seq，作为该会话最新 seq。
+        auto last_seq = qint64{};
+        for(auto const& item : messages) {
+            auto const obj = item.toObject();
+            auto const seq =
+                static_cast<qint64>(obj.value(QStringLiteral("seq")).toDouble(0.0));
+            if(seq > last_seq) {
+                last_seq = seq;
+            }
+        }
+
+        QJsonObject root;
+        root.insert(QStringLiteral("conversationId"), conversationId);
+        root.insert(QStringLiteral("messages"), messages);
+        root.insert(QStringLiteral("lastSeq"), static_cast<qint64>(last_seq));
+
+        auto const doc = QJsonDocument{ root };
+
+        QFile file{ path };
+        if(!file.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
+            return;
+        }
+
+        static_cast<void>(file.write(doc.toJson(QJsonDocument::Compact)));
+        file.close();
+
+        // 同步更新内存中的本地 latest seq。
+        local_last_seq_[conversationId] = last_seq;
+    }
+
+    /// \brief 追加一条消息到本地缓存。
+    /// \param conversationId 会话 ID。
+    /// \param senderId 发送者 ID。
+    /// \param content 消息文本。
+    /// \param serverTimeMs 服务器时间戳（毫秒）。
+    /// \param seq 会话内序号。
+    auto cache_append_message(
+        QString const& conversationId,
+        QString const& senderId,
+        QString const& content,
+        qint64 serverTimeMs,
+        qint64 seq
+    ) -> void
+    {
+        if(user_id_.isEmpty()) {
+            return;
+        }
+
+        auto const path = cache_file_path(conversationId);
+
+        QJsonArray messages;
+
+        {
+            QFile file{ path };
+            if(file.exists() && file.open(QIODevice::ReadOnly)) {
+                auto const data = file.readAll();
+                file.close();
+
+                auto const doc = QJsonDocument::fromJson(data);
+                if(doc.isObject()) {
+                    auto const obj = doc.object();
+                    messages = obj.value(QStringLiteral("messages")).toArray();
+                }
+            }
+        }
+
+        QJsonObject message;
+        message.insert(QStringLiteral("senderId"), senderId);
+        message.insert(QStringLiteral("content"), content);
+        message.insert(QStringLiteral("serverTimeMs"), serverTimeMs);
+        message.insert(QStringLiteral("seq"), seq);
+
+        messages.append(message);
+
+        cache_write_messages(conversationId, messages);
+    }
+
+    /// \brief 从本地缓存加载指定会话的消息，并以 messageReceived 形式重放。
+    /// \param conversationId 会话 ID。
+    /// \return 是否成功从缓存加载至少一条消息。
+    auto load_conversation_cache(QString const& conversationId) -> bool
+    {
+        if(user_id_.isEmpty()) {
+            return false;
+        }
+
+        auto const path = cache_file_path(conversationId);
+        QFile file{ path };
+        if(!file.exists()) {
+            return false;
+        }
+        if(!file.open(QIODevice::ReadOnly)) {
+            return false;
+        }
+
+        auto const data = file.readAll();
+        file.close();
+
+        auto const doc = QJsonDocument::fromJson(data);
+        if(!doc.isObject()) {
+            return false;
+        }
+
+        auto const obj = doc.object();
+        auto const messages = obj.value(QStringLiteral("messages")).toArray();
+
+        if(messages.isEmpty()) {
+            return false;
+        }
+
+        // 从缓存中恢复 lastSeq。
+        auto last_seq =
+            static_cast<qint64>(obj.value(QStringLiteral("lastSeq")).toDouble(0.0));
+        if(last_seq <= 0) {
+            for(auto const& item : messages) {
+                auto const m = item.toObject();
+                auto const seq =
+                    static_cast<qint64>(m.value(QStringLiteral("seq")).toDouble(0.0));
+                if(seq > last_seq) {
+                    last_seq = seq;
+                }
+            }
+        }
+        local_last_seq_[conversationId] = last_seq;
+
+        for(auto const& item : messages) {
+            auto const m = item.toObject();
+            auto const sender_id = m.value(QStringLiteral("senderId")).toString();
+            auto const content = m.value(QStringLiteral("content")).toString();
+            auto const server_time_ms =
+                static_cast<qint64>(m.value(QStringLiteral("serverTimeMs")).toDouble(0.0));
+            auto const seq =
+                static_cast<qint64>(m.value(QStringLiteral("seq")).toDouble(0.0));
+
+            emit messageReceived(conversationId, sender_id, content, server_time_ms, seq);
+        }
+
+        return true;
     }
 
     QTcpSocket socket_{};
@@ -475,4 +834,9 @@ private:
 
     QString host_{ QStringLiteral("127.0.0.1") };
     quint16 port_{ 5555 };
+
+    /// \brief 每个会话在服务器端已知的最新 seq。
+    QHash<QString, qint64> conv_last_seq_{};
+    /// \brief 本地缓存中每个会话的最新 seq。
+    QHash<QString, qint64> local_last_seq_{};
 };
