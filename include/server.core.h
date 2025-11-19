@@ -78,6 +78,10 @@ namespace server
                         auto payload = handle_conv_list_req(frame.payload);
                         auto msg = protocol::make_line("CONV_LIST_RESP", payload);
                         send_text(std::move(msg));
+                    } else if(frame.command == "PROFILE_UPDATE") {
+                        auto payload = handle_profile_update(frame.payload);
+                        auto msg = protocol::make_line("PROFILE_UPDATE_RESP", payload);
+                        send_text(std::move(msg));
                     } else {
                         // 默认 echo，方便用 nc 观察未知命令。
                         auto payload = std::string{ "{\"command\":\"" + frame.command + "\"}" };
@@ -179,6 +183,10 @@ namespace server
         /// \brief 处理会话列表请求，返回 CONV_LIST_RESP 的 JSON 串。
         /// \param payload CONV_LIST_REQ 的 JSON 文本。
         auto handle_conv_list_req(std::string const& payload) -> std::string;
+
+        /// \brief 处理资料更新请求，返回 PROFILE_UPDATE_RESP 的 JSON 串。
+        /// \param payload PROFILE_UPDATE 的 JSON 文本。
+        auto handle_profile_update(std::string const& payload) -> std::string;
 
         /// \brief 构造带错误码的通用错误响应 JSON 串。
         auto make_error_payload(std::string const& code, std::string const& msg) const -> std::string
@@ -557,6 +565,57 @@ inline auto server::Session::handle_conv_list_req(std::string const& payload) ->
         }
 
         resp["conversations"] = std::move(items);
+        return resp.dump();
+    } catch(json::parse_error const&) {
+        return make_error_payload("INVALID_JSON", "请求 JSON 解析失败");
+    } catch(std::exception const& ex) {
+        return make_error_payload("SERVER_ERROR", ex.what());
+    }
+}
+
+inline auto server::Session::handle_profile_update(std::string const& payload) -> std::string
+{
+    using json = nlohmann::json;
+
+    if(!authenticated_) {
+        return make_error_payload("NOT_AUTHENTICATED", "请先登录");
+    }
+
+    try {
+        auto j = json::parse(payload);
+
+        if(!j.contains("displayName")) {
+            return make_error_payload("INVALID_PARAM", "缺少 displayName 字段");
+        }
+
+        auto new_name = j.at("displayName").get<std::string>();
+
+        // 去掉首尾空白并做简单长度校验。
+        auto const trim = [](std::string& s) {
+            auto const not_space = [](unsigned char ch) { return !std::isspace(ch); };
+            s.erase(s.begin(), std::find_if(s.begin(), s.end(), not_space));
+            s.erase(std::find_if(s.rbegin(), s.rend(), not_space).base(), s.end());
+        };
+        trim(new_name);
+
+        if(new_name.empty()) {
+            return make_error_payload("INVALID_PARAM", "昵称不能为空");
+        }
+        if(new_name.size() > 64) {
+            return make_error_payload("INVALID_PARAM", "昵称长度过长");
+        }
+
+        auto const result = database::update_display_name(user_id_, new_name);
+        if(!result.ok) {
+            return make_error_payload(result.error_code, result.error_msg);
+        }
+
+        // 更新当前会话缓存的昵称。
+        display_name_ = result.user.display_name;
+
+        json resp;
+        resp["ok"] = true;
+        resp["displayName"] = display_name_;
         return resp.dump();
     } catch(json::parse_error const&) {
         return make_error_payload("INVALID_JSON", "请求 JSON 解析失败");

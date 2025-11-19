@@ -4,6 +4,7 @@ import QtQuick.Layouts
 import QtQuick.Window
 
 import WeChatClient as AppTheme
+import "../ChatArea"
 
 // 独立顶层窗口形式的“添加好友”界面，不阻塞主窗口。
 Window {
@@ -225,15 +226,27 @@ Window {
                         Layout.fillHeight: true
 
                         // 搜索结果卡片：friend / stranger
-                        Loader {
-                            id: resultLoader
-                            anchors.centerIn: parent    // 卡片在内容区域居中
+                        Rectangle {
+                            id: resultCard
+                            anchors.centerIn: parent
+                            width: 380
+                            height: root.relationState === "stranger" ? 300 : 480
+                            radius: 16
+                            color: theme.cardBackground
+                            border.color: theme.cardBorder
+                            visible: root.relationState === "friend" || root.relationState === "stranger"
 
-                            sourceComponent: root.relationState === "friend"
-                                             ? friendCard
-                                             : (root.relationState === "stranger"
-                                                ? strangerCard
-                                                : null)
+                            ContactDetailView {
+                                anchors.fill: parent
+                                // anchors.margins: 16 // ContactDetailView has its own internal spacing/centering
+                                
+                                hasSelection: true
+                                contactName: root.searchResult.displayName
+                                contactWeChatId: root.searchResult.account
+                                contactSignature: root.searchResult.note
+                                contactRegion: root.searchResult.region
+                                isStranger: root.relationState === "stranger"
+                            }
                         }
 
                         // 初始/加载/未找到 提示文字
@@ -262,309 +275,6 @@ Window {
     }
 
     // ===== 已有好友卡片 =====
-    Component {
-        id: friendCard
-
-        Rectangle {
-            radius: 16
-            color: theme.cardBackground
-            border.color: theme.cardBorder
-            implicitWidth: 380              // 卡片宽度
-            implicitHeight: 480             // 卡片高度
-
-            ColumnLayout {
-                anchors.fill: parent
-                anchors.margins: 16         // 卡片内部边距
-                spacing: 12                 // 各块之间垂直间距
-
-                // 顶部基本信息
-                RowLayout {
-                    Layout.fillWidth: true
-                    spacing: 12
-
-                    Rectangle {
-                        width: 80
-                        height: 80
-                        radius: 8
-                        clip: true
-                        color: "#333333"
-
-                        Image {
-                            anchors.fill: parent
-                            fillMode: Image.PreserveAspectCrop
-                            source: root.searchResult.avatar
-                        }
-                    }
-
-                    ColumnLayout {
-                        Layout.fillWidth: true
-                        spacing: 4
-
-                        RowLayout {
-                            Layout.fillWidth: true
-
-                            Text {
-                                text: root.searchResult.displayName
-                                color: theme.textPrimary
-                                font.pixelSize: 18  // 昵称字号
-                                font.bold: true
-                                elide: Text.ElideRight
-                                Layout.fillWidth: true
-                            }
-                        }
-
-                        Text {
-                            text: qsTr("账号：") + root.searchResult.account
-                            color: theme.textSecondary
-                            font.pixelSize: 13
-                        }
-
-                        Text {
-                            text: qsTr("地区：") + root.searchResult.region
-                            color: theme.textSecondary
-                            font.pixelSize: 13
-                        }
-                    }
-                }
-
-                Rectangle {
-                    Layout.fillWidth: true
-                    height: 1
-                    color: theme.separatorHorizontal
-                }
-
-                // 备注
-                RowLayout {
-                    Layout.fillWidth: true
-                    spacing: 16
-
-                    Text {
-                        text: qsTr("备注")
-                        width: 60
-                        color: theme.textSecondary
-                        font.pixelSize: 13
-                    }
-
-                    TextField {
-                        Layout.fillWidth: true
-                        text: root.searchResult.note
-                        placeholderText: qsTr("给 TA 备注一个名字")
-                        color: theme.textPrimary
-                        placeholderTextColor: theme.textMuted
-                        background: null
-                    }
-                }
-
-                Rectangle {
-                    Layout.fillWidth: true
-                    height: 1
-                    color: theme.separatorHorizontal
-                }
-
-                // 朋友圈占位
-                RowLayout {
-                    Layout.fillWidth: true
-                    spacing: 16
-
-                    Text {
-                        text: qsTr("朋友圈")
-                        width: 60
-                        color: theme.textSecondary
-                        font.pixelSize: 13
-                    }
-
-                    RowLayout {
-                        Layout.fillWidth: true
-                        spacing: 8
-
-                        Repeater {
-                            model: 3
-
-                            Rectangle {
-                                width: 60
-                                height: 60
-                                radius: 6
-                                color: "#333333"
-                            }
-                        }
-                    }
-                }
-
-                Rectangle {
-                    Layout.fillWidth: true
-                    height: 1
-                    color: theme.separatorHorizontal
-                }
-
-                // 共同群聊 / 来源
-                RowLayout {
-                    Layout.fillWidth: true
-                    spacing: 16
-
-                    ColumnLayout {
-                        width: 60
-                        spacing: 8
-
-                        Text {
-                            text: qsTr("共同群聊")
-                            color: theme.textSecondary
-                            font.pixelSize: 13
-                        }
-
-                        Text {
-                            text: qsTr("来源")
-                            color: theme.textSecondary
-                            font.pixelSize: 13
-                        }
-                    }
-
-                    ColumnLayout {
-                        Layout.fillWidth: true
-                        spacing: 8
-
-                        Text {
-                            text: root.searchResult.mutualGroups + qsTr(" 个")
-                            color: theme.textPrimary
-                            font.pixelSize: 13
-                        }
-
-                        Text {
-                            text: root.searchResult.source
-                            color: theme.textPrimary
-                            font.pixelSize: 13
-                            wrapMode: Text.Wrap
-                        }
-                    }
-                }
-
-                // 底部操作栏
-                Rectangle {
-                    Layout.fillWidth: true
-                    Layout.preferredHeight: 72
-                    radius: 12
-                    color: theme.panelBackground
-
-                    RowLayout {
-                        anchors.fill: parent
-                        anchors.margins: 12
-                        spacing: 12
-
-                        Button {
-                            Layout.fillWidth: true
-                            text: qsTr("发消息")
-                        }
-
-                        Button {
-                            Layout.fillWidth: true
-                            text: qsTr("语音聊天")
-                        }
-
-                        Button {
-                            Layout.fillWidth: true
-                            text: qsTr("视频聊天")
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    // ===== 未添加好友卡片 =====
-    Component {
-        id: strangerCard
-
-        Rectangle {
-            radius: 16
-            color: theme.cardBackground
-            border.color: theme.cardBorder
-            implicitWidth: 380
-            implicitHeight: 260
-
-            ColumnLayout {
-                anchors.fill: parent
-                anchors.margins: 24
-                spacing: 16
-
-                RowLayout {
-                    Layout.fillWidth: true
-                    spacing: 16
-
-                    Rectangle {
-                        width: 80
-                        height: 80
-                        radius: 8
-                        clip: true
-                        color: "#333333"
-
-                        Image {
-                            anchors.fill: parent
-                            fillMode: Image.PreserveAspectCrop
-                            source: root.searchResult.avatar
-                        }
-                    }
-
-                    ColumnLayout {
-                        Layout.fillWidth: true
-                        spacing: 6
-
-                        Text {
-                            text: root.searchResult.displayName
-                            color: theme.textPrimary
-                            font.pixelSize: 18
-                            font.bold: true
-                            elide: Text.ElideRight
-                            Layout.fillWidth: true
-                        }
-
-                        Text {
-                            text: qsTr("账号：") + root.searchResult.account
-                            color: theme.textSecondary
-                            font.pixelSize: 13
-                        }
-
-                        Text {
-                            text: qsTr("未添加到通讯录")
-                            color: theme.textMuted
-                            font.pixelSize: 12
-                        }
-                    }
-                }
-
-                Rectangle {
-                    Layout.fillWidth: true
-                    height: 1
-                    color: theme.separatorHorizontal
-                }
-
-                Item {
-                    Layout.fillWidth: true
-                    Layout.fillHeight: true
-                }
-
-                Button {
-                    Layout.alignment: Qt.AlignHCenter
-                    Layout.preferredWidth: 180
-                    Layout.preferredHeight: 40
-                    text: qsTr("添加到通讯录")
-
-                    background: Rectangle {
-                        radius: 6
-                        color: theme.primaryButton
-                    }
-
-                    contentItem: Label {
-                        text: qsTr("添加到通讯录")
-                        color: "#ffffff"
-                        horizontalAlignment: Text.AlignHCenter
-                        verticalAlignment: Text.AlignVCenter
-                        font.pixelSize: 14
-                        font.bold: true
-                    }
-
-                    // 后续在此发起 addFriend 请求
-                }
-            }
-        }
-    }
+    // Removed friendCard and strangerCard components as they are replaced by ContactDetailView
 }
 

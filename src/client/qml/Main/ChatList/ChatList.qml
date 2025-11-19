@@ -27,14 +27,32 @@ Rectangle {
             return ""
         return chatModel.get(currentIndex).conversationType
     }
+    // 当前选中会话的标题 / 昵称（用于右侧 ChatArea 标题栏）。
+    property string currentConversationTitle: {
+        if (currentIndex < 0 || currentIndex >= chatModel.count)
+            return ""
+        return chatModel.get(currentIndex).title
+    }
+
+    property int currentTab: 0
+    property bool hasContactSelection: contactList.currentIndex >= 0
+    property string currentContactName: contactList.currentContactName
+    property string currentContactWeChatId: contactList.currentContactWeChatId
+    property string currentContactSignature: contactList.currentContactSignature
+    property string currentRequestStatus: contactList.currentRequestStatus
 
     ColumnLayout {
         anchors.fill: parent
         spacing: 0
 
-        // 会话列表
-        ListView {
-            id: listView
+        StackLayout {
+            Layout.fillWidth: true
+            Layout.fillHeight: true
+            currentIndex: root.currentTab
+
+            // 会话列表
+            ListView {
+                id: listView
             Layout.fillWidth: true
             Layout.fillHeight: true
             clip: true
@@ -142,8 +160,14 @@ Rectangle {
                     }
                 }
             }
-        }
+            }
 
+            ContactListView {
+                id: contactList
+                Layout.fillWidth: true
+                Layout.fillHeight: true
+            }
+        }
     }
 
     ListModel {

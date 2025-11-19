@@ -18,13 +18,27 @@ Rectangle {
     property string conversationId: ""
     // 当前选中的会话类型（GROUP / SINGLE）。
     property string conversationType: ""
+    // 当前会话标题 / 昵称，用于标题栏显示。
+    property string conversationTitle: ""
 
     // 正常聊天界面，仅在有选中会话时显示
-    ColumnLayout {
-        id: chatLayout
-        visible: root.hasSelection
+    property int currentTab: 0
+    property string contactName: ""
+    property string contactWeChatId: ""
+    property string contactSignature: ""
+    property string requestStatus: ""
+
+    StackLayout {
         anchors.fill: parent
-        spacing: 0
+        currentIndex: root.currentTab
+        visible: root.hasSelection
+
+        // Tab 0: Chat Interface
+        ColumnLayout {
+            id: chatLayout
+            Layout.fillWidth: true
+            Layout.fillHeight: true
+            spacing: 0
 
         // 中间消息区域
         Rectangle {
@@ -231,6 +245,18 @@ Rectangle {
                     }
                 }
             }
+        }
+    }
+
+        // Tab 1: Contact Detail
+        ContactDetailView {
+            Layout.fillWidth: true
+            Layout.fillHeight: true
+            hasSelection: root.hasSelection
+            contactName: root.contactName
+            contactWeChatId: root.contactWeChatId
+            contactSignature: root.contactSignature
+            requestStatus: root.requestStatus
         }
     }
 

@@ -39,6 +39,19 @@ namespace database
         UserInfo user{};
     };
 
+    /// \brief 更新昵称结果。
+    struct UpdateDisplayNameResult
+    {
+        /// \brief 是否更新成功。
+        bool ok{};
+        /// \brief 错误码，失败时有效。
+        std::string error_code{};
+        /// \brief 错误信息，失败时有效。
+        std::string error_msg{};
+        /// \brief 成功时的用户信息。
+        UserInfo user{};
+    };
+
     /// \brief 登录结果。
     struct LoginResult
     {
@@ -233,6 +246,61 @@ namespace database
         res.user.account = row[1].as<std::string>();
         res.user.display_name = row[2].as<std::string>();
         return res;
+    }
+
+    /// \brief 更新指定用户的显示昵称。
+    /// \param user_id 目标用户 ID。
+    /// \param new_name 新的昵称。
+    /// \return 更新结果，包含错误信息或最新的用户信息。
+    auto inline update_display_name(i64 user_id, std::string const& new_name)
+        -> UpdateDisplayNameResult
+    {
+        UpdateDisplayNameResult res{};
+
+        if(user_id <= 0) {
+            res.ok = false;
+            res.error_code = "INVALID_PARAM";
+            res.error_msg = "无效的用户 ID";
+            return res;
+        }
+        if(new_name.empty()) {
+            res.ok = false;
+            res.error_code = "INVALID_PARAM";
+            res.error_msg = "昵称不能为空";
+            return res;
+        }
+
+        try {
+            auto conn = make_connection();
+            pqxx::work tx{ conn };
+
+            auto const update =
+                "UPDATE users SET display_name = " + tx.quote(new_name)
+                + " WHERE id = " + tx.quote(user_id)
+                + " RETURNING id, account, display_name";
+
+            auto rows = tx.exec(update);
+            if(rows.empty()) {
+                res.ok = false;
+                res.error_code = "NOT_FOUND";
+                res.error_msg = "用户不存在";
+                return res;
+            }
+
+            auto const& row = rows[0];
+            tx.commit();
+
+            res.ok = true;
+            res.user.id = row[0].as<i64>();
+            res.user.account = row[1].as<std::string>();
+            res.user.display_name = row[2].as<std::string>();
+            return res;
+        } catch(std::exception const& ex) {
+            res.ok = false;
+            res.error_code = "SERVER_ERROR";
+            res.error_msg = ex.what();
+            return res;
+        }
     }
 
     /// \brief 尝试登录用户。

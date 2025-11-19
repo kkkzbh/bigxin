@@ -9,6 +9,9 @@ Rectangle {
 
     // 全局主题单例
     readonly property var theme: AppTheme.Theme
+    // 当前选中的侧边栏索引：0=聊天, 1=通讯录, 2=Remix, 3=终端
+    property int currentIndex: 0
+    signal tabClicked(int index, string key)
 
     color: theme.sidebarBackground
     implicitWidth: 72
@@ -26,36 +29,77 @@ Rectangle {
 
             Repeater {
                 model: [
-                    { "icon": "\uE608", "tooltip": qsTr("聊天") },
-                    { "icon": "\uE603", "tooltip": qsTr("通讯录") },
-                    { "icon": "\uE609", "tooltip": qsTr("收藏") },
-                    { "icon": "\uE60A", "tooltip": qsTr("设置") }
+                    {
+                        "key": "chat",
+                        "iconLine": "qrc:/qt/qml/WeChatClient/client/qml/resource/sidebar/chat-3-line.svg",
+                        "iconFill": "qrc:/qt/qml/WeChatClient/client/qml/resource/sidebar/chat-3-fill.svg",
+                        "tooltip": qsTr("聊天")
+                    },
+                    {
+                        "key": "user",
+                        "iconLine": "qrc:/qt/qml/WeChatClient/client/qml/resource/sidebar/user-line.svg",
+                        "iconFill": "qrc:/qt/qml/WeChatClient/client/qml/resource/sidebar/user-fill.svg",
+                        "tooltip": qsTr("通讯录")
+                    },
+                    {
+                        "key": "remix",
+                        "iconLine": "qrc:/qt/qml/WeChatClient/client/qml/resource/sidebar/remix-fill.svg",
+                        "iconFill": "qrc:/qt/qml/WeChatClient/client/qml/resource/sidebar/remix-fill.svg",
+                        "tooltip": qsTr("Remix")
+                    },
+                    {
+                        "key": "terminal",
+                        "iconLine": "qrc:/qt/qml/WeChatClient/client/qml/resource/sidebar/terminal-box-line.svg",
+                        "iconFill": "qrc:/qt/qml/WeChatClient/client/qml/resource/sidebar/terminal-box-fill.svg",
+                        "tooltip": qsTr("终端")
+                    }
                 ]
 
                 delegate: Item {
+                    id: tabItem
                     Layout.fillWidth: true
                     Layout.preferredHeight: 44
+
+                    // hover 用作“焦点”视觉效果，类似 ChatList
+                    property bool hovered: false
+                    readonly property bool checked: index === root.currentIndex
+                    readonly property string iconSource: {
+                        if (modelData.key === "remix") {
+                            return modelData.iconFill
+                        }
+                        return checked ? modelData.iconFill : modelData.iconLine
+                    }
 
                     Rectangle {
                         id: btn
                         anchors.fill: parent
                         radius: 22
-                        color: hovered ? theme.sidebarButtonHover : "transparent"
+                        // 4 种状态：未选中 / hover / 选中 / 选中 + hover
+                        color: checked
+                               ? (hovered ? theme.chatListItemSelectedHover
+                                          : theme.chatListItemSelected)
+                               : (hovered ? theme.chatListItemHover
+                                          : "transparent")
 
-                        property bool hovered: false
-
-                        Text {
+                        Image {
                             anchors.centerIn: parent
-                            text: modelData.icon
-                            font.pixelSize: 22
-                            color: "#f5f5f5"
+                            source: iconSource
+                            width: 24
+                            height: 24
+                            fillMode: Image.PreserveAspectFit
+                            // 未选中稍微暗一点，hover/选中更亮
+                            opacity: checked ? 1.0 : (tabItem.hovered ? 0.9 : 0.7)
                         }
 
                         MouseArea {
                             anchors.fill: parent
                             hoverEnabled: true
-                            onEntered: btn.hovered = true
-                            onExited: btn.hovered = false
+                            onEntered: tabItem.hovered = true
+                            onExited: tabItem.hovered = false
+                            onClicked: {
+                                root.currentIndex = index
+                                root.tabClicked(index, modelData.key)
+                            }
                         }
                     }
                 }
@@ -74,18 +118,39 @@ Rectangle {
             Layout.preferredHeight: 36
 
             Rectangle {
-                width: 28
-                height: 28
-                radius: 14
+                id: settingsButton
+                width: 32
+                height: 32
+                radius: 16
                 color: "#202020"
                 anchors.horizontalCenter: parent.horizontalCenter
                 anchors.verticalCenter: parent.verticalCenter
 
-                Text {
+                Image {
                     anchors.centerIn: parent
-                    text: "⋮"
-                    color: "#f0f0f0"
-                    font.pixelSize: 18
+                    source: "qrc:/qt/qml/WeChatClient/client/qml/resource/sidebar/settings-line.svg"
+                    width: 20
+                    height: 20
+                    fillMode: Image.PreserveAspectFit
+                    smooth: true
+                }
+
+                MouseArea {
+                    anchors.fill: parent
+                    hoverEnabled: true
+                    onEntered: settingsButton.color = "#252525"
+                    onExited: settingsButton.color = "#202020"
+                    onClicked: {
+                        if (typeof settingsDialog !== "undefined" && settingsDialog) {
+                            settingsDialog.displayName = loginBackend.displayName
+                            settingsDialog.avatarText = loginBackend.displayName.length > 0
+                                                       ? loginBackend.displayName[0]
+                                                       : "A"
+                            settingsDialog.visible = true
+                            settingsDialog.raise()
+                            settingsDialog.requestActivate()
+                        }
+                    }
                 }
             }
         }

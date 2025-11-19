@@ -1,6 +1,4 @@
 
-add_executable(main main.cpp)
-target_link_libraries(main PRIVATE asio::asio)
 
 add_library(libchat INTERFACE)
 
@@ -40,14 +38,26 @@ set_source_files_properties(client/qml/Theme.qml
          client/qml/Theme.qml
          client/qml/Main/Dialogs/AddFriendDialog.qml
          client/qml/Main/Dialogs/PlusMenu.qml
+         client/qml/Main/Dialogs/SettingsDialog.qml
          client/qml/Login/Login.qml
          client/qml/Login/RegisterWindow.qml
          client/qml/Main/Main.qml
          client/qml/Main/Sidebar/Sidebar.qml
          client/qml/Main/ChatList/ChatList.qml
-        client/qml/Main/ChatArea/ChatArea.qml
-        SOURCES
-        ${CMAKE_SOURCE_DIR}/include/login.backend.h
+         client/qml/Main/ChatList/ContactListView.qml
+         client/qml/Main/ChatArea/ChatArea.qml
+         client/qml/Main/ChatArea/ContactDetailView.qml
+         RESOURCES
+         client/qml/resource/sidebar/chat-3-fill.svg
+         client/qml/resource/sidebar/chat-3-line.svg
+         client/qml/resource/sidebar/remix-fill.svg
+         client/qml/resource/sidebar/settings-line.svg
+         client/qml/resource/sidebar/terminal-box-fill.svg
+         client/qml/resource/sidebar/terminal-box-line.svg
+         client/qml/resource/sidebar/user-fill.svg
+         client/qml/resource/sidebar/user-line.svg
+         SOURCES
+         ${CMAKE_SOURCE_DIR}/include/login.backend.h
 )
 
 target_link_libraries(client

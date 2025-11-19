@@ -60,7 +60,7 @@ ApplicationWindow {
                 hoverEnabled: true
                 background: Rectangle {
                     radius: 3
-                    color: closeButton.hovered ? "#e81123" : "transparent"
+                    color: closeButton.hovered ? theme.dangerRed : "transparent"
                     border.color: "transparent"
                 }
                 contentItem: Label {

@@ -7,6 +7,7 @@ import WeChatClient as AppTheme
 import "Sidebar"
 import "ChatList"
 import "ChatArea"
+import "Dialogs"
 
 ApplicationWindow {
     id: window
@@ -24,7 +25,14 @@ ApplicationWindow {
     flags: Qt.FramelessWindowHint | Qt.Window
 
     // 是否有选中的会话：用于控制标题栏右侧和对话区显示
-    property bool hasSelection: chatList.currentIndex >= 0
+    property bool hasSelection: {
+        if (currentTab === 0) return chatList.currentIndex >= 0
+        if (currentTab === 1) return chatList.hasContactSelection
+        return false
+    }
+
+    // 当前选中的功能标签页：0=聊天, 1=通讯录
+    property int currentTab: 0
 
     Component.onCompleted: {
         loginBackend.requestConversationList()
@@ -223,7 +231,7 @@ ApplicationWindow {
                                     hoverEnabled: true
                                     background: Rectangle {
                                         radius: 3
-                                        color: closeButton.hovered ? "#e81123" : "transparent"
+                                        color: closeButton.hovered ? theme.dangerRed : "transparent"
                                         border.color: "transparent"
                                     }
                                     contentItem: Label {
@@ -249,7 +257,7 @@ ApplicationWindow {
                                 anchors.rightMargin: 20
 
                                 Label {
-                                    text: window.hasSelection ? "吴呐小琪。" : ""
+                                    text: window.hasSelection ? chatArea.conversationTitle : ""
                                     color: "#f5f5f5"
                                     font.pixelSize: 16
                                     font.bold: true
@@ -292,6 +300,11 @@ ApplicationWindow {
             id: addFriendDialog
         }
 
+        // 设置窗口（非模态）
+        SettingsDialog {
+            id: settingsDialog
+        }
+
         // 主体区域：侧边栏 / 会话列表 / 分隔线 / 对话区域
         RowLayout {
             Layout.fillWidth: true
@@ -301,12 +314,17 @@ ApplicationWindow {
             Sidebar {
                 Layout.preferredWidth: 72
                 Layout.fillHeight: true
+                currentIndex: window.currentTab
+                onTabClicked: (index, key) => {
+                    window.currentTab = index
+                }
             }
 
             ChatList {
                 id: chatList
                 Layout.preferredWidth: 300
                 Layout.fillHeight: true
+                currentTab: window.currentTab
             }
 
             // 会话列表与对话区域之间的分隔线（主体区域）
@@ -317,9 +335,21 @@ ApplicationWindow {
             }
 
             ChatArea {
+                id: chatArea
+                currentTab: window.currentTab
                 hasSelection: window.hasSelection
-                 conversationId: chatList.currentConversationId
-                 conversationType: chatList.currentConversationType
+                
+                // Chat Tab Data
+                conversationId: chatList.currentConversationId
+                conversationType: chatList.currentConversationType
+                conversationTitle: chatList.currentConversationTitle
+                
+                // Contact Tab Data
+                contactName: chatList.currentContactName
+                contactWeChatId: chatList.currentContactWeChatId
+                contactSignature: chatList.currentContactSignature
+                requestStatus: chatList.currentRequestStatus
+
                 Layout.fillWidth: true
                 Layout.fillHeight: true
             }

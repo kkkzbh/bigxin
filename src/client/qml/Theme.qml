@@ -50,6 +50,9 @@ QtObject {
     property color cardBorder: "#2a2b2f"
     property color panelBackground: "#202124"
 
+    // 关闭 / 错误高亮颜色
+    property color dangerRed: "#e81123"
+
     // 主按钮
     property color primaryButton: sendButtonEnabled
 }

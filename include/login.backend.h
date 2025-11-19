@@ -131,6 +131,39 @@ public:
         ensureConnected();
     }
 
+    /// \brief 更新当前用户的显示昵称。
+    /// \param newName 新的昵称。
+    Q_INVOKABLE void updateDisplayName(QString const& newName)
+    {
+        auto const trimmed = newName.trimmed();
+        if(trimmed.isEmpty()) {
+            setErrorMessage(QStringLiteral("昵称不能为空"));
+            return;
+        }
+        if(user_id_.isEmpty()) {
+            setErrorMessage(QStringLiteral("请先登录后再修改昵称"));
+            return;
+        }
+        if(socket_.state() != QAbstractSocket::ConnectedState) {
+            setErrorMessage(QStringLiteral("与服务器的连接已断开"));
+            return;
+        }
+
+        QJsonObject obj;
+        obj.insert("displayName", trimmed);
+        QJsonDocument doc{ obj };
+        auto payload = doc.toJson(QJsonDocument::Compact);
+
+        QByteArray line;
+        line.reserve(14 + 1 + payload.size() + 1); // "PROFILE_UPDATE"
+        line.append("PROFILE_UPDATE");
+        line.append(':');
+        line.append(payload);
+        line.append('\n');
+
+        socket_.write(line);
+    }
+
     /// \brief 主动清空错误信息。
     /// \note 作为 Q_INVOKABLE，使用传统 void 返回类型以兼容 Qt moc。
     Q_INVOKABLE void clearError()
@@ -454,6 +487,8 @@ private:
             handleHistoryResponse(obj);
         } else if(command == "CONV_LIST_RESP") {
             handleConversationListResponse(obj);
+        } else if(command == "PROFILE_UPDATE_RESP") {
+            handleProfileUpdateResponse(obj);
         }
     }
 
@@ -509,6 +544,26 @@ private:
         // 注册成功：清空错误，通知外部注册成功，让界面决定如何提示。
         setErrorMessage(QString{});
         emit registrationSucceeded(pending_account_);
+    }
+
+    /// \brief 处理昵称更新响应。
+    /// \param obj PROFILE_UPDATE_RESP 的 JSON 对象。
+    auto handleProfileUpdateResponse(QJsonObject const& obj) -> void
+    {
+        auto const ok = obj.value("ok").toBool(false);
+        if(!ok) {
+            auto const msg =
+                obj.value("errorMsg").toString(QStringLiteral("修改昵称失败"));
+            setErrorMessage(msg);
+            return;
+        }
+
+        auto const name = obj.value("displayName").toString();
+        if(!name.isEmpty() && display_name_ != name) {
+            display_name_ = name;
+            emit displayNameChanged();
+        }
+        setErrorMessage(QString{});
     }
 
     /// \brief 处理服务器推送的聊天消息。
