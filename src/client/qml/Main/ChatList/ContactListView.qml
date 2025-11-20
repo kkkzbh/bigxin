@@ -15,82 +15,55 @@ Rectangle {
     property string currentContactWeChatId: ""
     property string currentContactSignature: ""
     property string currentRequestStatus: ""
+    property string currentContactUserId: ""
+    property string currentRequestId: ""
 
-    // Mock Models
     ListModel {
         id: newFriendsModel
-        ListElement {
-            type: "request"
-            name: "谁看见我的快递了"
-            avatarColor: "#a29bfe"
-            wechatId: "kuaidi_123"
-            signature: "我是谁看见我的快递了"
-            status: "waiting"
-            msg: "通过搜索微信号添加"
-        }
-        ListElement {
-            type: "request"
-            name: "腻腻"
-            avatarColor: "#ffeaa7"
-            wechatId: "nini_cat"
-            signature: "我是群聊“河大校..."
-            status: "added"
-            msg: "我是群聊“河大校..."
-        }
-         ListElement {
-            type: "request"
-            name: "呆呆小琪。"
-            avatarColor: "#fab1a0"
-            wechatId: "daidai_77"
-            signature: "我是群聊“河大校..."
-            status: "added"
-            msg: "我是群聊“河大校..."
-        }
     }
 
     ListModel {
         id: contactsModel
-        ListElement {
-            type: "contact"
-            name: "文件传输助手"
-            avatarColor: "#4fbf73"
-            wechatId: "filehelper"
-            signature: ""
+    }
+
+    // 同步后端好友列表 / 好友申请列表到本地模型。
+    Connections {
+        target: loginBackend
+
+        function onFriendRequestsReset(requests) {
+            newFriendsModel.clear()
+            for (var i = 0; i < requests.length; ++i) {
+                var r = requests[i]
+                var name = (r.displayName || "").trim()
+                newFriendsModel.append({
+                    type: "request",
+                    userId: r.fromUserId,
+                    requestId: r.requestId,
+                    name: name,
+                    avatarColor: "#a29bfe",
+                    wechatId: r.account,
+                    signature: "",
+                    status: r.status === "PENDING" ? "waiting" : "added",
+                    msg: r.helloMsg || ""
+                })
+            }
         }
-        ListElement {
-            type: "contact"
-            name: "阿白"
-            avatarColor: "#ff9f43"
-            wechatId: "abai_123"
-            signature: "Stay hungry, stay foolish."
-        }
-         ListElement {
-            type: "contact"
-            name: "BigXin"
-            avatarColor: "#5f27cd"
-            wechatId: "bigxin_official"
-            signature: "Hello World"
-        }
-        ListElement {
-            type: "contact"
-            name: "G"
-            avatarColor: "#ff9f43"
-            wechatId: "g_official"
-            signature: "我是G"
-        }
-        ListElement {
-            type: "contact"
-            name: "Sakuta"
-            avatarColor: "#a29bfe"
-            wechatId: "sakuta_123"
-            signature: "我是25软工甲班2班..."
-        }
-        ListElement {
-            type: "contact"
-            name: "Ns"
-            avatarColor: "#fab1a0"
-            wechatId: "ns_official"
-            signature: "我是25软件工程张..."
+
+        function onFriendsReset(friends) {
+            contactsModel.clear()
+            for (var i = 0; i < friends.length; ++i) {
+                var f = friends[i]
+                var name = (f.displayName || "").trim()
+                contactsModel.append({
+                    type: "contact",
+                    userId: f.userId,
+                    requestId: "",
+                    name: name,
+                    avatarColor: "#4fbf73",
+                    wechatId: f.account,
+                    signature: f.signature || ""
+                })
+            }
         }
     }
 
@@ -201,6 +174,8 @@ Rectangle {
                     root.currentContactWeChatId = model.wechatId
                     root.currentContactSignature = model.signature || ""
                     root.currentRequestStatus = model.status || ""
+                    root.currentContactUserId = model.userId || ""
+                    root.currentRequestId = model.requestId || ""
                     root.currentIndex = index // Just for compatibility
                 }
             }

@@ -246,6 +246,153 @@ public:
         socket_.write(line);
     }
 
+    /// \brief 向服务器请求当前用户的好友列表，用于通讯录联系人页签。
+    Q_INVOKABLE void requestFriendList()
+    {
+        if(socket_.state() != QAbstractSocket::ConnectedState) {
+            return;
+        }
+
+        QByteArray line;
+        line.append("FRIEND_LIST_REQ:{}\n");
+        socket_.write(line);
+    }
+
+    /// \brief 向服务器请求“新的朋友”列表（别人加我的好友申请）。
+    Q_INVOKABLE void requestFriendRequestList()
+    {
+        if(socket_.state() != QAbstractSocket::ConnectedState) {
+            return;
+        }
+
+        QByteArray line;
+        line.append("FRIEND_REQ_LIST_REQ:{}\n");
+        socket_.write(line);
+    }
+
+    /// \brief 按账号搜索用户，并返回是否为好友等信息。
+    /// \param account 要搜索的账号。
+    Q_INVOKABLE void searchFriendByAccount(QString const& account)
+    {
+        auto const trimmed = account.trimmed();
+        if(trimmed.isEmpty()) {
+            QVariantMap result;
+            result.insert(QStringLiteral("ok"), false);
+            result.insert(QStringLiteral("errorCode"), QStringLiteral("INVALID_PARAM"));
+            result.insert(QStringLiteral("errorMsg"), QStringLiteral("账号不能为空"));
+            emit friendSearchFinished(result);
+            return;
+        }
+        if(socket_.state() != QAbstractSocket::ConnectedState) {
+            setErrorMessage(QStringLiteral("与服务器的连接已断开"));
+            return;
+        }
+
+        QJsonObject obj;
+        obj.insert(QStringLiteral("account"), trimmed);
+
+        QJsonDocument doc{ obj };
+        auto payload = doc.toJson(QJsonDocument::Compact);
+
+        QByteArray line;
+        line.reserve(16 + 1 + payload.size() + 1);
+        line.append("FRIEND_SEARCH_REQ");
+        line.append(':');
+        line.append(payload);
+        line.append('\n');
+
+        socket_.write(line);
+    }
+
+    /// \brief 发送好友申请（添加到通讯录）。
+    /// \param peerUserId 目标用户 ID（字符串形式）。
+    /// \param helloMsg 打招呼信息，可为空。
+    Q_INVOKABLE void sendFriendRequest(QString const& peerUserId, QString const& helloMsg)
+    {
+        if(peerUserId.trimmed().isEmpty()) {
+            return;
+        }
+        if(socket_.state() != QAbstractSocket::ConnectedState) {
+            setErrorMessage(QStringLiteral("与服务器的连接已断开"));
+            return;
+        }
+
+        QJsonObject obj;
+        obj.insert(QStringLiteral("peerUserId"), peerUserId.trimmed());
+        obj.insert(QStringLiteral("source"), QStringLiteral("search_account"));
+        if(!helloMsg.trimmed().isEmpty()) {
+            obj.insert(QStringLiteral("helloMsg"), helloMsg.trimmed());
+        }
+
+        QJsonDocument doc{ obj };
+        auto payload = doc.toJson(QJsonDocument::Compact);
+
+        QByteArray line;
+        line.reserve(14 + 1 + payload.size() + 1);
+        line.append("FRIEND_ADD_REQ");
+        line.append(':');
+        line.append(payload);
+        line.append('\n');
+
+        socket_.write(line);
+    }
+
+    /// \brief 同意一条好友申请。
+    /// \param requestId 好友申请 ID（字符串形式）。
+    Q_INVOKABLE void acceptFriendRequest(QString const& requestId)
+    {
+        if(requestId.trimmed().isEmpty()) {
+            return;
+        }
+        if(socket_.state() != QAbstractSocket::ConnectedState) {
+            setErrorMessage(QStringLiteral("与服务器的连接已断开"));
+            return;
+        }
+
+        QJsonObject obj;
+        obj.insert(QStringLiteral("requestId"), requestId.trimmed());
+
+        QJsonDocument doc{ obj };
+        auto payload = doc.toJson(QJsonDocument::Compact);
+
+        QByteArray line;
+        line.reserve(17 + 1 + payload.size() + 1);
+        line.append("FRIEND_ACCEPT_REQ");
+        line.append(':');
+        line.append(payload);
+        line.append('\n');
+
+        socket_.write(line);
+    }
+
+    /// \brief 打开与指定用户的单聊会话（如不存在则由服务器创建）。
+    /// \param peerUserId 对端用户 ID（字符串形式）。
+    Q_INVOKABLE void openSingleConversation(QString const& peerUserId)
+    {
+        if(peerUserId.trimmed().isEmpty()) {
+            return;
+        }
+        if(socket_.state() != QAbstractSocket::ConnectedState) {
+            setErrorMessage(QStringLiteral("与服务器的连接已断开"));
+            return;
+        }
+
+        QJsonObject obj;
+        obj.insert(QStringLiteral("peerUserId"), peerUserId.trimmed());
+
+        QJsonDocument doc{ obj };
+        auto payload = doc.toJson(QJsonDocument::Compact);
+
+        QByteArray line;
+        line.reserve(21 + 1 + payload.size() + 1);
+        line.append("OPEN_SINGLE_CONV_REQ");
+        line.append(':');
+        line.append(payload);
+        line.append('\n');
+
+        socket_.write(line);
+    }
+
     /// \brief 请求指定会话的一页历史消息。
     /// \param conversationId 会话 ID。
     Q_INVOKABLE void requestHistory(QString const& conversationId)
@@ -346,6 +493,26 @@ signals:
     /// \brief 会话列表发生变化时发出，QML 通过该信号重建模型。
     /// \param conversations 由 QVariantMap 组成的列表，每个元素代表一个会话。
     void conversationsReset(QVariantList conversations);
+
+    /// \brief 好友列表发生变化时发出，QML 用于重建通讯录联系人模型。
+    /// \param friends 由 QVariantMap 组成的列表，每个元素代表一个好友。
+    void friendsReset(QVariantList friends);
+
+    /// \brief “新的朋友”列表发生变化时发出。
+    /// \param requests 由 QVariantMap 组成的列表，每个元素代表一条好友申请。
+    void friendRequestsReset(QVariantList requests);
+
+    /// \brief 好友搜索结束时发出，为 AddFriendDialog 提供结果。
+    /// \param result 包含 ok / errorCode / userId / isFriend 等字段。
+    void friendSearchFinished(QVariantMap result);
+
+    /// \brief 好友申请发送成功时发出，用于弹出“已发送”提示并更新按钮状态。
+    void friendRequestSucceeded();
+
+    /// \brief 打开单聊会话成功时发出，用于前端高亮对应会话。
+    /// \param conversationId 新建或复用的会话 ID。
+    /// \param conversationType 会话类型（通常为 SINGLE）。
+    void singleConversationReady(QString conversationId, QString conversationType);
 
 private slots:
     /// \brief socket 连接建立后的回调。
@@ -489,6 +656,18 @@ private:
             handleConversationListResponse(obj);
         } else if(command == "PROFILE_UPDATE_RESP") {
             handleProfileUpdateResponse(obj);
+        } else if(command == "FRIEND_LIST_RESP") {
+            handleFriendListResponse(obj);
+        } else if(command == "FRIEND_REQ_LIST_RESP") {
+            handleFriendRequestListResponse(obj);
+        } else if(command == "FRIEND_SEARCH_RESP") {
+            handleFriendSearchResponse(obj);
+        } else if(command == "FRIEND_ADD_RESP") {
+            handleFriendAddResponse(obj);
+        } else if(command == "FRIEND_ACCEPT_RESP") {
+            handleFriendAcceptResponse(obj);
+        } else if(command == "OPEN_SINGLE_CONV_RESP") {
+            handleOpenSingleConvResponse(obj);
         }
     }
 
@@ -581,6 +760,12 @@ private:
         auto const local_seq = local_last_seq_.value(conversation_id, 0);
         if(seq > local_seq + 1) {
             // TODO: 后续可在这里触发一次补拉历史。
+        }
+
+        // 首次见到该会话，触发一次会话列表刷新以在 UI 中补全会话，但不改变当前选中。
+        if(!conv_last_seq_.contains(conversation_id)
+           && socket_.state() == QAbstractSocket::ConnectedState) {
+            requestConversationList();
         }
 
         emit messageReceived(conversation_id, sender_id, content, server_time_ms, seq);
@@ -687,6 +872,210 @@ private:
         }
 
         emit conversationsReset(list);
+    }
+
+    /// \brief 处理好友列表响应，转为 QVariantList 通知 QML。
+    /// \param obj FRIEND_LIST_RESP 的 JSON 对象。
+    auto handleFriendListResponse(QJsonObject const& obj) -> void
+    {
+        auto const ok = obj.value(QStringLiteral("ok")).toBool(true);
+        if(!ok) {
+            auto const msg = obj.value(QStringLiteral("errorMsg")).toString();
+            if(!msg.isEmpty()) {
+                setErrorMessage(msg);
+            }
+            return;
+        }
+
+        auto const array = obj.value(QStringLiteral("friends")).toArray();
+
+        QVariantList list;
+        list.reserve(array.size());
+
+        for(auto const& item : array) {
+            auto const u = item.toObject();
+
+            QVariantMap map;
+            map.insert(QStringLiteral("userId"), u.value(QStringLiteral("userId")).toString());
+            map.insert(QStringLiteral("account"), u.value(QStringLiteral("account")).toString());
+            map.insert(
+                QStringLiteral("displayName"),
+                u.value(QStringLiteral("displayName")).toString()
+            );
+            map.insert(QStringLiteral("region"), u.value(QStringLiteral("region")).toString());
+            map.insert(
+                QStringLiteral("signature"),
+                u.value(QStringLiteral("signature")).toString()
+            );
+
+            list.push_back(map);
+        }
+
+        emit friendsReset(list);
+    }
+
+    /// \brief 处理“新的朋友”列表响应。
+    /// \param obj FRIEND_REQ_LIST_RESP 的 JSON 对象。
+    auto handleFriendRequestListResponse(QJsonObject const& obj) -> void
+    {
+        auto const ok = obj.value(QStringLiteral("ok")).toBool(true);
+        if(!ok) {
+            auto const msg = obj.value(QStringLiteral("errorMsg")).toString();
+            if(!msg.isEmpty()) {
+                setErrorMessage(msg);
+            }
+            return;
+        }
+
+        auto const array = obj.value(QStringLiteral("requests")).toArray();
+
+        QVariantList list;
+        list.reserve(array.size());
+
+        for(auto const& item : array) {
+            auto const r = item.toObject();
+
+            QVariantMap map;
+            map.insert(
+                QStringLiteral("requestId"),
+                r.value(QStringLiteral("requestId")).toString()
+            );
+            map.insert(
+                QStringLiteral("fromUserId"),
+                r.value(QStringLiteral("fromUserId")).toString()
+            );
+            map.insert(
+                QStringLiteral("account"),
+                r.value(QStringLiteral("account")).toString()
+            );
+            map.insert(
+                QStringLiteral("displayName"),
+                r.value(QStringLiteral("displayName")).toString()
+            );
+            map.insert(QStringLiteral("status"), r.value(QStringLiteral("status")).toString());
+            map.insert(
+                QStringLiteral("helloMsg"),
+                r.value(QStringLiteral("helloMsg")).toString()
+            );
+
+            list.push_back(map);
+        }
+
+        emit friendRequestsReset(list);
+    }
+
+    /// \brief 处理好友搜索响应，转为 QVariantMap 通知 QML。
+    /// \param obj FRIEND_SEARCH_RESP 的 JSON 对象。
+    auto handleFriendSearchResponse(QJsonObject const& obj) -> void
+    {
+        QVariantMap result;
+
+        auto const ok = obj.value(QStringLiteral("ok")).toBool(false);
+        result.insert(QStringLiteral("ok"), ok);
+
+        if(!ok) {
+            result.insert(QStringLiteral("errorCode"), obj.value(QStringLiteral("errorCode")).toString());
+            result.insert(QStringLiteral("errorMsg"), obj.value(QStringLiteral("errorMsg")).toString());
+            emit friendSearchFinished(result);
+            return;
+        }
+
+        auto const user_obj = obj.value(QStringLiteral("user")).toObject();
+
+        result.insert(
+            QStringLiteral("userId"),
+            user_obj.value(QStringLiteral("userId")).toString()
+        );
+        result.insert(
+            QStringLiteral("account"),
+            user_obj.value(QStringLiteral("account")).toString()
+        );
+        result.insert(
+            QStringLiteral("displayName"),
+            user_obj.value(QStringLiteral("displayName")).toString()
+        );
+        result.insert(
+            QStringLiteral("region"),
+            user_obj.value(QStringLiteral("region")).toString()
+        );
+        result.insert(
+            QStringLiteral("signature"),
+            user_obj.value(QStringLiteral("signature")).toString()
+        );
+
+        result.insert(QStringLiteral("isFriend"), obj.value(QStringLiteral("isFriend")).toBool());
+        result.insert(QStringLiteral("isSelf"), obj.value(QStringLiteral("isSelf")).toBool());
+
+        emit friendSearchFinished(result);
+    }
+
+    /// \brief 处理好友申请创建的响应。
+    /// \param obj FRIEND_ADD_RESP 的 JSON 对象。
+    auto handleFriendAddResponse(QJsonObject const& obj) -> void
+    {
+        auto const ok = obj.value(QStringLiteral("ok")).toBool(false);
+        if(!ok) {
+            auto const msg =
+                obj.value(QStringLiteral("errorMsg")).toString(QStringLiteral("添加好友失败"));
+            if(!msg.isEmpty()) {
+                setErrorMessage(msg);
+            }
+            return;
+        }
+
+        // 目前添加好友仅在 AddFriendDialog 中使用，由前端自行更新 UI 状态。
+        setErrorMessage(QString{});
+        emit friendRequestSucceeded();
+    }
+
+    /// \brief 处理同意好友申请的响应。
+    /// \param obj FRIEND_ACCEPT_RESP 的 JSON 对象。
+    auto handleFriendAcceptResponse(QJsonObject const& obj) -> void
+    {
+        auto const ok = obj.value(QStringLiteral("ok")).toBool(false);
+        if(!ok) {
+            auto const msg =
+                obj.value(QStringLiteral("errorMsg")).toString(QStringLiteral("同意好友申请失败"));
+            if(!msg.isEmpty()) {
+                setErrorMessage(msg);
+            }
+            return;
+        }
+
+        setErrorMessage(QString{});
+
+        // 同意成功后，刷新“新的朋友”列表和好友列表。
+        requestFriendRequestList();
+        requestFriendList();
+    }
+
+    /// \brief 处理打开单聊会话的响应。
+    /// \param obj OPEN_SINGLE_CONV_RESP 的 JSON 对象。
+    auto handleOpenSingleConvResponse(QJsonObject const& obj) -> void
+    {
+        auto const ok = obj.value(QStringLiteral("ok")).toBool(false);
+        if(!ok) {
+            auto const msg =
+                obj.value(QStringLiteral("errorMsg")).toString(QStringLiteral("打开会话失败"));
+            if(!msg.isEmpty()) {
+                setErrorMessage(msg);
+            }
+            return;
+        }
+
+        auto const conv_id = obj.value(QStringLiteral("conversationId")).toString();
+        if(conv_id.isEmpty()) {
+            return;
+        }
+
+        setErrorMessage(QString{});
+
+        // 触发一次会话列表刷新，便于 ChatList 中展示新的单聊会话。
+        requestConversationList();
+        // 主动加载该会话的历史消息，具体展示交由 QML 决定。
+        openConversation(conv_id);
+
+        emit singleConversationReady(conv_id, obj.value(QStringLiteral("conversationType")).toString());
     }
 
     /// \brief 返回当前用户的缓存基础目录。

@@ -27,6 +27,8 @@ Rectangle {
     property string contactWeChatId: ""
     property string contactSignature: ""
     property string requestStatus: ""
+    property string contactUserId: ""
+    property string contactRequestId: ""
 
     StackLayout {
         anchors.fill: parent
@@ -257,6 +259,8 @@ Rectangle {
             contactWeChatId: root.contactWeChatId
             contactSignature: root.contactSignature
             requestStatus: root.requestStatus
+            contactUserId: root.contactUserId
+            requestId: root.contactRequestId
         }
     }
 

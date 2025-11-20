@@ -16,6 +16,12 @@ Rectangle {
     property string requestStatus: ""
     property string contactRegion: ""
     property bool isStranger: false
+    // 联系人用户 ID（用于发消息 / 添加好友等操作）。
+    property string contactUserId: ""
+    // 好友申请 ID（用于“同意”按钮）。
+    property string requestId: ""
+    // 是否已经向该用户发送过好友申请（用于禁用“添加到通讯录”按钮）。
+    property bool hasPendingRequest: false
 
     // Content
     Item {
@@ -115,6 +121,7 @@ Rectangle {
                 component ActionButton: ColumnLayout {
                     property string iconText
                     property string labelText
+                    signal triggered()
                     spacing: 8
                     Rectangle {
                         width: 50
@@ -122,12 +129,16 @@ Rectangle {
                         radius: 25 // Circle
                         color: "#2b2b2b" // Button bg
                         border.color: "#3a3a3a"
-                        
+
                         Text {
                             anchors.centerIn: parent
                             text: iconText
                             color: "#4fbf73" // Green accent
                             font.pixelSize: 20
+                        }
+                        MouseArea {
+                            anchors.fill: parent
+                            onClicked: triggered()
                         }
                     }
                     Label {
@@ -138,7 +149,15 @@ Rectangle {
                     }
                 }
 
-                ActionButton { iconText: "💬"; labelText: "发消息" }
+                ActionButton {
+                    iconText: "💬"
+                    labelText: "发消息"
+                    onTriggered: {
+                        if (root.contactUserId && root.contactUserId !== "") {
+                            loginBackend.openSingleConversation(root.contactUserId)
+                        }
+                    }
+                }
                 ActionButton { iconText: "📞"; labelText: "语音聊天" }
                 ActionButton { iconText: "📹"; labelText: "视频聊天" }
             }
@@ -162,19 +181,22 @@ Rectangle {
                     verticalAlignment: Text.AlignVCenter
                 }
                 onClicked: {
-                    console.log("Accepted friend request")
+                    if (root.requestId && root.requestId !== "") {
+                        loginBackend.acceptFriendRequest(root.requestId)
+                    }
                 }
             }
 
             // Add to Contacts Button
             Button {
                 visible: root.isStranger
-                text: "添加到通讯录"
+                text: root.hasPendingRequest ? "已发送" : "添加到通讯录"
                 Layout.alignment: Qt.AlignHCenter
                 Layout.preferredWidth: 160
                 Layout.preferredHeight: 36
+                enabled: !root.hasPendingRequest
                 background: Rectangle {
-                    color: "#4fbf73"
+                    color: root.hasPendingRequest ? "#3a3a3a" : "#4fbf73"
                     radius: 4
                 }
                 contentItem: Text {
@@ -185,7 +207,9 @@ Rectangle {
                     verticalAlignment: Text.AlignVCenter
                 }
                 onClicked: {
-                    console.log("Add friend request sent")
+                    if (root.contactUserId && root.contactUserId !== "") {
+                        loginBackend.sendFriendRequest(root.contactUserId, "")
+                    }
                 }
             }
         }

@@ -42,6 +42,11 @@ Window {
         source: ""
     })
 
+    // 当前搜索命中的用户 ID（用于发送好友申请 / 发消息）。
+    property string searchUserId: ""
+    // 当前窗口内是否已经对该用户发送过好友申请。
+    property bool requestSent: false
+
     // 对外可调用的重置接口
     function resetState() {
         relationState = "idle"
@@ -57,6 +62,8 @@ Window {
             source: ""
         })
         query = ""
+        searchUserId = ""
+        requestSent = false
     }
 
     // 整个窗口的可视背景（圆角 + 主题色）
@@ -209,7 +216,10 @@ Window {
                                 font.bold: true
                             }
 
-                            // 后续在此调用后端搜索接口
+                            onClicked: {
+                                root.relationState = "loading"
+                                loginBackend.searchFriendByAccount(root.query)
+                            }
                         }
                     }
 
@@ -246,6 +256,9 @@ Window {
                                 contactSignature: root.searchResult.note
                                 contactRegion: root.searchResult.region
                                 isStranger: root.relationState === "stranger"
+                                contactUserId: root.searchUserId
+                                requestId: ""
+                                hasPendingRequest: root.requestSent
                             }
                         }
 
@@ -274,7 +287,130 @@ Window {
         }
     }
 
-    // ===== 已有好友卡片 =====
-    // Removed friendCard and strangerCard components as they are replaced by ContactDetailView
-}
+    // 从后端好友搜索结果更新本地状态。
+    Connections {
+        target: loginBackend
 
+        function onFriendSearchFinished(result) {
+            if (!root.visible)
+                return
+
+            root.requestSent = false
+
+            if (!result.ok) {
+                root.relationState = "notFound"
+                root.searchUserId = ""
+                root.searchResult = ({
+                    found: false,
+                    isFriend: false,
+                    avatar: "",
+                    displayName: "",
+                    account: root.query,
+                    region: "",
+                    note: "",
+                    mutualGroups: 0,
+                    source: ""
+                })
+                return
+            }
+
+            root.searchUserId = result.userId || ""
+
+            root.searchResult = ({
+                found: true,
+                isFriend: result.isFriend,
+                avatar: "",
+                displayName: result.displayName,
+                account: result.account,
+                region: result.region,
+                note: "",
+                mutualGroups: 0,
+                source: ""
+            })
+
+            if (result.isFriend || result.isSelf) {
+                root.relationState = "friend"
+            } else {
+                root.relationState = "stranger"
+            }
+        }
+    }
+
+    // 好友申请发送成功弹窗。
+    Popup {
+        id: addSuccessDialog
+        parent: root.contentItem
+        modal: true
+        focus: true
+        closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
+        x: (parent.width - width) / 2
+        y: (parent.height - height) / 2
+        width: 260
+        background: Rectangle {
+            radius: 8
+            color: theme.cardBackground
+            border.color: theme.cardBorder
+            border.width: 1
+        }
+
+        // 半透明遮罩冻结窗口交互
+        Overlay.modal: Rectangle { color: "#80000000" }
+
+        ColumnLayout {
+            anchors.fill: parent
+            anchors.margins: 20
+            spacing: 16
+
+            Label {
+                text: qsTr("已发送好友申请")
+                color: theme.textPrimary
+                font.pixelSize: 16
+                font.bold: true
+                Layout.alignment: Qt.AlignHCenter
+            }
+
+            Label {
+                text: qsTr("对方通过验证后，将自动出现在你的通讯录中。")
+                color: theme.textSecondary
+                font.pixelSize: 12
+                wrapMode: Text.Wrap
+                Layout.fillWidth: true
+            }
+
+            Item { Layout.fillWidth: true; Layout.preferredHeight: 8 }
+
+            RowLayout {
+                Layout.fillWidth: true
+
+                Item { Layout.fillWidth: true }
+
+                Button {
+                    text: qsTr("知道了")
+                    background: Rectangle {
+                        radius: 4
+                        color: theme.primaryButton
+                    }
+                    contentItem: Label {
+                        text: parent.text
+                        color: "#ffffff"
+                        horizontalAlignment: Text.AlignHCenter
+                        verticalAlignment: Text.AlignVCenter
+                        font.pixelSize: 14
+                    }
+                    onClicked: addSuccessDialog.close()
+                }
+            }
+        }
+    }
+
+    Connections {
+        target: loginBackend
+
+        function onFriendRequestSucceeded() {
+            if (!root.visible)
+                return
+            root.requestSent = true
+            addSuccessDialog.open()
+        }
+    }
+}

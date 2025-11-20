@@ -40,6 +40,11 @@ Rectangle {
     property string currentContactWeChatId: contactList.currentContactWeChatId
     property string currentContactSignature: contactList.currentContactSignature
     property string currentRequestStatus: contactList.currentRequestStatus
+    property string currentContactUserId: contactList.currentContactUserId
+    property string currentRequestId: contactList.currentRequestId
+
+    // 用户主动打开单聊后等待选中的会话 ID（仅主动操作使用，不影响被动消息）。
+    property string pendingSelectConversationId: ""
 
     ColumnLayout {
         anchors.fill: parent
@@ -181,11 +186,37 @@ Rectangle {
         function onConversationsReset(conversations) {
             chatModel.clear()
             for (var i = 0; i < conversations.length; ++i) {
-                chatModel.append(conversations[i])
+                var item = conversations[i]
+                // 兜底去掉标题首尾空白，避免通讯录数据带空格。
+                item.title = (item.title || "").trim()
+                chatModel.append(item)
             }
-            if (chatModel.count > 0 && listView.currentIndex === -1) {
+            // 主动打开会话：尝试选中 pending 会话。
+            if (pendingSelectConversationId && pendingSelectConversationId !== "") {
+                var targetIndex = -1
+                for (var j = 0; j < chatModel.count; ++j) {
+                    if (chatModel.get(j).conversationId === pendingSelectConversationId) {
+                        targetIndex = j
+                        break
+                    }
+                }
+                if (targetIndex >= 0) {
+                    listView.currentIndex = targetIndex
+                }
+                pendingSelectConversationId = ""
+            } else if (chatModel.count > 0 && listView.currentIndex === -1) {
                 listView.currentIndex = 0
             }
+        }
+    }
+
+    // 监听单聊打开完成信号：仅源于用户主动点击“发消息”。
+    Connections {
+        target: loginBackend
+
+        function onSingleConversationReady(conversationId, conversationType) {
+            pendingSelectConversationId = conversationId
+            // 等待下一次会话列表刷新后高亮该会话。
         }
     }
 }

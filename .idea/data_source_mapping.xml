@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="DataSourcePerFileMappings">
+    <file url="file://$PROJECT_DIR$/src/database/conversations.sql" value="01a9e29b-e2a6-4961-afa0-6a9bca3bd300" />
+    <file url="file://$PROJECT_DIR$/src/database/friend_requests.sql" value="01a9e29b-e2a6-4961-afa0-6a9bca3bd300" />
+    <file url="file://$PROJECT_DIR$/src/database/friends.sql" value="01a9e29b-e2a6-4961-afa0-6a9bca3bd300" />
+    <file url="file://$PROJECT_DIR$/src/database/single_conversations.sql" value="01a9e29b-e2a6-4961-afa0-6a9bca3bd300" />
+  </component>
+</project>

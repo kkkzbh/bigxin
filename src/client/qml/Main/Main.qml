@@ -36,6 +36,16 @@ ApplicationWindow {
 
     Component.onCompleted: {
         loginBackend.requestConversationList()
+        loginBackend.requestFriendList()
+        loginBackend.requestFriendRequestList()
+    }
+
+    Connections {
+        target: loginBackend
+        function onSingleConversationReady(conversationId, conversationType) {
+            // 用户主动打开单聊时切回聊天页签，等待会话列表刷新后高亮。
+            window.currentTab = 0
+        }
     }
 
     ColumnLayout {
@@ -349,6 +359,8 @@ ApplicationWindow {
                 contactWeChatId: chatList.currentContactWeChatId
                 contactSignature: chatList.currentContactSignature
                 requestStatus: chatList.currentRequestStatus
+                contactUserId: chatList.currentContactUserId
+                contactRequestId: chatList.currentRequestId
 
                 Layout.fillWidth: true
                 Layout.fillHeight: true

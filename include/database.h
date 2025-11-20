@@ -65,6 +65,81 @@ namespace database
         UserInfo user{};
     };
 
+    /// \brief 好友基础信息，用于通讯录联系人列表展示。
+    struct FriendInfo
+    {
+        /// \brief 好友用户 ID。
+        i64 id{};
+        /// \brief 好友账号。
+        std::string account{};
+        /// \brief 好友昵称。
+        std::string display_name{};
+    };
+
+    /// \brief 好友申请信息，用于“新的朋友”列表展示。
+    struct FriendRequestInfo
+    {
+        /// \brief 申请 ID。
+        i64 id{};
+        /// \brief 申请发起者用户 ID。
+        i64 from_user_id{};
+        /// \brief 申请发起者账号。
+        std::string account{};
+        /// \brief 申请发起者昵称。
+        std::string display_name{};
+        /// \brief 当前状态：PENDING / ACCEPTED 等。
+        std::string status{};
+        /// \brief 打招呼信息或来源文案。
+        std::string hello_msg{};
+    };
+
+    /// \brief 按账号搜索好友的结果。
+    struct SearchFriendResult
+    {
+        /// \brief 是否查询成功。
+        bool ok{};
+        /// \brief 错误码（例如 NOT_FOUND）。
+        std::string error_code{};
+        /// \brief 错误信息。
+        std::string error_msg{};
+        /// \brief 是否找到对应账号。
+        bool found{};
+        /// \brief 是否为当前用户自己。
+        bool is_self{};
+        /// \brief 是否已经是好友。
+        bool is_friend{};
+        /// \brief 当 found 为 true 时的用户信息。
+        UserInfo user{};
+    };
+
+    /// \brief 创建好友申请的结果。
+    struct FriendRequestResult
+    {
+        /// \brief 是否操作成功。
+        bool ok{};
+        /// \brief 错误码，例如 ALREADY_FRIEND。
+        std::string error_code{};
+        /// \brief 错误信息。
+        std::string error_msg{};
+        /// \brief 成功时的申请 ID。
+        i64 request_id{};
+    };
+
+    /// \brief 同意好友申请的结果。
+    struct AcceptFriendRequestResult
+    {
+        /// \brief 是否操作成功。
+        bool ok{};
+        /// \brief 错误码。
+        std::string error_code{};
+        /// \brief 错误信息。
+        std::string error_msg{};
+        /// \brief 新增好友的基础信息。
+        UserInfo friend_user{};
+        /// \brief 为这对好友建立 / 复用的单聊会话 ID（如无则为 0）。
+        i64 conversation_id{};
+    };
+
     /// \brief 会话基础信息，用于会话列表展示。
     struct ConversationInfo
     {
@@ -191,51 +266,6 @@ namespace database
                 "ON CONFLICT DO NOTHING";
 
             tx.exec(member_insert);
-        }
-
-        // 注册成功后，尝试自动与账号 "kkkzbh" 建立单聊会话。
-        auto const friend_query =
-            "SELECT id FROM users WHERE account = " + tx.quote(std::string{ "kkkzbh" }) + " "
-            "LIMIT 1";
-
-        auto friend_rows = tx.exec(friend_query);
-        if(!friend_rows.empty()) {
-            auto const friend_id = friend_rows[0][0].as<i64>();
-            if(friend_id != user_id) {
-                // 在同一事务中确保存在一个 SINGLE 会话。
-                auto const conv_check =
-                    "SELECT c.id "
-                    "FROM conversations c "
-                    "JOIN conversation_members m1 ON m1.conversation_id = c.id AND m1.user_id = "
-                    + tx.quote(user_id) + " "
-                    "JOIN conversation_members m2 ON m2.conversation_id = c.id AND m2.user_id = "
-                    + tx.quote(friend_id) + " "
-                    "WHERE c.type = " + tx.quote("SINGLE") + " "
-                    "LIMIT 1";
-
-                auto conv_rows = tx.exec(conv_check);
-                if(conv_rows.empty()) {
-                    auto const insert_conv =
-                        "INSERT INTO conversations (type, name, owner_user_id) "
-                        "VALUES (" + tx.quote("SINGLE") + ", '', " + tx.quote(user_id) + ") "
-                        "RETURNING id";
-
-                    auto conv_result = tx.exec(insert_conv);
-                    if(!conv_result.empty()) {
-                        auto const conv_id = conv_result[0][0].as<i64>();
-
-                        auto const insert_members =
-                            "INSERT INTO conversation_members (conversation_id, user_id, role) "
-                            "VALUES (" + tx.quote(conv_id) + ", " + tx.quote(user_id)
-                            + ", 'MEMBER'), ("
-                            + tx.quote(conv_id) + ", " + tx.quote(friend_id)
-                            + ", 'MEMBER') "
-                            "ON CONFLICT DO NOTHING";
-
-                        tx.exec(insert_members);
-                    }
-                }
-            }
         }
 
         tx.commit();
@@ -369,6 +399,100 @@ namespace database
         auto const id = rows[0][0].as<i64>();
         tx.commit();
         return id;
+    }
+
+    /// \brief 判断两个用户是否已经互为好友。
+    /// \param user_id 当前用户 ID。
+    /// \param peer_id 待检查的对端用户 ID。
+    /// \return 当 friends 表中存在 (user_id, peer_id) 记录时返回 true。
+    auto inline is_friend(i64 user_id, i64 peer_id) -> bool
+    {
+        if(user_id <= 0 || peer_id <= 0 || user_id == peer_id) {
+            return false;
+        }
+
+        auto conn = make_connection();
+        pqxx::work tx{ conn };
+
+        auto const query =
+            "SELECT 1 FROM friends "
+            "WHERE user_id = " + tx.quote(user_id)
+            + " AND friend_user_id = " + tx.quote(peer_id)
+            + " LIMIT 1";
+
+        auto rows = tx.exec(query);
+        tx.commit();
+        return !rows.empty();
+    }
+
+    /// \brief 确保给定两个用户之间存在一个 SINGLE 会话，若不存在则创建。
+    /// \param user1 第一个用户 ID。
+    /// \param user2 第二个用户 ID。
+    /// \return 单聊会话 ID。
+    auto inline get_or_create_single_conversation(i64 user1, i64 user2) -> i64
+    {
+        if(user1 <= 0 || user2 <= 0 || user1 == user2) {
+            throw std::runtime_error{ "无效的单聊会话参与者" };
+        }
+
+        auto conn = make_connection();
+        pqxx::work tx{ conn };
+
+        // 为保证唯一性，将用户 ID 排序后写入 single_conversations。
+        auto const a = std::min(user1, user2);
+        auto const b = std::max(user1, user2);
+
+        // 1. 尝试在辅助表中直接查已有单聊会话。
+        auto const check_query =
+            "SELECT conversation_id "
+            "FROM single_conversations "
+            "WHERE user1_id = " + tx.quote(a) + " AND user2_id = " + tx.quote(b) + " "
+            "LIMIT 1";
+
+        auto rows = tx.exec(check_query);
+        if(!rows.empty()) {
+            auto const conv_id = rows[0][0].as<i64>();
+            tx.commit();
+            return conv_id;
+        }
+
+        // 2. 不存在时创建新的 SINGLE 会话。
+        auto const insert_conv =
+            "INSERT INTO conversations (type, name, owner_user_id) "
+            "VALUES (" + tx.quote(std::string{ "SINGLE" }) + ", '', " + tx.quote(user1) + ") "
+            "RETURNING id";
+
+        auto conv_rows = tx.exec(insert_conv);
+        if(conv_rows.empty()) {
+            throw std::runtime_error{ "创建单聊会话失败" };
+        }
+        auto const conv_id = conv_rows[0][0].as<i64>();
+
+        // 3. 建立会话成员关系。
+        auto const insert_members =
+            "INSERT INTO conversation_members (conversation_id, user_id, role) "
+            "VALUES (" + tx.quote(conv_id) + ", " + tx.quote(user1) + ", 'MEMBER'), ("
+            + tx.quote(conv_id) + ", " + tx.quote(user2) + ", 'MEMBER') "
+            "ON CONFLICT DO NOTHING";
+
+        tx.exec(insert_members);
+
+        // 4. 在 single_conversations 中记录该对用户，利用唯一约束防止并发重复创建。
+        auto const insert_pair =
+            "INSERT INTO single_conversations (user1_id, user2_id, conversation_id) "
+            "VALUES (" + tx.quote(a) + ", " + tx.quote(b) + ", " + tx.quote(conv_id) + ") "
+            "ON CONFLICT (user1_id, user2_id) DO UPDATE "
+            "SET conversation_id = EXCLUDED.conversation_id "
+            "RETURNING conversation_id";
+
+        auto pair_rows = tx.exec(insert_pair);
+        if(pair_rows.empty()) {
+            throw std::runtime_error{ "记录单聊会话失败" };
+        }
+
+        auto const final_conv_id = pair_rows[0][0].as<i64>();
+        tx.commit();
+        return final_conv_id;
     }
 
     /// \brief 在指定会话中追加一条文本消息。
@@ -602,5 +726,312 @@ namespace database
 
         tx.commit();
         return result;
+    }
+
+    /// \brief 加载某个用户的好友列表。
+    /// \param user_id 当前用户 ID。
+    /// \return 好友信息列表。
+    auto inline load_user_friends(i64 user_id) -> std::vector<FriendInfo>
+    {
+        auto conn = make_connection();
+        pqxx::work tx{ conn };
+
+        auto const query =
+            "SELECT u.id, u.account, u.display_name "
+            "FROM friends f "
+            "JOIN users u ON u.id = f.friend_user_id "
+            "WHERE f.user_id = " + tx.quote(user_id) + " "
+            "ORDER BY u.id ASC";
+
+        auto rows = tx.exec(query);
+
+        std::vector<FriendInfo> result{};
+        result.reserve(rows.size());
+
+        for(auto const& row : rows) {
+            FriendInfo info{};
+            info.id = row[0].as<i64>();
+            info.account = row[1].as<std::string>();
+            info.display_name = row[2].as<std::string>();
+            result.push_back(std::move(info));
+        }
+
+        tx.commit();
+        return result;
+    }
+
+    /// \brief 按账号搜索用户，并判断是否为当前用户或已是好友。
+    /// \param current_user_id 当前登录用户 ID。
+    /// \param account 要搜索的账号。
+    /// \return 查询结果及好友关系标记。
+    auto inline search_friend_by_account(i64 current_user_id, std::string const& account)
+        -> SearchFriendResult
+    {
+        SearchFriendResult res{};
+
+        if(account.empty()) {
+            res.ok = false;
+            res.error_code = "INVALID_PARAM";
+            res.error_msg = "账号不能为空";
+            return res;
+        }
+
+        auto conn = make_connection();
+        pqxx::work tx{ conn };
+
+        auto const query =
+            "SELECT id, account, display_name "
+            "FROM users WHERE account = " + tx.quote(account) + " "
+            "LIMIT 1";
+
+        auto rows = tx.exec(query);
+        if(rows.empty()) {
+            res.ok = false;
+            res.error_code = "NOT_FOUND";
+            res.error_msg = "账号不存在";
+            return res;
+        }
+
+        auto const& row = rows[0];
+        auto const target_id = row[0].as<i64>();
+
+        res.ok = true;
+        res.found = true;
+        res.user.id = target_id;
+        res.user.account = row[1].as<std::string>();
+        res.user.display_name = row[2].as<std::string>();
+
+        res.is_self = (current_user_id == target_id);
+        res.is_friend = !res.is_self && is_friend(current_user_id, target_id);
+
+        tx.commit();
+        return res;
+    }
+
+    /// \brief 创建一条好友申请，若已是好友或存在未处理申请则返回对应错误。
+    /// \param from_user_id 申请发起者。
+    /// \param to_user_id 申请接收者。
+    /// \param source 申请来源说明，例如 search_account。
+    /// \param hello_msg 打招呼信息。
+    /// \return 操作结果以及申请 ID。
+    auto inline create_friend_request(
+        i64 from_user_id,
+        i64 to_user_id,
+        std::string const& source,
+        std::string const& hello_msg
+    ) -> FriendRequestResult
+    {
+        FriendRequestResult res{};
+
+        if(from_user_id <= 0 || to_user_id <= 0 || from_user_id == to_user_id) {
+            res.ok = false;
+            res.error_code = "INVALID_PARAM";
+            res.error_msg = "无效的好友申请参数";
+            return res;
+        }
+
+        auto conn = make_connection();
+        pqxx::work tx{ conn };
+
+        // 确认接收者存在。
+        auto const user_query =
+            "SELECT 1 FROM users WHERE id = " + tx.quote(to_user_id) + " LIMIT 1";
+
+        auto user_rows = tx.exec(user_query);
+        if(user_rows.empty()) {
+            res.ok = false;
+            res.error_code = "NOT_FOUND";
+            res.error_msg = "目标用户不存在";
+            return res;
+        }
+
+        // 已是好友则直接返回。
+        auto const friend_query =
+            "SELECT 1 FROM friends "
+            "WHERE user_id = " + tx.quote(from_user_id)
+            + " AND friend_user_id = " + tx.quote(to_user_id)
+            + " LIMIT 1";
+
+        auto friend_rows = tx.exec(friend_query);
+        if(!friend_rows.empty()) {
+            res.ok = false;
+            res.error_code = "ALREADY_FRIEND";
+            res.error_msg = "已是好友";
+            return res;
+        }
+
+        // 检查是否已经存在任意方向的未处理申请。
+        auto const pending_query =
+            "SELECT 1 FROM friend_requests "
+            "WHERE status = " + tx.quote(std::string{ "PENDING" }) + " "
+            "AND ("
+            "(from_user_id = " + tx.quote(from_user_id)
+            + " AND to_user_id = " + tx.quote(to_user_id) + ") OR "
+            "(from_user_id = " + tx.quote(to_user_id)
+            + " AND to_user_id = " + tx.quote(from_user_id) + ")"
+            ") "
+            "LIMIT 1";
+
+        auto pending_rows = tx.exec(pending_query);
+        if(!pending_rows.empty()) {
+            res.ok = false;
+            res.error_code = "ALREADY_PENDING";
+            res.error_msg = "已存在待处理的好友申请";
+            return res;
+        }
+
+        auto const insert =
+            "INSERT INTO friend_requests (from_user_id, to_user_id, status, source, hello_msg) "
+            "VALUES (" + tx.quote(from_user_id) + ", "
+            + tx.quote(to_user_id) + ", "
+            + tx.quote(std::string{ "PENDING" }) + ", "
+            + tx.quote(source) + ", "
+            + tx.quote(hello_msg) + ") "
+            "RETURNING id";
+
+        auto insert_rows = tx.exec(insert);
+        if(insert_rows.empty()) {
+            res.ok = false;
+            res.error_code = "SERVER_ERROR";
+            res.error_msg = "创建好友申请失败";
+            return res;
+        }
+
+        res.ok = true;
+        res.request_id = insert_rows[0][0].as<i64>();
+        tx.commit();
+        return res;
+    }
+
+    /// \brief 加载“别人加我”的好友申请列表。
+    /// \param user_id 当前用户 ID。
+    /// \return 好友申请列表。
+    auto inline load_incoming_friend_requests(i64 user_id) -> std::vector<FriendRequestInfo>
+    {
+        auto conn = make_connection();
+        pqxx::work tx{ conn };
+
+        auto const query =
+            "SELECT fr.id, fr.from_user_id, u.account, u.display_name, fr.status, "
+            "COALESCE(fr.hello_msg, '') "
+            "FROM friend_requests fr "
+            "JOIN users u ON u.id = fr.from_user_id "
+            "WHERE fr.to_user_id = " + tx.quote(user_id) + " "
+            "AND fr.status IN ("
+            + tx.quote(std::string{ "PENDING" }) + ", "
+            + tx.quote(std::string{ "ACCEPTED" }) + ") "
+            "ORDER BY fr.created_at DESC";
+
+        auto rows = tx.exec(query);
+
+        std::vector<FriendRequestInfo> result{};
+        result.reserve(rows.size());
+
+        for(auto const& row : rows) {
+            FriendRequestInfo info{};
+            info.id = row[0].as<i64>();
+            info.from_user_id = row[1].as<i64>();
+            info.account = row[2].as<std::string>();
+            info.display_name = row[3].as<std::string>();
+            info.status = row[4].as<std::string>();
+            info.hello_msg = row[5].as<std::string>();
+            result.push_back(std::move(info));
+        }
+
+        tx.commit();
+        return result;
+    }
+
+    /// \brief 同意一条好友申请，并在必要时建立好友关系及单聊会话。
+    /// \param request_id 好友申请 ID。
+    /// \param current_user_id 当前登录用户 ID（必须为申请接收者）。
+    /// \return 操作结果及新好友信息。
+    auto inline accept_friend_request(i64 request_id, i64 current_user_id)
+        -> AcceptFriendRequestResult
+    {
+        AcceptFriendRequestResult res{};
+
+        if(request_id <= 0 || current_user_id <= 0) {
+            res.ok = false;
+            res.error_code = "INVALID_PARAM";
+            res.error_msg = "无效的好友申请参数";
+            return res;
+        }
+
+        auto conn = make_connection();
+        pqxx::work tx{ conn };
+
+        auto const query =
+            "SELECT from_user_id, to_user_id, status "
+            "FROM friend_requests "
+            "WHERE id = " + tx.quote(request_id) + " "
+            "FOR UPDATE";
+
+        auto rows = tx.exec(query);
+        if(rows.empty()) {
+            res.ok = false;
+            res.error_code = "NOT_FOUND";
+            res.error_msg = "好友申请不存在";
+            return res;
+        }
+
+        auto const from_user_id = rows[0][0].as<i64>();
+        auto const to_user_id = rows[0][1].as<i64>();
+        auto const status = rows[0][2].as<std::string>();
+
+        if(to_user_id != current_user_id) {
+            res.ok = false;
+            res.error_code = "FORBIDDEN";
+            res.error_msg = "无权处理该好友申请";
+            return res;
+        }
+        if(status != "PENDING") {
+            res.ok = false;
+            res.error_code = "INVALID_STATE";
+            res.error_msg = "好友申请状态已变更";
+            return res;
+        }
+
+        // 建立双向好友关系（幂等）。
+        auto const insert_friends =
+            "INSERT INTO friends (user_id, friend_user_id) "
+            "VALUES (" + tx.quote(from_user_id) + ", " + tx.quote(to_user_id) + "), ("
+            + tx.quote(to_user_id) + ", " + tx.quote(from_user_id) + ") "
+            "ON CONFLICT DO NOTHING";
+
+        tx.exec(insert_friends);
+
+        auto const update_req =
+            "UPDATE friend_requests "
+            "SET status = " + tx.quote(std::string{ "ACCEPTED" })
+            + ", handled_at = now() "
+            + "WHERE id = " + tx.quote(request_id);
+
+        tx.exec(update_req);
+
+        // 加载好友用户基础信息。
+        auto const user_query =
+            "SELECT id, account, display_name FROM users "
+            "WHERE id = " + tx.quote(from_user_id) + " LIMIT 1";
+
+        auto user_rows = tx.exec(user_query);
+        if(user_rows.empty()) {
+            res.ok = false;
+            res.error_code = "SERVER_ERROR";
+            res.error_msg = "好友用户数据不存在";
+            return res;
+        }
+
+        auto const& user_row = user_rows[0];
+        res.friend_user.id = user_row[0].as<i64>();
+        res.friend_user.account = user_row[1].as<std::string>();
+        res.friend_user.display_name = user_row[2].as<std::string>();
+
+        // 确保存在单聊会话。
+        res.conversation_id = get_or_create_single_conversation(from_user_id, to_user_id);
+
+        res.ok = true;
+        tx.commit();
+        return res;
     }
 } // namespace database

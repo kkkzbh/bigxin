@@ -82,6 +82,30 @@ namespace server
                         auto payload = handle_profile_update(frame.payload);
                         auto msg = protocol::make_line("PROFILE_UPDATE_RESP", payload);
                         send_text(std::move(msg));
+                    } else if(frame.command == "FRIEND_LIST_REQ") {
+                        auto payload = handle_friend_list_req(frame.payload);
+                        auto msg = protocol::make_line("FRIEND_LIST_RESP", payload);
+                        send_text(std::move(msg));
+                    } else if(frame.command == "FRIEND_SEARCH_REQ") {
+                        auto payload = handle_friend_search_req(frame.payload);
+                        auto msg = protocol::make_line("FRIEND_SEARCH_RESP", payload);
+                        send_text(std::move(msg));
+                    } else if(frame.command == "FRIEND_ADD_REQ") {
+                        auto payload = handle_friend_add_req(frame.payload);
+                        auto msg = protocol::make_line("FRIEND_ADD_RESP", payload);
+                        send_text(std::move(msg));
+                    } else if(frame.command == "FRIEND_REQ_LIST_REQ") {
+                        auto payload = handle_friend_req_list_req(frame.payload);
+                        auto msg = protocol::make_line("FRIEND_REQ_LIST_RESP", payload);
+                        send_text(std::move(msg));
+                    } else if(frame.command == "FRIEND_ACCEPT_REQ") {
+                        auto payload = handle_friend_accept_req(frame.payload);
+                        auto msg = protocol::make_line("FRIEND_ACCEPT_RESP", payload);
+                        send_text(std::move(msg));
+                    } else if(frame.command == "OPEN_SINGLE_CONV_REQ") {
+                        auto payload = handle_open_single_conv_req(frame.payload);
+                        auto msg = protocol::make_line("OPEN_SINGLE_CONV_RESP", payload);
+                        send_text(std::move(msg));
                     } else {
                         // 默认 echo，方便用 nc 观察未知命令。
                         auto payload = std::string{ "{\"command\":\"" + frame.command + "\"}" };
@@ -187,6 +211,30 @@ namespace server
         /// \brief 处理资料更新请求，返回 PROFILE_UPDATE_RESP 的 JSON 串。
         /// \param payload PROFILE_UPDATE 的 JSON 文本。
         auto handle_profile_update(std::string const& payload) -> std::string;
+
+        /// \brief 处理好友列表请求，返回 FRIEND_LIST_RESP 的 JSON 串。
+        /// \param payload FRIEND_LIST_REQ 的 JSON 文本。
+        auto handle_friend_list_req(std::string const& payload) -> std::string;
+
+        /// \brief 处理按账号搜索好友的请求，返回 FRIEND_SEARCH_RESP 的 JSON 串。
+        /// \param payload FRIEND_SEARCH_REQ 的 JSON 文本。
+        auto handle_friend_search_req(std::string const& payload) -> std::string;
+
+        /// \brief 处理创建好友申请的请求，返回 FRIEND_ADD_RESP 的 JSON 串。
+        /// \param payload FRIEND_ADD_REQ 的 JSON 文本。
+        auto handle_friend_add_req(std::string const& payload) -> std::string;
+
+        /// \brief 处理“新的朋友”列表请求，返回 FRIEND_REQ_LIST_RESP 的 JSON 串。
+        /// \param payload FRIEND_REQ_LIST_REQ 的 JSON 文本。
+        auto handle_friend_req_list_req(std::string const& payload) -> std::string;
+
+        /// \brief 处理同意好友申请的请求，返回 FRIEND_ACCEPT_RESP 的 JSON 串。
+        /// \param payload FRIEND_ACCEPT_REQ 的 JSON 文本。
+        auto handle_friend_accept_req(std::string const& payload) -> std::string;
+
+        /// \brief 处理打开单聊会话的请求，返回 OPEN_SINGLE_CONV_RESP 的 JSON 串。
+        /// \param payload OPEN_SINGLE_CONV_REQ 的 JSON 文本。
+        auto handle_open_single_conv_req(std::string const& payload) -> std::string;
 
         /// \brief 构造带错误码的通用错误响应 JSON 串。
         auto make_error_payload(std::string const& code, std::string const& msg) const -> std::string
@@ -325,6 +373,142 @@ namespace server
                 [ptr](std::shared_ptr<Session> const& s) { return s.get() == ptr; }
             );
             sessions_.erase(it, sessions_.end());
+        }
+
+        /// \brief 主动向指定用户推送一份最新的“新的朋友”列表。
+        /// \details 用 FRIEND_REQ_LIST_RESP 的形式下发，复用现有前端处理逻辑。
+        auto send_friend_request_list_to(i64 target_user_id) -> void
+        {
+            using json = nlohmann::json;
+
+            if(target_user_id <= 0) {
+                return;
+            }
+
+            try {
+                auto const requests = database::load_incoming_friend_requests(target_user_id);
+
+                json resp;
+                resp["ok"] = true;
+
+                json items = json::array();
+                for(auto const& r : requests) {
+                    json obj;
+                    obj["requestId"] = std::to_string(r.id);
+                    obj["fromUserId"] = std::to_string(r.from_user_id);
+                    obj["account"] = r.account;
+                    obj["displayName"] = r.display_name;
+                    obj["status"] = r.status;
+                    obj["helloMsg"] = r.hello_msg;
+                    items.push_back(std::move(obj));
+                }
+
+                resp["requests"] = std::move(items);
+                auto const line =
+                    protocol::make_line("FRIEND_REQ_LIST_RESP", resp.dump());
+
+                for(auto const& s : sessions_) {
+                    if(!s) {
+                        continue;
+                    }
+                    if(!s->authenticated_) {
+                        continue;
+                    }
+                    if(s->user_id_ != target_user_id) {
+                        continue;
+                    }
+                    s->send_text(line);
+                }
+            } catch(std::exception const&) {
+                // 失败时静默忽略，等待客户端下次主动拉取。
+            }
+        }
+
+        /// \brief 主动向指定用户推送一份最新的好友列表。
+        /// \details 复用 FRIEND_LIST_RESP 结构，便于前端直接重建模型。
+        auto send_friend_list_to(i64 target_user_id) -> void
+        {
+            using json = nlohmann::json;
+
+            if(target_user_id <= 0) {
+                return;
+            }
+
+            try {
+                auto const friends = database::load_user_friends(target_user_id);
+
+                json resp;
+                resp["ok"] = true;
+
+                json items = json::array();
+                for(auto const& f : friends) {
+                    json u;
+                    u["userId"] = std::to_string(f.id);
+                    u["account"] = f.account;
+                    u["displayName"] = f.display_name;
+                    u["region"] = "";
+                    u["signature"] = "";
+                    items.push_back(std::move(u));
+                }
+
+                resp["friends"] = std::move(items);
+                auto const line = protocol::make_line("FRIEND_LIST_RESP", resp.dump());
+
+                for(auto const& s : sessions_) {
+                    if(!s || !s->is_authenticated()) {
+                        continue;
+                    }
+                    if(s->user_id() != target_user_id) {
+                        continue;
+                    }
+                    s->send_text(line);
+                }
+            } catch(std::exception const&) {
+                // 忽略推送失败。
+            }
+        }
+
+        /// \brief 主动下发会话列表给指定用户，结构同 CONV_LIST_RESP。
+        auto send_conv_list_to(i64 target_user_id) -> void
+        {
+            using json = nlohmann::json;
+
+            if(target_user_id <= 0) {
+                return;
+            }
+
+            try {
+                auto const conversations = database::load_user_conversations(target_user_id);
+
+                json resp;
+                resp["ok"] = true;
+
+                json items = json::array();
+                for(auto const& conv : conversations) {
+                    json c;
+                    c["conversationId"] = std::to_string(conv.id);
+                    c["conversationType"] = conv.type;
+                    c["title"] = conv.title;
+                    c["lastSeq"] = conv.last_seq;
+                    c["lastServerTimeMs"] = conv.last_server_time_ms;
+                    items.push_back(std::move(c));
+                }
+
+                resp["conversations"] = std::move(items);
+                auto const line = protocol::make_line("CONV_LIST_RESP", resp.dump());
+
+                for(auto const& s : sessions_) {
+                    if(!s || !s->is_authenticated()) {
+                        continue;
+                    }
+                    if(s->user_id() != target_user_id) {
+                        continue;
+                    }
+                    s->send_text(line);
+                }
+            } catch(std::exception const&) {
+                // 忽略推送失败。
+            }
         }
 
         /// \brief 在指定会话中广播一条消息（群聊 / 单聊通用）。
@@ -616,6 +800,297 @@ inline auto server::Session::handle_profile_update(std::string const& payload) -
         json resp;
         resp["ok"] = true;
         resp["displayName"] = display_name_;
+        return resp.dump();
+    } catch(json::parse_error const&) {
+        return make_error_payload("INVALID_JSON", "请求 JSON 解析失败");
+    } catch(std::exception const& ex) {
+        return make_error_payload("SERVER_ERROR", ex.what());
+    }
+}
+
+inline auto server::Session::handle_friend_list_req(std::string const& payload) -> std::string
+{
+    using json = nlohmann::json;
+
+    if(!authenticated_) {
+        return make_error_payload("NOT_AUTHENTICATED", "请先登录");
+    }
+
+    try {
+        if(!payload.empty() && payload != "{}") {
+            // 目前好友列表不支持过滤参数，仅校验 JSON 格式。
+            (void)json::parse(payload);
+        }
+
+        auto const friends = database::load_user_friends(user_id_);
+
+        json resp;
+        resp["ok"] = true;
+
+        json items = json::array();
+        for(auto const& f : friends) {
+            json u;
+            u["userId"] = std::to_string(f.id);
+            u["account"] = f.account;
+            u["displayName"] = f.display_name;
+            // 当前没有地区 / 个性签名字段，预留为空串。
+            u["region"] = "";
+            u["signature"] = "";
+            items.push_back(std::move(u));
+        }
+
+        resp["friends"] = std::move(items);
+        return resp.dump();
+    } catch(json::parse_error const&) {
+        return make_error_payload("INVALID_JSON", "请求 JSON 解析失败");
+    } catch(std::exception const& ex) {
+        return make_error_payload("SERVER_ERROR", ex.what());
+    }
+}
+
+inline auto server::Session::handle_friend_search_req(std::string const& payload) -> std::string
+{
+    using json = nlohmann::json;
+
+    if(!authenticated_) {
+        return make_error_payload("NOT_AUTHENTICATED", "请先登录");
+    }
+
+    try {
+        auto j = payload.empty() ? json::object() : json::parse(payload);
+
+        if(!j.contains("account")) {
+            return make_error_payload("INVALID_PARAM", "缺少 account 字段");
+        }
+
+        auto const account = j.at("account").get<std::string>();
+
+        auto const result = database::search_friend_by_account(user_id_, account);
+        if(!result.ok) {
+            return make_error_payload(result.error_code, result.error_msg);
+        }
+
+        json resp;
+        resp["ok"] = true;
+
+        json user;
+        user["userId"] = std::to_string(result.user.id);
+        user["account"] = result.user.account;
+        user["displayName"] = result.user.display_name;
+        user["region"] = "";
+        user["signature"] = "";
+
+        resp["user"] = std::move(user);
+        resp["isFriend"] = result.is_friend;
+        resp["isSelf"] = result.is_self;
+        return resp.dump();
+    } catch(json::parse_error const&) {
+        return make_error_payload("INVALID_JSON", "请求 JSON 解析失败");
+    } catch(std::exception const& ex) {
+        return make_error_payload("SERVER_ERROR", ex.what());
+    }
+}
+
+inline auto server::Session::handle_friend_add_req(std::string const& payload) -> std::string
+{
+    using json = nlohmann::json;
+
+    if(!authenticated_) {
+        return make_error_payload("NOT_AUTHENTICATED", "请先登录");
+    }
+
+    try {
+        auto j = payload.empty() ? json::object() : json::parse(payload);
+
+        if(!j.contains("peerUserId")) {
+            return make_error_payload("INVALID_PARAM", "缺少 peerUserId 字段");
+        }
+
+        auto const peer_str = j.at("peerUserId").get<std::string>();
+        auto peer_id = i64{};
+        try {
+            peer_id = std::stoll(peer_str);
+        } catch(std::exception const&) {
+            return make_error_payload("INVALID_PARAM", "peerUserId 非法");
+        }
+        if(peer_id <= 0) {
+            return make_error_payload("INVALID_PARAM", "peerUserId 非法");
+        }
+
+        auto const source =
+            j.contains("source") ? j.at("source").get<std::string>() : std::string{ "search_account" };
+        auto const hello_msg =
+            j.contains("helloMsg") ? j.at("helloMsg").get<std::string>() : std::string{};
+
+        auto const result =
+            database::create_friend_request(user_id_, peer_id, source, hello_msg);
+        if(!result.ok) {
+            return make_error_payload(result.error_code, result.error_msg);
+        }
+
+        json resp;
+        resp["ok"] = true;
+        resp["requestId"] = std::to_string(result.request_id);
+
+        // 通知对端用户刷新“新的朋友”列表。
+        if(server_ != nullptr) {
+            server_->send_friend_request_list_to(peer_id);
+        }
+
+        return resp.dump();
+    } catch(json::parse_error const&) {
+        return make_error_payload("INVALID_JSON", "请求 JSON 解析失败");
+    } catch(std::exception const& ex) {
+        return make_error_payload("SERVER_ERROR", ex.what());
+    }
+}
+
+inline auto server::Session::handle_friend_req_list_req(std::string const& payload) -> std::string
+{
+    using json = nlohmann::json;
+
+    if(!authenticated_) {
+        return make_error_payload("NOT_AUTHENTICATED", "请先登录");
+    }
+
+    try {
+        if(!payload.empty() && payload != "{}") {
+            (void)json::parse(payload);
+        }
+
+        auto const requests = database::load_incoming_friend_requests(user_id_);
+
+        json resp;
+        resp["ok"] = true;
+
+        json items = json::array();
+        for(auto const& r : requests) {
+            json obj;
+            obj["requestId"] = std::to_string(r.id);
+            obj["fromUserId"] = std::to_string(r.from_user_id);
+            obj["account"] = r.account;
+            obj["displayName"] = r.display_name;
+            obj["status"] = r.status;
+            obj["helloMsg"] = r.hello_msg;
+            items.push_back(std::move(obj));
+        }
+
+        resp["requests"] = std::move(items);
+        return resp.dump();
+    } catch(json::parse_error const&) {
+        return make_error_payload("INVALID_JSON", "请求 JSON 解析失败");
+    } catch(std::exception const& ex) {
+        return make_error_payload("SERVER_ERROR", ex.what());
+    }
+}
+
+inline auto server::Session::handle_friend_accept_req(std::string const& payload) -> std::string
+{
+    using json = nlohmann::json;
+
+    if(!authenticated_) {
+        return make_error_payload("NOT_AUTHENTICATED", "请先登录");
+    }
+
+    try {
+        auto j = payload.empty() ? json::object() : json::parse(payload);
+
+        if(!j.contains("requestId")) {
+            return make_error_payload("INVALID_PARAM", "缺少 requestId 字段");
+        }
+
+        auto const id_str = j.at("requestId").get<std::string>();
+        auto request_id = i64{};
+        try {
+            request_id = std::stoll(id_str);
+        } catch(std::exception const&) {
+            return make_error_payload("INVALID_PARAM", "requestId 非法");
+        }
+        if(request_id <= 0) {
+            return make_error_payload("INVALID_PARAM", "requestId 非法");
+        }
+
+        auto const result = database::accept_friend_request(request_id, user_id_);
+        if(!result.ok) {
+            return make_error_payload(result.error_code, result.error_msg);
+        }
+
+        json resp;
+        resp["ok"] = true;
+
+        json f;
+        f["userId"] = std::to_string(result.friend_user.id);
+        f["account"] = result.friend_user.account;
+        f["displayName"] = result.friend_user.display_name;
+        resp["friend"] = std::move(f);
+
+        if(result.conversation_id > 0) {
+            resp["conversationId"] = std::to_string(result.conversation_id);
+            resp["conversationType"] = "SINGLE";
+        } else {
+            resp["conversationId"] = "";
+        }
+
+        // 同步双方的好友列表 / “新的朋友”列表 / 会话列表，确保前端及时刷新。
+        if(server_ != nullptr) {
+            server_->send_friend_list_to(user_id_);
+            server_->send_friend_list_to(result.friend_user.id);
+            server_->send_friend_request_list_to(user_id_);
+            server_->send_friend_request_list_to(result.friend_user.id);
+            if(result.conversation_id > 0) {
+                server_->send_conv_list_to(user_id_);
+                server_->send_conv_list_to(result.friend_user.id);
+            }
+        }
+
+        return resp.dump();
+    } catch(json::parse_error const&) {
+        return make_error_payload("INVALID_JSON", "请求 JSON 解析失败");
+    } catch(std::exception const& ex) {
+        return make_error_payload("SERVER_ERROR", ex.what());
+    }
+}
+
+inline auto server::Session::handle_open_single_conv_req(std::string const& payload)
+    -> std::string
+{
+    using json = nlohmann::json;
+
+    if(!authenticated_) {
+        return make_error_payload("NOT_AUTHENTICATED", "请先登录");
+    }
+
+    try {
+        auto j = payload.empty() ? json::object() : json::parse(payload);
+
+        if(!j.contains("peerUserId")) {
+            return make_error_payload("INVALID_PARAM", "缺少 peerUserId 字段");
+        }
+
+        auto const peer_str = j.at("peerUserId").get<std::string>();
+        auto peer_id = i64{};
+        try {
+            peer_id = std::stoll(peer_str);
+        } catch(std::exception const&) {
+            return make_error_payload("INVALID_PARAM", "peerUserId 非法");
+        }
+        if(peer_id <= 0) {
+            return make_error_payload("INVALID_PARAM", "peerUserId 非法");
+        }
+        if(peer_id == user_id_) {
+            return make_error_payload("INVALID_PARAM", "不能与自己建立单聊");
+        }
+
+        if(!database::is_friend(user_id_, peer_id)) {
+            return make_error_payload("NOT_FRIEND", "对方还不是你的好友");
+        }
+
+        auto const conv_id = database::get_or_create_single_conversation(user_id_, peer_id);
+
+        json resp;
+        resp["ok"] = true;
+        resp["conversationId"] = std::to_string(conv_id);
+        resp["conversationType"] = "SINGLE";
         return resp.dump();
     } catch(json::parse_error const&) {
         return make_error_payload("INVALID_JSON", "请求 JSON 解析失败");

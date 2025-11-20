@@ -1,0 +1,461 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
+  <component name="BackendCodeEditorMiscSettings">
+    <option name="/Default/Environment/Hierarchy/GeneratedFilesCacheKey/Timestamp/@EntryValue" value="12" type="long" />
+    <option name="/Default/Housekeeping/FeatureSuggestion/FeatureSuggestionManager/DisabledSuggesters/=SwitchToGoToActionSuggester/@EntryIndexedValue" value="true" type="bool" />
+    <option name="/Default/Housekeeping/GlobalSettingsUpgraded/IsUpgraded/@EntryValue" value="true" type="bool" />
+    <option name="/Default/Housekeeping/OptionsDialog/SelectedPageId/@EntryValue" value="CppFormatterOtherPage" type="string" />
+    <option name="/Default/RiderDebugger/RiderRestoreDecompile/RestoreDecompileSetting/@EntryValue" value="false" type="bool" />
+  </component>
+  <component name="CMakePresetLoader">{
+  &quot;useNewFormat&quot;: true
+}</component>
+  <component name="CMakeProjectFlavorService">
+    <option name="flavorId" value="CMakePlainProjectFlavor" />
+  </component>
+  <component name="CMakeReloadState">
+    <option name="reloaded" value="true" />
+  </component>
+  <component name="CMakeRunConfigurationManager">
+    <generated>
+      <config projectName="JuXin" targetName="client_qmltyperegistration" />
+      <config projectName="JuXin" targetName="client_qmllint" />
+      <config projectName="JuXin" targetName="client_copy_qml" />
+      <config projectName="JuXin" targetName="all_qmltyperegistrations" />
+      <config projectName="JuXin" targetName="client" />
+      <config projectName="JuXin" targetName="all_aotstats" />
+      <config projectName="JuXin" targetName="all_qmllint_module" />
+      <config projectName="JuXin" targetName="client_qmllint_json" />
+      <config projectName="JuXin" targetName="server" />
+      <config projectName="JuXin" targetName="client_qmllint_module" />
+      <config projectName="JuXin" targetName="all_qmllint_json" />
+      <config projectName="JuXin" targetName="all_qmllint" />
+      <config projectName="JuXin" targetName="client_other_files" />
+      <config projectName="JuXin" targetName="client_copy_res" />
+      <config projectName="JuXin" targetName="__CMAKE__CXX26@synth_6ca556088a15" />
+      <config projectName="JuXin" targetName="module_client_aotstats_target" />
+    </generated>
+  </component>
+  <component name="CMakeSettings">
+    <configurations>
+      <configuration PROFILE_NAME="Debug" ENABLED="true" CONFIG_NAME="Debug" TOOLCHAIN_NAME="GCC15" GENERATION_OPTIONS="-Wno-dev -DCMAKE_TOOLCHAIN_FILE=/home/kkkzbh/vcpkg/scripts/buildsystems/vcpkg.cmake -DQt6_DIR=/opt/Qt/6.9.0/gcc_64/lib/cmake/Qt6" />
+    </configurations>
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="2dc32154-be48-467c-9695-c2dd10df8b29" name="更改" comment="v0.13 通讯录UI">
+      <change afterPath="$PROJECT_DIR$/.idea/.name" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/QtSettings.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/chat.iml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/dataSources.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/data_source_mapping.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/editor.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/inspectionProfiles/Project_Default.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/modules.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/sqldialects.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/img/b2名字带空格.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/img/err_database.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/img/err_reg.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/img/添加好友弹框.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/img/点击发消息没用，甚至错误.png" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/include/database.h" beforeDir="false" afterPath="$PROJECT_DIR$/include/database.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/include/login.backend.h" beforeDir="false" afterPath="$PROJECT_DIR$/include/login.backend.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/include/server.core.h" beforeDir="false" afterPath="$PROJECT_DIR$/include/server.core.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/client/qml/Main/ChatArea/ChatArea.qml" beforeDir="false" afterPath="$PROJECT_DIR$/src/client/qml/Main/ChatArea/ChatArea.qml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/client/qml/Main/ChatArea/ContactDetailView.qml" beforeDir="false" afterPath="$PROJECT_DIR$/src/client/qml/Main/ChatArea/ContactDetailView.qml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/client/qml/Main/ChatList/ChatList.qml" beforeDir="false" afterPath="$PROJECT_DIR$/src/client/qml/Main/ChatList/ChatList.qml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/client/qml/Main/ChatList/ContactListView.qml" beforeDir="false" afterPath="$PROJECT_DIR$/src/client/qml/Main/ChatList/ContactListView.qml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/client/qml/Main/Dialogs/AddFriendDialog.qml" beforeDir="false" afterPath="$PROJECT_DIR$/src/client/qml/Main/Dialogs/AddFriendDialog.qml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/client/qml/Main/Main.qml" beforeDir="false" afterPath="$PROJECT_DIR$/src/client/qml/Main/Main.qml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/database/conversations.sql" beforeDir="false" afterPath="$PROJECT_DIR$/src/database/conversations.sql" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="ClangdSettings">
+    <option name="formatViaClangd" value="false" />
+  </component>
+  <component name="ExecutionTargetManager" SELECTED_TARGET="CMakeBuildProfile:Debug" />
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="CMakeLists.txt" />
+      </list>
+    </option>
+  </component>
+  <component name="Git.Settings">
+    <option name="PREVIOUS_COMMIT_AUTHORS">
+      <list>
+        <option value="kkkzbh" />
+      </list>
+    </option>
+    <option name="RECENT_BRANCH_BY_REPOSITORY">
+      <map>
+        <entry key="$PROJECT_DIR$" value="c88ad16453fda75e05e5b8bfc117a77b833b7bc5" />
+      </map>
+    </option>
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+    <option name="RESET_MODE" value="HARD" />
+  </component>
+  <component name="GitHubPullRequestSearchHistory">{
+  &quot;lastFilter&quot;: {
+    &quot;state&quot;: &quot;OPEN&quot;,
+    &quot;assignee&quot;: &quot;kkkzbh&quot;
+  }
+}</component>
+  <component name="GithubPullRequestsUISettings">{
+  &quot;selectedUrlAndAccountId&quot;: {
+    &quot;url&quot;: &quot;https://github.com/kkkzbh/bigxin.git&quot;,
+    &quot;accountId&quot;: &quot;13462269-2ed9-41c6-bc6b-26eb640ea251&quot;
+  }
+}</component>
+  <component name="HighlightingSettingsPerFile">
+    <setting file="file://$PROJECT_DIR$/src/client/client.cpp" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file:///usr/local/gcc16-1116/include/c++/16.0.0/bits/atomic_base.h" root0="SKIP_HIGHLIGHTING" />
+    <setting file="mock://main.cpp" root0="SKIP_HIGHLIGHTING" />
+  </component>
+  <component name="MacroExpansionManager">
+    <option name="directoryName" value="4aTo6yeX" />
+  </component>
+  <component name="ProjectApplicationVersion">
+    <option name="ide" value="CLion" />
+    <option name="majorVersion" value="2025" />
+    <option name="minorVersion" value="2.4" />
+    <option name="productBranch" value="Classic" />
+  </component>
+  <component name="ProjectColorInfo">{
+  &quot;customColor&quot;: &quot;3e87c7fb&quot;,
+  &quot;associatedIndex&quot;: 6
+}</component>
+  <component name="ProjectId" id="34viNCQqSPP2sxvAsELza3swQmL" />
+  <component name="ProjectStatusUIService">{
+  &quot;uiKindId&quot;: &quot;Widget&quot;
+}</component>
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;ASKED_SHARE_PROJECT_CONFIGURATION_FILES&quot;: &quot;true&quot;,
+    &quot;CMake 应用程序.client.executor&quot;: &quot;Run&quot;,
+    &quot;CMake 应用程序.client_gui.executor&quot;: &quot;Run&quot;,
+    &quot;CMake 应用程序.import_std_asio_repro.executor&quot;: &quot;Run&quot;,
+    &quot;CMake 应用程序.main.executor&quot;: &quot;Run&quot;,
+    &quot;CMake 应用程序.server.executor&quot;: &quot;Run&quot;,
+    &quot;CMake 应用程序.stu.executor&quot;: &quot;Run&quot;,
+    &quot;CMake 应用程序.test.executor&quot;: &quot;Run&quot;,
+    &quot;CMake 应用程序.ttest.executor&quot;: &quot;Run&quot;,
+    &quot;CMake 调试.Project.executor&quot;: &quot;Debug&quot;,
+    &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.RadMigrateCodeStyle&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.cidr.known.project.marker&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.readMode.enableVisualFormatting&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.typescript.service.memoryLimit.init&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.west.config.association.type.startup.service&quot;: &quot;true&quot;,
+    &quot;SHARE_PROJECT_CONFIGURATION_FILES&quot;: &quot;true&quot;,
+    &quot;cf.first.check.clang-format&quot;: &quot;false&quot;,
+    &quot;cidr.known.project.marker&quot;: &quot;true&quot;,
+    &quot;ctest.advertisement.all.test.configuration.is.created&quot;: &quot;true&quot;,
+    &quot;last_opened_file_path&quot;: &quot;/home/kkkzbh/code/chat/img&quot;,
+    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
+    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
+    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
+    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
+    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
+    &quot;org.rust.cargo.project.model.impl.CargoExternalSystemProjectAware.subscribe.first.balloon&quot;: &quot;&quot;,
+    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
+  },
+  &quot;keyToStringList&quot;: {
+    &quot;DatabaseDriversLRU&quot;: [
+      &quot;postgresql&quot;
+    ]
+  }
+}</component>
+  <component name="RdControllerToolWindowsLayoutState" isNewUi="true">
+    <layout>
+      <window_info id="Bookmarks" side_tool="true" />
+      <window_info id="Merge Requests" />
+      <window_info id="Backup and Sync History" />
+      <window_info id="Commit_Guest" show_stripe_button="false" />
+      <window_info id="Pull Requests" />
+      <window_info id="Learn" show_stripe_button="false" />
+      <window_info active="true" content_ui="combo" id="Project" order="0" visible="true" weight="0.23351227" />
+      <window_info id="Commit" order="1" weight="0.23351227" />
+      <window_info id="Structure" order="2" side_tool="true" weight="0.25" />
+      <window_info anchor="bottom" id="Database Changes" />
+      <window_info anchor="bottom" id="TypeScript" />
+      <window_info anchor="bottom" id="GitHub Copilot MCP Log" show_stripe_button="false" />
+      <window_info anchor="bottom" id="Python Packages" />
+      <window_info anchor="bottom" id="File Transfer" />
+      <window_info anchor="bottom" id="Serial Monitor" />
+      <window_info anchor="bottom" id="clangd" />
+      <window_info anchor="bottom" id="Version Control" order="0" weight="0.21679473" />
+      <window_info anchor="bottom" id="Problems" order="1" />
+      <window_info anchor="bottom" id="Problems View" order="2" />
+      <window_info anchor="bottom" id="Debug" order="3" weight="0.47906697" />
+      <window_info anchor="bottom" id="Services" order="4" weight="0.42205542" />
+      <window_info anchor="bottom" id="Find" order="5" weight="0.33006912" />
+      <window_info anchor="bottom" id="CMake" order="6" weight="0.45669746" />
+      <window_info active="true" anchor="bottom" id="Run" order="7" visible="true" weight="0.21679473" />
+      <window_info anchor="bottom" id="PythonProcessOutput" order="8" show_stripe_button="false" weight="0.3762322" />
+      <window_info anchor="bottom" id="Vcpkg" order="9" weight="0.3762322" />
+      <window_info anchor="bottom" id="Terminal" order="10" weight="0.39538044" />
+      <window_info anchor="bottom" id="TODO" order="11" show_stripe_button="false" weight="0.3762322" />
+      <window_info anchor="bottom" id="Messages" order="12" weight="0.21679473" />
+      <window_info anchor="right" id="make" side_tool="true" />
+      <window_info anchor="right" id="Coverage" side_tool="true" />
+      <window_info anchor="right" id="Python Console" />
+      <window_info anchor="right" id="PlatformIO" />
+      <window_info anchor="right" id="GitHub Coding Agent Jobs" show_stripe_button="false" />
+      <window_info anchor="right" id="Meson" />
+      <window_info anchor="right" id="Notifications" order="0" weight="0.264049" />
+      <window_info anchor="right" id="AIAssistant" order="1" weight="0.25" />
+      <window_info anchor="right" id="Database" order="2" weight="0.264049" />
+      <window_info anchor="right" id="Gradle" order="3" weight="0.25" />
+      <window_info anchor="right" id="Maven" order="4" weight="0.25" />
+      <window_info anchor="right" id="github.copilotToolWindow" order="5" weight="0.34985352" />
+      <window_info anchor="right" id="GitHub Copilot Chat" order="6" show_stripe_button="false" weight="0.34985352" />
+    </layout>
+  </component>
+  <component name="RecentsManager">
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/img" />
+      <recent name="$PROJECT_DIR$/src/client/qml/resource/input" />
+      <recent name="$PROJECT_DIR$/src/client/qml/resource/sidebar" />
+      <recent name="$PROJECT_DIR$" />
+    </key>
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/img/head" />
+      <recent name="$PROJECT_DIR$/doc" />
+    </key>
+  </component>
+  <component name="RunManager" selected="CMake 应用程序.client">
+    <configuration name="all_aotstats" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="JuXin" TARGET_NAME="all_aotstats" CONFIG_NAME="Debug">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="all_qmllint" type="CMakeRunConfiguration" factoryName="Application" folderName="QtInternalTargets/QmlLinter" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="JuXin" TARGET_NAME="all_qmllint" CONFIG_NAME="Debug">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="all_qmllint_json" type="CMakeRunConfiguration" factoryName="Application" folderName="QtInternalTargets/QmlLinter" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="JuXin" TARGET_NAME="all_qmllint_json" CONFIG_NAME="Debug">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="all_qmllint_module" type="CMakeRunConfiguration" factoryName="Application" folderName="QtInternalTargets/QmlLinter" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="JuXin" TARGET_NAME="all_qmllint_module" CONFIG_NAME="Debug">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="all_qmltyperegistrations" type="CMakeRunConfiguration" factoryName="Application" folderName="QtInternalTargets" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="JuXin" TARGET_NAME="all_qmltyperegistrations" CONFIG_NAME="Debug">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="client" type="CMakeRunConfiguration" factoryName="Application" singleton="false" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="JuXin" TARGET_NAME="client" CONFIG_NAME="Debug" RUN_TARGET_PROJECT_NAME="JuXin" RUN_TARGET_NAME="client">
+      <envs>
+        <env name="QT_QPA_PLATFORM" value="xcb" />
+      </envs>
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="client_copy_qml" type="CMakeRunConfiguration" factoryName="Application" folderName="QtInternalTargets" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="JuXin" TARGET_NAME="client_copy_qml" CONFIG_NAME="Debug">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="client_copy_res" type="CMakeRunConfiguration" factoryName="Application" folderName="QtInternalTargets" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="JuXin" TARGET_NAME="client_copy_res" CONFIG_NAME="Debug">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="client_other_files" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="JuXin" TARGET_NAME="client_other_files" CONFIG_NAME="Debug">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="client_qmllint" type="CMakeRunConfiguration" factoryName="Application" folderName="QtInternalTargets/QmlLinter" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="JuXin" TARGET_NAME="client_qmllint" CONFIG_NAME="Debug">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="client_qmllint_json" type="CMakeRunConfiguration" factoryName="Application" folderName="QtInternalTargets/QmlLinter" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="JuXin" TARGET_NAME="client_qmllint_json" CONFIG_NAME="Debug">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="client_qmllint_module" type="CMakeRunConfiguration" factoryName="Application" folderName="QtInternalTargets/QmlLinter" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="JuXin" TARGET_NAME="client_qmllint_module" CONFIG_NAME="Debug">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="client_qmltyperegistration" type="CMakeRunConfiguration" factoryName="Application" folderName="QtInternalTargets" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="JuXin" TARGET_NAME="client_qmltyperegistration" CONFIG_NAME="Debug">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="module_client_aotstats_target" type="CMakeRunConfiguration" factoryName="Application" folderName="QtInternalTargets" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="JuXin" TARGET_NAME="module_client_aotstats_target" CONFIG_NAME="Debug">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="server" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="JuXin" TARGET_NAME="server" CONFIG_NAME="Debug" RUN_TARGET_PROJECT_NAME="JuXin" RUN_TARGET_NAME="server">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <list>
+      <item itemvalue="CMake 应用程序.all_qmllint" />
+      <item itemvalue="CMake 应用程序.all_qmllint_json" />
+      <item itemvalue="CMake 应用程序.all_qmllint_module" />
+      <item itemvalue="CMake 应用程序.client_qmllint" />
+      <item itemvalue="CMake 应用程序.client_qmllint_json" />
+      <item itemvalue="CMake 应用程序.client_qmllint_module" />
+      <item itemvalue="CMake 应用程序.all_qmltyperegistrations" />
+      <item itemvalue="CMake 应用程序.client_copy_qml" />
+      <item itemvalue="CMake 应用程序.client_copy_res" />
+      <item itemvalue="CMake 应用程序.client_qmltyperegistration" />
+      <item itemvalue="CMake 应用程序.module_client_aotstats_target" />
+      <item itemvalue="CMake 应用程序.all_aotstats" />
+      <item itemvalue="CMake 应用程序.client" />
+      <item itemvalue="CMake 应用程序.client_other_files" />
+      <item itemvalue="CMake 应用程序.server" />
+    </list>
+  </component>
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="默认任务">
+      <changelist id="2dc32154-be48-467c-9695-c2dd10df8b29" name="更改" comment="" />
+      <created>1762100405111</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1762100405111</updated>
+      <workItem from="1762100423154" duration="18489000" />
+      <workItem from="1762142612370" duration="836000" />
+      <workItem from="1762145121448" duration="37815000" />
+      <workItem from="1762274268375" duration="1804000" />
+      <workItem from="1762276299783" duration="57620000" />
+      <workItem from="1762452018504" duration="17292000" />
+      <workItem from="1762702741406" duration="7744000" />
+      <workItem from="1762751723283" duration="2310000" />
+      <workItem from="1762755813373" duration="730000" />
+      <workItem from="1762758756990" duration="20753000" />
+      <workItem from="1762834665987" duration="21688000" />
+      <workItem from="1762953134708" duration="52151000" />
+      <workItem from="1763122957062" duration="52344000" />
+      <workItem from="1763271067931" duration="925000" />
+      <workItem from="1763272329309" duration="961000" />
+      <workItem from="1763273255261" duration="48447000" />
+      <workItem from="1763447479879" duration="150000" />
+      <workItem from="1763448087689" duration="549000" />
+      <workItem from="1763449733697" duration="352000" />
+      <workItem from="1763450325754" duration="27379000" />
+      <workItem from="1763518798655" duration="14329000" />
+      <workItem from="1763535135158" duration="10151000" />
+      <workItem from="1763546039049" duration="15949000" />
+      <workItem from="1763564419316" duration="829000" />
+      <workItem from="1763565651516" duration="246000" />
+      <workItem from="1763565931713" duration="562000" />
+      <workItem from="1763566571649" duration="408000" />
+      <workItem from="1763566966634" duration="356000" />
+      <workItem from="1763567344651" duration="7052000" />
+      <workItem from="1763610851895" duration="9000" />
+      <workItem from="1763617697109" duration="3622000" />
+    </task>
+    <task id="LOCAL-00001" summary="基础CMAKE，示例程序">
+      <option name="closed" value="true" />
+      <created>1762101169834</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1762101169834</updated>
+    </task>
+    <task id="LOCAL-00002" summary="v0.01 简单的TUI，客户端之间通过一个房间可以互相通信，异步IO">
+      <option name="closed" value="true" />
+      <created>1762706750301</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1762706750301</updated>
+    </task>
+    <task id="LOCAL-00003" summary="v0.02 仿微信GUI，同步于TUI">
+      <option name="closed" value="true" />
+      <created>1762828821403</created>
+      <option name="number" value="00003" />
+      <option name="presentableId" value="LOCAL-00003" />
+      <option name="project" value="LOCAL" />
+      <updated>1762828821403</updated>
+    </task>
+    <task id="LOCAL-00004" summary="v0.10 完全重构，微信GUI前端，注册登录逻辑">
+      <option name="closed" value="true" />
+      <created>1763484393617</created>
+      <option name="number" value="00004" />
+      <option name="presentableId" value="LOCAL-00004" />
+      <option name="project" value="LOCAL" />
+      <updated>1763484393617</updated>
+    </task>
+    <task id="LOCAL-00005" summary="v0.12 群聊单聊，本地缓冲，若干生命周期问题修复，添加好友UI的设计">
+      <option name="closed" value="true" />
+      <created>1763540438958</created>
+      <option name="number" value="00005" />
+      <option name="presentableId" value="LOCAL-00005" />
+      <option name="project" value="LOCAL" />
+      <updated>1763540438958</updated>
+    </task>
+    <task id="LOCAL-00006" summary="v0.13 通讯录UI">
+      <option name="closed" value="true" />
+      <created>1763565611316</created>
+      <option name="number" value="00006" />
+      <option name="presentableId" value="LOCAL-00006" />
+      <option name="project" value="LOCAL" />
+      <updated>1763565611316</updated>
+    </task>
+    <option name="localTasksCounter" value="7" />
+    <servers />
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="3" />
+  </component>
+  <component name="VCPKGProject">
+    <isAutomaticCheckingOnLaunch value="false" />
+    <isAutomaticFoundErrors value="true" />
+    <isAutomaticReloadCMake value="true" />
+  </component>
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State />
+          </value>
+        </entry>
+      </map>
+    </option>
+  </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="基础CMAKE，示例程序" />
+    <MESSAGE value="v0.01 简单的TUI，客户端之间通过一个房间可以互相通信，异步IO" />
+    <MESSAGE value="v0.02 仿微信GUI，同步于TUI" />
+    <MESSAGE value="v0.10 完全重构，微信GUI前端，注册登录逻辑" />
+    <MESSAGE value="v0.12 群聊单聊，本地缓冲，若干生命周期问题修复，添加好友UI的设计" />
+    <MESSAGE value="v0.13 通讯录UI" />
+    <option name="LAST_COMMIT_MESSAGE" value="v0.13 通讯录UI" />
+  </component>
+  <component name="XSLT-Support.FileAssociations.UIState">
+    <expand />
+    <select />
+  </component>
+</project>
