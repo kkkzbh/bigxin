@@ -546,6 +546,103 @@ namespace database
         stored.server_time_ms = now_ms;
         return stored;
     }
+
+    /// \brief 创建群聊会话，返回会话 ID（不写入系统消息）。
+    /// \param creator_id 群主用户 ID。
+    /// \param member_ids 需要加入群聊的用户 ID 列表（不包含自己，函数内部会去重并加入 creator）。
+    /// \param name 群名称，空字符串时按默认规则生成。
+    /// \return 新建的群聊会话 ID。
+    auto inline create_group_conversation(
+        i64 creator_id,
+        std::vector<i64> member_ids,
+        std::string name
+    ) -> i64
+    {
+        if(creator_id <= 0) {
+            throw std::runtime_error{ "无效的群主 ID" };
+        }
+
+        // 去重并移除 creator
+        std::sort(member_ids.begin(), member_ids.end());
+        member_ids.erase(std::unique(member_ids.begin(), member_ids.end()), member_ids.end());
+        member_ids.erase(
+            std::remove(member_ids.begin(), member_ids.end(), creator_id),
+            member_ids.end()
+        );
+
+        if(member_ids.size() < 2) {
+            throw std::runtime_error{ "群成员不足（至少需要群主 + 2 位好友）" };
+        }
+
+        // 默认群名：取群主 + 前若干成员昵称（顺序为群主优先，再按 member_ids 排序），超过加“等”
+        auto conn = make_connection();
+        pqxx::work tx{ conn };
+
+        if(name.empty()) {
+            std::vector<std::string> picked_names;
+            picked_names.reserve(3);
+
+            // 组装用于命名的顺序：群主 + 剩余成员
+            std::vector<i64> name_order;
+            name_order.reserve(member_ids.size() + 1);
+            name_order.push_back(creator_id);
+            name_order.insert(name_order.end(), member_ids.begin(), member_ids.end());
+
+            for(size_t i = 0; i < name_order.size() && picked_names.size() < 3; ++i) {
+                auto const uid = name_order[i];
+                auto const q =
+                    "SELECT display_name FROM users WHERE id = " + tx.quote(uid) + " LIMIT 1";
+                auto rows = tx.exec(q);
+                if(!rows.empty()) {
+                    picked_names.push_back(rows[0][0].as<std::string>());
+                }
+            }
+
+            std::string joined;
+            for(size_t i = 0; i < picked_names.size(); ++i) {
+                if(i > 0) joined += "、";
+                joined += picked_names[i];
+            }
+            if(name_order.size() > 3) {
+                joined += "等";
+            }
+            if(joined.empty()) {
+                joined = "群聊";
+            }
+            name = joined;
+        }
+
+        // 创建 conversations 记录
+        auto const insert_conv =
+            "INSERT INTO conversations (type, name, owner_user_id) "
+            "VALUES (" + tx.quote(std::string{ "GROUP" }) + ", "
+            + tx.quote(name) + ", "
+            + tx.quote(creator_id) + ") "
+            "RETURNING id";
+
+        auto conv_rows = tx.exec(insert_conv);
+        if(conv_rows.empty()) {
+            throw std::runtime_error{ "创建群聊失败" };
+        }
+        auto const conv_id = conv_rows[0][0].as<i64>();
+
+        // 插入成员：群主=OWNER，其余=MEMBER
+        std::string values;
+        values += "(" + tx.quote(conv_id) + ", " + tx.quote(creator_id) + ", 'OWNER')";
+        for(auto const uid : member_ids) {
+            values += ", (" + tx.quote(conv_id) + ", " + tx.quote(uid) + ", 'MEMBER')";
+        }
+
+        auto const insert_members =
+            "INSERT INTO conversation_members (conversation_id, user_id, role) VALUES "
+            + values
+            + " ON CONFLICT DO NOTHING";
+
+        tx.exec(insert_members);
+
+        tx.commit();
+        return conv_id;
+    }
     /// \brief 在“世界”会话中追加一条文本消息。
     /// \param sender_id 发送者用户 ID。
     /// \param content 消息文本内容。

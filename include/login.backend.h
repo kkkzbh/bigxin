@@ -337,6 +337,46 @@ public:
         socket_.write(line);
     }
 
+    /// \brief 创建群聊会话。
+    /// \param memberUserIds 群成员用户 ID 列表（不含自己，至少 2 人）。
+    /// \param name 可选群名，空字符串走后端默认命名规则。
+    Q_INVOKABLE void createGroupConversation(QStringList const& memberUserIds, QString const& name)
+    {
+        if(socket_.state() != QAbstractSocket::ConnectedState) {
+            setErrorMessage(QStringLiteral("与服务器的连接已断开"));
+            return;
+        }
+        if(memberUserIds.size() < 2) {
+            setErrorMessage(QStringLiteral("请至少选择两位联系人"));
+            return;
+        }
+
+        QJsonObject obj;
+        QJsonArray arr;
+        for(auto const& id : memberUserIds) {
+            auto trimmed = id.trimmed();
+            if(!trimmed.isEmpty()) {
+                arr.append(trimmed);
+            }
+        }
+        obj.insert(QStringLiteral("memberUserIds"), arr);
+        if(!name.trimmed().isEmpty()) {
+            obj.insert(QStringLiteral("name"), name.trimmed());
+        }
+
+        QJsonDocument doc{ obj };
+        auto payload = doc.toJson(QJsonDocument::Compact);
+
+        QByteArray line;
+        line.reserve(16 + 1 + payload.size() + 1);
+        line.append("CREATE_GROUP_REQ");
+        line.append(':');
+        line.append(payload);
+        line.append('\n');
+
+        socket_.write(line);
+    }
+
     /// \brief 同意一条好友申请。
     /// \param requestId 好友申请 ID（字符串形式）。
     Q_INVOKABLE void acceptFriendRequest(QString const& requestId)
@@ -514,6 +554,11 @@ signals:
     /// \param conversationType 会话类型（通常为 SINGLE）。
     void singleConversationReady(QString conversationId, QString conversationType);
 
+    /// \brief 创建群聊成功时发出，用于前端高亮新群。
+    /// \param conversationId 新群会话 ID。
+    /// \param title 群标题。
+    void groupCreated(QString conversationId, QString title);
+
 private slots:
     /// \brief socket 连接建立后的回调。
     void onConnected()
@@ -668,6 +713,8 @@ private:
             handleFriendAcceptResponse(obj);
         } else if(command == "OPEN_SINGLE_CONV_RESP") {
             handleOpenSingleConvResponse(obj);
+        } else if(command == "CREATE_GROUP_RESP") {
+            handleCreateGroupResponse(obj);
         }
     }
 
@@ -834,7 +881,7 @@ private:
 
             auto const id = conv.value("conversationId").toString();
             auto const type = conv.value("conversationType").toString();
-            auto const title = conv.value("title").toString();
+            auto const title = conv.value("title").toString().simplified();
              auto const last_seq =
                 static_cast<qint64>(conv.value("lastSeq").toDouble(0.0));
             auto const last_time_ms =
@@ -900,7 +947,7 @@ private:
             map.insert(QStringLiteral("account"), u.value(QStringLiteral("account")).toString());
             map.insert(
                 QStringLiteral("displayName"),
-                u.value(QStringLiteral("displayName")).toString()
+                u.value(QStringLiteral("displayName")).toString().simplified()
             );
             map.insert(QStringLiteral("region"), u.value(QStringLiteral("region")).toString());
             map.insert(
@@ -950,7 +997,7 @@ private:
             );
             map.insert(
                 QStringLiteral("displayName"),
-                r.value(QStringLiteral("displayName")).toString()
+                r.value(QStringLiteral("displayName")).toString().simplified()
             );
             map.insert(QStringLiteral("status"), r.value(QStringLiteral("status")).toString());
             map.insert(
@@ -1076,6 +1123,29 @@ private:
         openConversation(conv_id);
 
         emit singleConversationReady(conv_id, obj.value(QStringLiteral("conversationType")).toString());
+    }
+
+    /// \brief 处理创建群聊的响应。
+    /// \param obj CREATE_GROUP_RESP 的 JSON 对象。
+    auto handleCreateGroupResponse(QJsonObject const& obj) -> void
+    {
+        auto const ok = obj.value(QStringLiteral("ok")).toBool(false);
+        if(!ok) {
+            auto const msg =
+                obj.value(QStringLiteral("errorMsg")).toString(QStringLiteral("创建群聊失败"));
+            if(!msg.isEmpty()) {
+                setErrorMessage(msg);
+            }
+            return;
+        }
+
+        auto const conv_id = obj.value(QStringLiteral("conversationId")).toString();
+        auto const title = obj.value(QStringLiteral("title")).toString();
+
+        setErrorMessage(QString{});
+
+        requestConversationList();
+        emit groupCreated(conv_id, title);
     }
 
     /// \brief 返回当前用户的缓存基础目录。

@@ -45,33 +45,70 @@
     </configurations>
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="2dc32154-be48-467c-9695-c2dd10df8b29" name="更改" comment="v0.13 通讯录UI">
-      <change afterPath="$PROJECT_DIR$/.idea/.name" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/QtSettings.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/chat.iml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/dataSources.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/data_source_mapping.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/editor.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/inspectionProfiles/Project_Default.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/modules.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/sqldialects.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/img/b2名字带空格.png" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/img/err_database.png" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/img/err_reg.png" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/img/添加好友弹框.png" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/img/点击发消息没用，甚至错误.png" afterDir="false" />
+    <list default="true" id="2dc32154-be48-467c-9695-c2dd10df8b29" name="更改" comment="v0.14 添加好友">
+      <change afterPath="$PROJECT_DIR$/.idea/dataSources/01a9e29b-e2a6-4961-afa0-6a9bca3bd300.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/dataSources/01a9e29b-e2a6-4961-afa0-6a9bca3bd300/storage_v2/_src_/database/chatdb.1inXrg.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/dataSources/01a9e29b-e2a6-4961-afa0-6a9bca3bd300/storage_v2/_src_/database/chatdb.1inXrg/schema/information_schema.FNRwLQ.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/dataSources/01a9e29b-e2a6-4961-afa0-6a9bca3bd300/storage_v2/_src_/database/chatdb.1inXrg/schema/pg_catalog.0S1ZNQ.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/dataSources/01a9e29b-e2a6-4961-afa0-6a9bca3bd300/storage_v2/_src_/database/chatdb.1inXrg/schema/public.abK9xQ.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/AGENTS.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/build/CMakeCache.txt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/build/CMakeFiles/4.1.2/CMakeCXXCompiler.cmake" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/build/CMakeFiles/4.1.2/CMakeDetermineCompilerABI_CXX.bin" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/build/CMakeFiles/4.1.2/CMakeSystem.cmake" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/build/CMakeFiles/4.1.2/CompilerIdCXX/CMakeCXXCompilerId.cpp" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/build/CMakeFiles/4.1.2/CompilerIdCXX/a.out" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/build/CMakeFiles/CMakeConfigureLog.yaml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/build/CMakeFiles/cmake.check_cache" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/img/+noselect.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/img/+select.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/img/+号下拉框.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/img/8e85f4b4-7d72-41ad-a9d1-e17126352455.png.tmp" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/img/UI.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/img/UI_input.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/img/add_friend.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/img/add_friend2.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/img/add_req.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/img/err.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/img/err2.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/img/g.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/img/nerr.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/img/noChatArea.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/img/noselect.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/img/not.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/img/now.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/img/now_chatlist.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/img/progress.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/img/settings..png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/img/target+.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/img/warn_copy_mode.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/img/发起群聊.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/img/已add.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/img/群聊.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/img/通讯录-select.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/img/通讯录.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/img/通讯里联系人名字有空格问题.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/client/qml/Main/Dialogs/StartGroupDialog.qml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/client/qml/resource/input/openai.svg" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/client/qml/resource/sidebar/chat-3-fill.svg" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/client/qml/resource/sidebar/chat-3-line.svg" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/client/qml/resource/sidebar/remix-fill.svg" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/client/qml/resource/sidebar/settings-line.svg" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/client/qml/resource/sidebar/terminal-box-fill.svg" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/client/qml/resource/sidebar/terminal-box-line.svg" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/client/qml/resource/sidebar/user-fill.svg" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/client/qml/resource/sidebar/user-line.svg" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/doc/protocol.md" beforeDir="false" afterPath="$PROJECT_DIR$/doc/protocol.md" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/include/database.h" beforeDir="false" afterPath="$PROJECT_DIR$/include/database.h" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/include/login.backend.h" beforeDir="false" afterPath="$PROJECT_DIR$/include/login.backend.h" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/include/server.core.h" beforeDir="false" afterPath="$PROJECT_DIR$/include/server.core.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/CMakeLists.txt" beforeDir="false" afterPath="$PROJECT_DIR$/src/CMakeLists.txt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/client/qml/Main/ChatArea/ChatArea.qml" beforeDir="false" afterPath="$PROJECT_DIR$/src/client/qml/Main/ChatArea/ChatArea.qml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/client/qml/Main/ChatArea/ContactDetailView.qml" beforeDir="false" afterPath="$PROJECT_DIR$/src/client/qml/Main/ChatArea/ContactDetailView.qml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/client/qml/Main/ChatList/ChatList.qml" beforeDir="false" afterPath="$PROJECT_DIR$/src/client/qml/Main/ChatList/ChatList.qml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/client/qml/Main/ChatList/ContactListView.qml" beforeDir="false" afterPath="$PROJECT_DIR$/src/client/qml/Main/ChatList/ContactListView.qml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/client/qml/Main/Dialogs/AddFriendDialog.qml" beforeDir="false" afterPath="$PROJECT_DIR$/src/client/qml/Main/Dialogs/AddFriendDialog.qml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/client/qml/Main/Dialogs/PlusMenu.qml" beforeDir="false" afterPath="$PROJECT_DIR$/src/client/qml/Main/Dialogs/PlusMenu.qml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/client/qml/Main/Main.qml" beforeDir="false" afterPath="$PROJECT_DIR$/src/client/qml/Main/Main.qml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/database/conversations.sql" beforeDir="false" afterPath="$PROJECT_DIR$/src/database/conversations.sql" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -189,7 +226,7 @@
       <window_info id="Commit_Guest" show_stripe_button="false" />
       <window_info id="Pull Requests" />
       <window_info id="Learn" show_stripe_button="false" />
-      <window_info active="true" content_ui="combo" id="Project" order="0" visible="true" weight="0.23351227" />
+      <window_info active="true" content_ui="combo" id="Project" order="0" visible="true" weight="0.18738462" />
       <window_info id="Commit" order="1" weight="0.23351227" />
       <window_info id="Structure" order="2" side_tool="true" weight="0.25" />
       <window_info anchor="bottom" id="Database Changes" />
@@ -199,19 +236,19 @@
       <window_info anchor="bottom" id="File Transfer" />
       <window_info anchor="bottom" id="Serial Monitor" />
       <window_info anchor="bottom" id="clangd" />
-      <window_info anchor="bottom" id="Version Control" order="0" weight="0.21679473" />
+      <window_info anchor="bottom" id="Version Control" order="0" weight="0.045864664" />
       <window_info anchor="bottom" id="Problems" order="1" />
       <window_info anchor="bottom" id="Problems View" order="2" />
       <window_info anchor="bottom" id="Debug" order="3" weight="0.47906697" />
       <window_info anchor="bottom" id="Services" order="4" weight="0.42205542" />
       <window_info anchor="bottom" id="Find" order="5" weight="0.33006912" />
       <window_info anchor="bottom" id="CMake" order="6" weight="0.45669746" />
-      <window_info active="true" anchor="bottom" id="Run" order="7" visible="true" weight="0.21679473" />
+      <window_info active="true" anchor="bottom" id="Run" order="7" visible="true" weight="0.30749488" />
       <window_info anchor="bottom" id="PythonProcessOutput" order="8" show_stripe_button="false" weight="0.3762322" />
       <window_info anchor="bottom" id="Vcpkg" order="9" weight="0.3762322" />
       <window_info anchor="bottom" id="Terminal" order="10" weight="0.39538044" />
       <window_info anchor="bottom" id="TODO" order="11" show_stripe_button="false" weight="0.3762322" />
-      <window_info anchor="bottom" id="Messages" order="12" weight="0.21679473" />
+      <window_info anchor="bottom" id="Messages" order="12" weight="0.30749488" />
       <window_info anchor="right" id="make" side_tool="true" />
       <window_info anchor="right" id="Coverage" side_tool="true" />
       <window_info anchor="right" id="Python Console" />
@@ -220,7 +257,7 @@
       <window_info anchor="right" id="Meson" />
       <window_info anchor="right" id="Notifications" order="0" weight="0.264049" />
       <window_info anchor="right" id="AIAssistant" order="1" weight="0.25" />
-      <window_info anchor="right" id="Database" order="2" weight="0.264049" />
+      <window_info active="true" anchor="right" id="Database" order="2" visible="true" weight="0.25692308" />
       <window_info anchor="right" id="Gradle" order="3" weight="0.25" />
       <window_info anchor="right" id="Maven" order="4" weight="0.25" />
       <window_info anchor="right" id="github.copilotToolWindow" order="5" weight="0.34985352" />
@@ -240,6 +277,11 @@
     </key>
   </component>
   <component name="RunManager" selected="CMake 应用程序.client">
+    <configuration default="true" type="CLionExternalRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true">
+      <method v="2">
+        <option name="CLION.EXTERNAL.BUILD" enabled="true" />
+      </method>
+    </configuration>
     <configuration name="all_aotstats" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="JuXin" TARGET_NAME="all_aotstats" CONFIG_NAME="Debug">
       <method v="2">
         <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
@@ -319,17 +361,17 @@
       </method>
     </configuration>
     <list>
+      <item itemvalue="CMake 应用程序.all_qmltyperegistrations" />
+      <item itemvalue="CMake 应用程序.client_copy_qml" />
+      <item itemvalue="CMake 应用程序.client_copy_res" />
+      <item itemvalue="CMake 应用程序.client_qmltyperegistration" />
+      <item itemvalue="CMake 应用程序.module_client_aotstats_target" />
       <item itemvalue="CMake 应用程序.all_qmllint" />
       <item itemvalue="CMake 应用程序.all_qmllint_json" />
       <item itemvalue="CMake 应用程序.all_qmllint_module" />
       <item itemvalue="CMake 应用程序.client_qmllint" />
       <item itemvalue="CMake 应用程序.client_qmllint_json" />
       <item itemvalue="CMake 应用程序.client_qmllint_module" />
-      <item itemvalue="CMake 应用程序.all_qmltyperegistrations" />
-      <item itemvalue="CMake 应用程序.client_copy_qml" />
-      <item itemvalue="CMake 应用程序.client_copy_res" />
-      <item itemvalue="CMake 应用程序.client_qmltyperegistration" />
-      <item itemvalue="CMake 应用程序.module_client_aotstats_target" />
       <item itemvalue="CMake 应用程序.all_aotstats" />
       <item itemvalue="CMake 应用程序.client" />
       <item itemvalue="CMake 应用程序.client_other_files" />
@@ -373,7 +415,7 @@
       <workItem from="1763566966634" duration="356000" />
       <workItem from="1763567344651" duration="7052000" />
       <workItem from="1763610851895" duration="9000" />
-      <workItem from="1763617697109" duration="3622000" />
+      <workItem from="1763617697109" duration="8803000" />
     </task>
     <task id="LOCAL-00001" summary="基础CMAKE，示例程序">
       <option name="closed" value="true" />
@@ -423,7 +465,15 @@
       <option name="project" value="LOCAL" />
       <updated>1763565611316</updated>
     </task>
-    <option name="localTasksCounter" value="7" />
+    <task id="LOCAL-00007" summary="v0.14 添加好友">
+      <option name="closed" value="true" />
+      <created>1763621515587</created>
+      <option name="number" value="00007" />
+      <option name="presentableId" value="LOCAL-00007" />
+      <option name="project" value="LOCAL" />
+      <updated>1763621515587</updated>
+    </task>
+    <option name="localTasksCounter" value="8" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -452,7 +502,8 @@
     <MESSAGE value="v0.10 完全重构，微信GUI前端，注册登录逻辑" />
     <MESSAGE value="v0.12 群聊单聊，本地缓冲，若干生命周期问题修复，添加好友UI的设计" />
     <MESSAGE value="v0.13 通讯录UI" />
-    <option name="LAST_COMMIT_MESSAGE" value="v0.13 通讯录UI" />
+    <MESSAGE value="v0.14 添加好友" />
+    <option name="LAST_COMMIT_MESSAGE" value="v0.14 添加好友" />
   </component>
   <component name="XSLT-Support.FileAssociations.UIState">
     <expand />

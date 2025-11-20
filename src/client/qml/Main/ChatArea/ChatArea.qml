@@ -59,9 +59,10 @@ Rectangle {
 
                 delegate: Item {
                     width: ListView.view.width
-                    height: Math.max(leftRow.implicitHeight, rightRow.implicitHeight)
+                    height: Math.max(Math.max(leftRow.implicitHeight, rightRow.implicitHeight), systemRow.implicitHeight)
 
                     property bool isMine: sender === "me"
+                    property bool isSystem: sender === "system"
 
                     // 其他人消息：头像在左，气泡在右，整体靠左
                     Row {
@@ -69,7 +70,7 @@ Rectangle {
                         anchors.left: parent.left
                         anchors.verticalCenter: parent.verticalCenter
                         spacing: 6
-                        visible: !isMine
+                        visible: !isMine && !isSystem
 
                         Rectangle {
                             width: 36
@@ -144,12 +145,39 @@ Rectangle {
                                 text: "我"
                                 color: "#222222"
                                 font.pixelSize: 14
-                                font.bold: true
+                            font.bold: true
+                        }
+                    }
+
+                    // 系统消息：居中显示
+                    Row {
+                        id: systemRow
+                        anchors.horizontalCenter: parent.horizontalCenter
+                        anchors.verticalCenter: parent.verticalCenter
+                        visible: isSystem
+
+                        Rectangle {
+                            color: theme.bubbleOther
+                            radius: 6
+                            border.color: theme.bubbleOther
+                            implicitWidth: systemText.implicitWidth + 20
+                            implicitHeight: systemText.implicitHeight + 12
+
+                            Text {
+                                id: systemText
+                                anchors.fill: parent
+                                anchors.margins: 8
+                                text: content
+                                color: theme.textSecondary
+                                font.pixelSize: 12
+                                wrapMode: Text.Wrap
+                                horizontalAlignment: Text.AlignHCenter
                             }
                         }
                     }
                 }
             }
+        }
         }
 
         // 底部输入区域
@@ -300,8 +328,9 @@ Rectangle {
             if (conversationId !== root.conversationId)
                 return
             const mine = senderId === loginBackend.userId
+            const sys = senderId === "0"
             messageModel.append({
-                sender: mine ? "me" : "other",
+                sender: sys ? "system" : (mine ? "me" : "other"),
                 content: content
             })
             messageList.positionViewAtEnd()

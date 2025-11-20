@@ -83,6 +83,8 @@ SEND_MSG:{"conversationId":"grp-123","senderId":"u_001","clientMsgId":"cli-1","m
   - `FRIEND_REQ_LIST_REQ` / `FRIEND_REQ_LIST_RESP`
   - `FRIEND_ACCEPT_REQ` / `FRIEND_ACCEPT_RESP`
   - `OPEN_SINGLE_CONV_REQ` / `OPEN_SINGLE_CONV_RESP`
+- 群聊：
+  - `CREATE_GROUP_REQ` / `CREATE_GROUP_RESP`
 - 心跳保活：
   - `PING` (C ↔ S)
   - `PONG` (C ↔ S)

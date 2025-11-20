@@ -26,6 +26,10 @@ Rectangle {
         id: contactsModel
     }
 
+    ListModel {
+        id: groupsModel
+    }
+
     // 同步后端好友列表 / 好友申请列表到本地模型。
     Connections {
         target: loginBackend
@@ -34,7 +38,7 @@ Rectangle {
             newFriendsModel.clear()
             for (var i = 0; i < requests.length; ++i) {
                 var r = requests[i]
-                var name = (r.displayName || "").trim()
+                var name = (r.displayName || "").replace(/\s+/g, " ").trim()
                 newFriendsModel.append({
                     type: "request",
                     userId: r.fromUserId,
@@ -53,7 +57,7 @@ Rectangle {
             contactsModel.clear()
             for (var i = 0; i < friends.length; ++i) {
                 var f = friends[i]
-                var name = (f.displayName || "").trim()
+                var name = (f.displayName || "").replace(/\s+/g, " ").trim()
                 contactsModel.append({
                     type: "contact",
                     userId: f.userId,
@@ -62,6 +66,24 @@ Rectangle {
                     avatarColor: "#4fbf73",
                     wechatId: f.account,
                     signature: f.signature || ""
+                })
+            }
+        }
+
+        function onConversationsReset(conversations) {
+            groupsModel.clear()
+            for (var i = 0; i < conversations.length; ++i) {
+                var c = conversations[i]
+                if (c.conversationType !== "GROUP")
+                    continue
+                var name = (c.title || "").replace(/\s+/g, " ").trim()
+                groupsModel.append({
+                    type: "group",
+                    conversationId: c.conversationId,
+                    wechatId: c.conversationId, // 复用字段以便选中逻辑
+                    name: name,
+                    avatarColor: "#4fbf73",
+                    signature: ""
                 })
             }
         }
@@ -108,6 +130,42 @@ Rectangle {
                 visible: true
                 interactive: false
                 model: newFriendsModel
+                delegate: contactDelegate
+            }
+
+            // --- Groups ---
+            Item {
+                Layout.fillWidth: true
+                Layout.preferredHeight: 30
+
+                RowLayout {
+                    anchors.fill: parent
+                    anchors.leftMargin: 10
+                    spacing: 5
+                    Text {
+                        text: groupsList.visible ? "▼" : "▶"
+                        color: "#7d7d7d"
+                        font.pixelSize: 10
+                    }
+                    Text {
+                        text: "群聊"
+                        color: "#7d7d7d"
+                        font.pixelSize: 12
+                    }
+                }
+                MouseArea {
+                    anchors.fill: parent
+                    onClicked: groupsList.visible = !groupsList.visible
+                }
+            }
+
+            ListView {
+                id: groupsList
+                Layout.fillWidth: true
+                Layout.preferredHeight: visible ? contentHeight : 0
+                visible: true
+                interactive: false
+                model: groupsModel
                 delegate: contactDelegate
             }
 

@@ -35,6 +35,29 @@ namespace server
             , server_(&server)
         {}
 
+        /// \brief 压缩连续空白并去掉首尾空格，避免昵称中有填充空格。
+        static auto normalize_whitespace(std::string s) -> std::string
+        {
+            std::string out;
+            out.reserve(s.size());
+            bool pending_space = false;
+            for(char ch : s) {
+                if(std::isspace(static_cast<unsigned char>(ch))) {
+                    pending_space = !out.empty(); // 仅在已有内容后记录空格
+                    continue;
+                }
+                if(pending_space) {
+                    out.push_back(' ');
+                    pending_space = false;
+                }
+                out.push_back(ch);
+            }
+            while(!out.empty() && out.back() == ' ') {
+                out.pop_back();
+            }
+            return out;
+        }
+
         /// \brief 以协程形式运行会话主循环。
         /// \details 使用 async_read_until / async_write 配合 use_awaitable。
         /// \return 协程完成时返回 void。
@@ -101,6 +124,10 @@ namespace server
                     } else if(frame.command == "FRIEND_ACCEPT_REQ") {
                         auto payload = handle_friend_accept_req(frame.payload);
                         auto msg = protocol::make_line("FRIEND_ACCEPT_RESP", payload);
+                        send_text(std::move(msg));
+                    } else if(frame.command == "CREATE_GROUP_REQ") {
+                        auto payload = handle_create_group_req(frame.payload);
+                        auto msg = protocol::make_line("CREATE_GROUP_RESP", payload);
                         send_text(std::move(msg));
                     } else if(frame.command == "OPEN_SINGLE_CONV_REQ") {
                         auto payload = handle_open_single_conv_req(frame.payload);
@@ -231,6 +258,10 @@ namespace server
         /// \brief 处理同意好友申请的请求，返回 FRIEND_ACCEPT_RESP 的 JSON 串。
         /// \param payload FRIEND_ACCEPT_REQ 的 JSON 文本。
         auto handle_friend_accept_req(std::string const& payload) -> std::string;
+
+        /// \brief 处理创建群聊的请求，返回 CREATE_GROUP_RESP 的 JSON 串。
+        /// \param payload CREATE_GROUP_REQ 的 JSON 文本。
+        auto handle_create_group_req(std::string const& payload) -> std::string;
 
         /// \brief 处理打开单聊会话的请求，返回 OPEN_SINGLE_CONV_RESP 的 JSON 串。
         /// \param payload OPEN_SINGLE_CONV_REQ 的 JSON 文本。
@@ -397,7 +428,7 @@ namespace server
                     obj["requestId"] = std::to_string(r.id);
                     obj["fromUserId"] = std::to_string(r.from_user_id);
                     obj["account"] = r.account;
-                    obj["displayName"] = r.display_name;
+                    obj["displayName"] = Session::normalize_whitespace(r.display_name);
                     obj["status"] = r.status;
                     obj["helloMsg"] = r.hello_msg;
                     items.push_back(std::move(obj));
@@ -441,15 +472,15 @@ namespace server
                 resp["ok"] = true;
 
                 json items = json::array();
-                for(auto const& f : friends) {
-                    json u;
-                    u["userId"] = std::to_string(f.id);
-                    u["account"] = f.account;
-                    u["displayName"] = f.display_name;
-                    u["region"] = "";
-                    u["signature"] = "";
-                    items.push_back(std::move(u));
-                }
+                        for(auto const& f : friends) {
+                            json u;
+                            u["userId"] = std::to_string(f.id);
+                            u["account"] = f.account;
+                            u["displayName"] = Session::normalize_whitespace(f.display_name);
+                            u["region"] = "";
+                            u["signature"] = "";
+                            items.push_back(std::move(u));
+                        }
 
                 resp["friends"] = std::move(items);
                 auto const line = protocol::make_line("FRIEND_LIST_RESP", resp.dump());
@@ -508,6 +539,59 @@ namespace server
                 }
             } catch(std::exception const&) {
                 // 忽略推送失败。
+            }
+        }
+
+        /// \brief 将系统消息以 MSG_PUSH 形式广播给指定会话成员。
+        auto broadcast_system_message(
+            i64 conversation_id,
+            database::StoredMessage const& stored,
+            std::string const& content
+        ) -> void
+        {
+            using json = nlohmann::json;
+
+            json push;
+            push["conversationId"] = std::to_string(conversation_id);
+            push["conversationType"] = "GROUP";
+            push["serverMsgId"] = std::to_string(stored.id);
+            push["senderId"] = "0";
+            push["msgType"] = "TEXT";
+            push["serverTimeMs"] = stored.server_time_ms;
+            push["seq"] = stored.seq;
+            push["content"] = content;
+
+            auto const line = protocol::make_line("MSG_PUSH", push.dump());
+
+            std::vector<i64> member_ids;
+            try {
+                auto conn = database::make_connection();
+                pqxx::work tx{ conn };
+                auto const query =
+                    "SELECT user_id FROM conversation_members WHERE conversation_id = "
+                    + tx.quote(conversation_id);
+                auto rows = tx.exec(query);
+                member_ids.reserve(rows.size());
+                for(auto const& row : rows) {
+                    member_ids.push_back(row[0].as<i64>());
+                }
+                tx.commit();
+            } catch(std::exception const&) {
+                member_ids.clear(); // broadcast to all authenticated if query failed.
+            }
+
+            auto const is_target = [&member_ids](i64 uid) -> bool {
+                if(member_ids.empty()) {
+                    return true;
+                }
+                return std::find(member_ids.begin(), member_ids.end(), uid)
+                       != member_ids.end();
+            };
+
+            for(auto const& session : sessions_) {
+                if(session && session->is_authenticated() && is_target(session->user_id())) {
+                    session->send_text(line);
+                }
             }
         }
 
@@ -1041,6 +1125,98 @@ inline auto server::Session::handle_friend_accept_req(std::string const& payload
                 server_->send_conv_list_to(user_id_);
                 server_->send_conv_list_to(result.friend_user.id);
             }
+        }
+
+        return resp.dump();
+    } catch(json::parse_error const&) {
+        return make_error_payload("INVALID_JSON", "请求 JSON 解析失败");
+    } catch(std::exception const& ex) {
+        return make_error_payload("SERVER_ERROR", ex.what());
+    }
+}
+
+inline auto server::Session::handle_create_group_req(std::string const& payload) -> std::string
+{
+    using json = nlohmann::json;
+
+    if(!authenticated_) {
+        return make_error_payload("NOT_AUTHENTICATED", "请先登录");
+    }
+
+    try {
+        auto j = payload.empty() ? json::object() : json::parse(payload);
+
+        if(!j.contains("memberUserIds") || !j.at("memberUserIds").is_array()) {
+            return make_error_payload("INVALID_PARAM", "缺少 memberUserIds 数组");
+        }
+
+        auto const arr = j.at("memberUserIds");
+        std::vector<i64> members;
+        members.reserve(arr.size());
+        for(auto const& item : arr) {
+            auto const str = item.get<std::string>();
+            auto id = i64{};
+            try {
+                id = std::stoll(str);
+            } catch(std::exception const&) {
+                return make_error_payload("INVALID_PARAM", "memberUserIds 中存在非法 ID");
+            }
+            if(id > 0) {
+                members.push_back(id);
+            }
+        }
+
+        // 至少要两位好友，加上创建者总计>=3
+        if(members.size() < 2) {
+            return make_error_payload("INVALID_PARAM", "群成员不足");
+        }
+
+        auto name = std::string{};
+        if(j.contains("name")) {
+            name = j.at("name").get<std::string>();
+            auto trim = [](std::string& s) {
+                auto const not_space = [](unsigned char ch) { return !std::isspace(ch); };
+                s.erase(s.begin(), std::find_if(s.begin(), s.end(), not_space));
+                s.erase(std::find_if(s.rbegin(), s.rend(), not_space).base(), s.end());
+            };
+            trim(name);
+        }
+
+        auto const conv_id = database::create_group_conversation(user_id_, members, name);
+
+        // 取实际群名
+        std::string conv_name{ "群聊" };
+        {
+            auto conn = database::make_connection();
+            pqxx::work tx{ conn };
+            auto const q =
+                "SELECT name FROM conversations WHERE id = " + tx.quote(conv_id) + " LIMIT 1";
+            auto rows = tx.exec(q);
+            if(!rows.empty()) {
+                conv_name = rows[0][0].as<std::string>();
+            }
+            tx.commit();
+        }
+
+        // 写首条系统消息
+        auto const sys_content = std::string{ "你们创建了群聊：" } + conv_name;
+        auto const stored = database::append_text_message(conv_id, 0, sys_content);
+
+        json resp;
+        resp["ok"] = true;
+        resp["conversationId"] = std::to_string(conv_id);
+        resp["conversationType"] = "GROUP";
+        resp["title"] = conv_name;
+        resp["memberCount"] = static_cast<i64>(members.size() + 1);
+
+        // 推送会话列表 & 系统消息给全体成员
+        if(server_ != nullptr) {
+            // 推送 creator + members
+            server_->send_conv_list_to(user_id_);
+            for(auto const uid : members) {
+                server_->send_conv_list_to(uid);
+            }
+            server_->broadcast_system_message(conv_id, stored, sys_content);
         }
 
         return resp.dump();

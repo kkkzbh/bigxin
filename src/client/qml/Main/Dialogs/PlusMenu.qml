@@ -7,6 +7,8 @@ Menu {
     id: root
 
     readonly property var theme: AppTheme.Theme
+    // 外部注入的发起群聊对话框引用
+    property var startGroupDialog
 
     implicitWidth: 160
 
@@ -35,7 +37,11 @@ Menu {
             leftPadding: 12
             rightPadding: 12
         }
-        // TODO: 后续接入发起群聊窗口
+        onTriggered: {
+            if (root.startGroupDialog) {
+                root.startGroupDialog.resetAndOpen()
+            }
+        }
     }
 
     MenuItem {

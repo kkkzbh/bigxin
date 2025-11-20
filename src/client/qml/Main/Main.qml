@@ -46,6 +46,10 @@ ApplicationWindow {
             // 用户主动打开单聊时切回聊天页签，等待会话列表刷新后高亮。
             window.currentTab = 0
         }
+        function onGroupCreated(conversationId, title) {
+            window.currentTab = 0
+            chatList.pendingSelectConversationId = conversationId
+        }
     }
 
     ColumnLayout {
@@ -63,9 +67,14 @@ ApplicationWindow {
             color: theme.topBarBackground
 
             // 使用 DragHandler + startSystemMove 实现拖动（Qt 6 推荐）
-            DragHandler {
-                target: null
-                onActiveChanged: if (active) window.startSystemMove()
+            // 增加 margin 避免与边缘缩放冲突
+            Item {
+                anchors.fill: parent
+                anchors.margins: 10
+                DragHandler {
+                    target: null
+                    onActiveChanged: if (active) window.startSystemMove()
+                }
             }
 
             RowLayout {
@@ -303,11 +312,17 @@ ApplicationWindow {
         AppTheme.PlusMenu {
             id: addMenu
             parent: window.contentItem
+            startGroupDialog: startGroupDialog
         }
 
         // 添加好友独立窗口（非模态）
         AppTheme.AddFriendDialog {
             id: addFriendDialog
+        }
+
+        // 发起群聊弹窗（模态）
+        AppTheme.StartGroupDialog {
+            id: startGroupDialog
         }
 
         // 设置窗口（非模态）
@@ -365,6 +380,69 @@ ApplicationWindow {
                 Layout.fillWidth: true
                 Layout.fillHeight: true
             }
+        }
+    }
+
+    // 窗口边缘缩放处理 (Qt 6.9 推荐方式: startSystemResize)
+    // 注意：startSystemResize 需要传递 Qt.Edge 标志位，而不是 Qt.Corner
+    Item {
+        id: resizeFrame
+        anchors.fill: parent
+        z: 9999 // 确保在最上层
+
+        // 边缘判定宽度
+        readonly property int m: 6
+
+        // 四边
+        MouseArea {
+            width: resizeFrame.m; height: parent.height
+            anchors.left: parent.left
+            cursorShape: Qt.SizeHorCursor
+            onPressed: window.startSystemResize(Qt.LeftEdge)
+        }
+        MouseArea {
+            width: resizeFrame.m; height: parent.height
+            anchors.right: parent.right
+            cursorShape: Qt.SizeHorCursor
+            onPressed: window.startSystemResize(Qt.RightEdge)
+        }
+        MouseArea {
+            height: resizeFrame.m; width: parent.width
+            anchors.top: parent.top
+            cursorShape: Qt.SizeVerCursor
+            onPressed: window.startSystemResize(Qt.TopEdge)
+        }
+        MouseArea {
+            height: resizeFrame.m; width: parent.width
+            anchors.bottom: parent.bottom
+            cursorShape: Qt.SizeVerCursor
+            onPressed: window.startSystemResize(Qt.BottomEdge)
+        }
+
+        // 四角 (组合 Edge 标志位)
+        MouseArea {
+            width: resizeFrame.m * 2; height: resizeFrame.m * 2
+            anchors.left: parent.left; anchors.top: parent.top
+            cursorShape: Qt.SizeFDiagCursor
+            onPressed: window.startSystemResize(Qt.TopEdge | Qt.LeftEdge)
+        }
+        MouseArea {
+            width: resizeFrame.m * 2; height: resizeFrame.m * 2
+            anchors.right: parent.right; anchors.top: parent.top
+            cursorShape: Qt.SizeBDiagCursor
+            onPressed: window.startSystemResize(Qt.TopEdge | Qt.RightEdge)
+        }
+        MouseArea {
+            width: resizeFrame.m * 2; height: resizeFrame.m * 2
+            anchors.left: parent.left; anchors.bottom: parent.bottom
+            cursorShape: Qt.SizeBDiagCursor
+            onPressed: window.startSystemResize(Qt.BottomEdge | Qt.LeftEdge)
+        }
+        MouseArea {
+            width: resizeFrame.m * 2; height: resizeFrame.m * 2
+            anchors.right: parent.right; anchors.bottom: parent.bottom
+            cursorShape: Qt.SizeFDiagCursor
+            onPressed: window.startSystemResize(Qt.BottomEdge | Qt.RightEdge)
         }
     }
 }
