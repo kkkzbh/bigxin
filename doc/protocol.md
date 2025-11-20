@@ -316,6 +316,7 @@ MSG_PUSH:{
 
   "serverMsgId": "srv-8888",
   "senderId":    "u_001",
+  "senderDisplayName": "张三",
   "msgType":     "TEXT",
   "serverTimeMs": 1731312346000,
   "seq":          101,
@@ -329,6 +330,7 @@ MSG_PUSH:{
 - `conversationId` / `conversationType`：会话信息。
 - `serverMsgId`：消息的服务器 ID。
 - `senderId`：发送者 ID。
+- `senderDisplayName`：发送者昵称（已规范化、去首尾空白）。
 - `msgType`：消息类型。
 - `serverTimeMs`：消息在服务器写入时间。
 - `seq`：会话内消息序号。
@@ -391,6 +393,7 @@ HISTORY_RESP:{
     {
       "serverMsgId":  "srv-8881",
       "senderId":     "u_002",
+      "senderDisplayName": "李四",
       "msgType":      "TEXT",
       "serverTimeMs": 1731312300000,
       "seq":          99,
@@ -399,6 +402,7 @@ HISTORY_RESP:{
     {
       "serverMsgId":  "srv-8882",
       "senderId":     "u_003",
+      "senderDisplayName": "王五",
       "msgType":      "TEXT",
       "serverTimeMs": 1731312310000,
       "seq":          100,

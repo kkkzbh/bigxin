@@ -556,6 +556,7 @@ namespace server
             push["conversationType"] = "GROUP";
             push["serverMsgId"] = std::to_string(stored.id);
             push["senderId"] = "0";
+            push["senderDisplayName"] = "";
             push["msgType"] = "TEXT";
             push["serverTimeMs"] = stored.server_time_ms;
             push["seq"] = stored.seq;
@@ -611,15 +612,18 @@ namespace server
             push["conversationId"] = std::to_string(stored.conversation_id);
             // 会话类型用于前端展示，不影响路由逻辑。
             std::string conv_type{ "GROUP" };
+            std::string sender_name;
             try {
                 auto conn = database::make_connection();
                 pqxx::work tx{ conn };
                 auto const query =
-                    "SELECT type FROM conversations WHERE id = "
-                    + tx.quote(stored.conversation_id) + " LIMIT 1";
+                    "SELECT c.type, u.display_name FROM conversations c "
+                    "JOIN users u ON u.id = " + tx.quote(sender_id) + " "
+                    "WHERE c.id = " + tx.quote(stored.conversation_id) + " LIMIT 1";
                 auto rows = tx.exec(query);
                 if(!rows.empty()) {
                     conv_type = rows[0][0].as<std::string>();
+                    sender_name = rows[0][1].as<std::string>();
                 }
                 tx.commit();
             } catch(std::exception const&) {
@@ -628,6 +632,7 @@ namespace server
             push["conversationType"] = conv_type;
             push["serverMsgId"] = std::to_string(stored.id);
             push["senderId"] = std::to_string(sender_id);
+            push["senderDisplayName"] = sender_name;
             push["msgType"] = "TEXT";
             push["serverTimeMs"] = stored.server_time_ms;
             push["seq"] = stored.seq;
@@ -783,6 +788,7 @@ inline auto server::Session::handle_history_req(std::string const& payload) -> s
             json m;
             m["serverMsgId"] = std::to_string(msg.id);
             m["senderId"] = std::to_string(msg.sender_id);
+            m["senderDisplayName"] = msg.sender_display_name;
             m["msgType"] = msg.msg_type;
             m["serverTimeMs"] = msg.server_time_ms;
             m["seq"] = msg.seq;

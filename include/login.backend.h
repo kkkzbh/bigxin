@@ -525,6 +525,7 @@ signals:
     void messageReceived(
         QString conversationId,
         QString senderId,
+        QString senderDisplayName,
         QString content,
         qint64 serverTimeMs,
         qint64 seq
@@ -798,6 +799,7 @@ private:
     {
         auto const conversation_id = obj.value("conversationId").toString();
         auto const sender_id = obj.value("senderId").toString();
+        auto const sender_name = obj.value("senderDisplayName").toString();
         auto const content = obj.value("content").toString();
         auto const server_time_ms =
             static_cast<qint64>(obj.value("serverTimeMs").toDouble(0.0));
@@ -815,10 +817,24 @@ private:
             requestConversationList();
         }
 
-        emit messageReceived(conversation_id, sender_id, content, server_time_ms, seq);
+        emit messageReceived(
+            conversation_id,
+            sender_id,
+            sender_name,
+            content,
+            server_time_ms,
+            seq
+        );
 
         // 追加写入本地缓存。
-        cache_append_message(conversation_id, sender_id, content, server_time_ms, seq);
+        cache_append_message(
+            conversation_id,
+            sender_id,
+            sender_name,
+            content,
+            server_time_ms,
+            seq
+        );
 
         // 更新已知的最新 seq。
         conv_last_seq_[conversation_id] = std::max(conv_last_seq_.value(conversation_id, 0), seq);
@@ -835,13 +851,21 @@ private:
         for(auto const& item : messages) {
             auto const message_obj = item.toObject();
             auto const sender_id = message_obj.value("senderId").toString();
+            auto const sender_name = message_obj.value("senderDisplayName").toString();
             auto const content = message_obj.value("content").toString();
             auto const server_time_ms =
                 static_cast<qint64>(message_obj.value("serverTimeMs").toDouble(0.0));
             auto const seq =
                 static_cast<qint64>(message_obj.value("seq").toDouble(0.0));
 
-            emit messageReceived(conversation_id, sender_id, content, server_time_ms, seq);
+            emit messageReceived(
+                conversation_id,
+                sender_id,
+                sender_name,
+                content,
+                server_time_ms,
+                seq
+            );
 
             if(seq > max_seq) {
                 max_seq = seq;
@@ -1226,12 +1250,14 @@ private:
     /// \brief 追加一条消息到本地缓存。
     /// \param conversationId 会话 ID。
     /// \param senderId 发送者 ID。
+    /// \param senderDisplayName 发送者显示昵称。
     /// \param content 消息文本。
     /// \param serverTimeMs 服务器时间戳（毫秒）。
     /// \param seq 会话内序号。
     auto cache_append_message(
         QString const& conversationId,
         QString const& senderId,
+        QString const& senderDisplayName,
         QString const& content,
         qint64 serverTimeMs,
         qint64 seq
@@ -1261,6 +1287,7 @@ private:
 
         QJsonObject message;
         message.insert(QStringLiteral("senderId"), senderId);
+        message.insert(QStringLiteral("senderDisplayName"), senderDisplayName);
         message.insert(QStringLiteral("content"), content);
         message.insert(QStringLiteral("serverTimeMs"), serverTimeMs);
         message.insert(QStringLiteral("seq"), seq);
@@ -1321,13 +1348,21 @@ private:
         for(auto const& item : messages) {
             auto const m = item.toObject();
             auto const sender_id = m.value(QStringLiteral("senderId")).toString();
+            auto const sender_name = m.value(QStringLiteral("senderDisplayName")).toString();
             auto const content = m.value(QStringLiteral("content")).toString();
             auto const server_time_ms =
                 static_cast<qint64>(m.value(QStringLiteral("serverTimeMs")).toDouble(0.0));
             auto const seq =
                 static_cast<qint64>(m.value(QStringLiteral("seq")).toDouble(0.0));
 
-            emit messageReceived(conversationId, sender_id, content, server_time_ms, seq);
+            emit messageReceived(
+                conversationId,
+                sender_id,
+                sender_name,
+                content,
+                server_time_ms,
+                seq
+            );
         }
 
         return true;

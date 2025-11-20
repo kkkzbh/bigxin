@@ -177,6 +177,8 @@ namespace database
         i64 conversation_id{};
         /// \brief 发送者用户 ID。
         i64 sender_id{};
+        /// \brief 发送者显示昵称。
+        std::string sender_display_name{};
         /// \brief 会话内递增序号。
         i64 seq{};
         /// \brief 消息类型，例如 TEXT。
@@ -669,14 +671,16 @@ namespace database
         pqxx::work tx{ conn };
 
         std::string query =
-            "SELECT id, conversation_id, sender_id, seq, msg_type, content, server_time_ms "
-            "FROM messages WHERE conversation_id = " + tx.quote(conversation_id);
+            "SELECT m.id, m.conversation_id, m.sender_id, u.display_name, m.seq, m.msg_type, m.content, m.server_time_ms "
+            "FROM messages m "
+            "JOIN users u ON u.id = m.sender_id "
+            "WHERE m.conversation_id = " + tx.quote(conversation_id);
 
         if(before_seq > 0) {
             query += " AND seq < " + tx.quote(before_seq);
         }
 
-        query += " ORDER BY seq DESC LIMIT " + tx.quote(limit);
+        query += " ORDER BY m.seq DESC LIMIT " + tx.quote(limit);
 
         auto rows = tx.exec(query);
 
@@ -689,10 +693,11 @@ namespace database
             msg.id = row[0].as<i64>();
             msg.conversation_id = row[1].as<i64>();
             msg.sender_id = row[2].as<i64>();
-            msg.seq = row[3].as<i64>();
-            msg.msg_type = row[4].as<std::string>();
-            msg.content = row[5].as<std::string>();
-            msg.server_time_ms = row[6].as<i64>();
+            msg.sender_display_name = row[3].as<std::string>();
+            msg.seq = row[4].as<i64>();
+            msg.msg_type = row[5].as<std::string>();
+            msg.content = row[6].as<std::string>();
+            msg.server_time_ms = row[7].as<i64>();
             messages.push_back(std::move(msg));
         }
 
@@ -716,14 +721,16 @@ namespace database
         pqxx::work tx{ conn };
 
         std::string query =
-            "SELECT id, conversation_id, sender_id, seq, msg_type, content, server_time_ms "
-            "FROM messages WHERE conversation_id = " + tx.quote(conversation_id);
+            "SELECT m.id, m.conversation_id, m.sender_id, u.display_name, m.seq, m.msg_type, m.content, m.server_time_ms "
+            "FROM messages m "
+            "JOIN users u ON u.id = m.sender_id "
+            "WHERE m.conversation_id = " + tx.quote(conversation_id);
 
         if(after_seq > 0) {
             query += " AND seq > " + tx.quote(after_seq);
         }
 
-        query += " ORDER BY seq ASC LIMIT " + tx.quote(limit);
+        query += " ORDER BY m.seq ASC LIMIT " + tx.quote(limit);
 
         auto rows = tx.exec(query);
 
@@ -735,10 +742,11 @@ namespace database
             msg.id = row[0].as<i64>();
             msg.conversation_id = row[1].as<i64>();
             msg.sender_id = row[2].as<i64>();
-            msg.seq = row[3].as<i64>();
-            msg.msg_type = row[4].as<std::string>();
-            msg.content = row[5].as<std::string>();
-            msg.server_time_ms = row[6].as<i64>();
+            msg.sender_display_name = row[3].as<std::string>();
+            msg.seq = row[4].as<i64>();
+            msg.msg_type = row[5].as<std::string>();
+            msg.content = row[6].as<std::string>();
+            msg.server_time_ms = row[7].as<i64>();
             messages.push_back(std::move(msg));
         }
 

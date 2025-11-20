@@ -63,6 +63,7 @@ Rectangle {
 
                     property bool isMine: sender === "me"
                     property bool isSystem: sender === "system"
+                    property bool showName: root.conversationType === "GROUP" && !isMine && !isSystem
 
                     // 其他人消息：头像在左，气泡在右，整体靠左
                     Row {
@@ -87,22 +88,35 @@ Rectangle {
                             }
                         }
 
-                        Rectangle {
-                            id: leftBubble
-                            color: theme.bubbleOther
-                            radius: 6
-                            border.color: theme.bubbleOther
-                            implicitWidth: leftText.implicitWidth + 20
-                            implicitHeight: leftText.implicitHeight + 14
+                        Column {
+                            spacing: 4
+                            anchors.verticalCenter: parent.verticalCenter
 
                             Text {
-                                id: leftText
-                                anchors.margins: 8
-                                anchors.fill: parent
-                                text: content
-                                color: theme.bubbleOtherText
-                                font.pixelSize: 14
-                                wrapMode: Text.Wrap
+                                visible: showName
+                                text: senderName
+                                color: theme.textSecondary
+                                font.pixelSize: 12
+                                font.bold: false
+                            }
+
+                            Rectangle {
+                                id: leftBubble
+                                color: theme.bubbleOther
+                                radius: 6
+                                border.color: theme.bubbleOther
+                                implicitWidth: Math.min(messageList.width * 0.7, leftText.implicitWidth + 20)
+                                implicitHeight: leftText.implicitHeight + 14
+
+                                Text {
+                                    id: leftText
+                                    anchors.margins: 8
+                                    anchors.fill: parent
+                                    text: content
+                                    color: theme.bubbleOtherText
+                                    font.pixelSize: 14
+                                    wrapMode: Text.Wrap
+                                }
                             }
                         }
                     }
@@ -120,7 +134,7 @@ Rectangle {
                             color: theme.bubbleMine
                             radius: 6
                             border.color: theme.bubbleMine
-                            implicitWidth: rightText.implicitWidth + 20
+                            implicitWidth: Math.min(messageList.width * 0.7, rightText.implicitWidth + 20)
                             implicitHeight: rightText.implicitHeight + 14
 
                             Text {
@@ -324,13 +338,14 @@ Rectangle {
     Connections {
         target: loginBackend
 
-        function onMessageReceived(conversationId, senderId, content, serverTimeMs, seq) {
+        function onMessageReceived(conversationId, senderId, senderDisplayName, content, serverTimeMs, seq) {
             if (conversationId !== root.conversationId)
                 return
             const mine = senderId === loginBackend.userId
             const sys = senderId === "0"
             messageModel.append({
                 sender: sys ? "system" : (mine ? "me" : "other"),
+                senderName: senderDisplayName,
                 content: content
             })
             messageList.positionViewAtEnd()
