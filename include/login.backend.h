@@ -608,9 +608,11 @@ signals:
     void registrationSucceeded(QString account);
 
     /// \brief 收到服务器推送的聊天消息时发出。
-    /// \param conversationId 会话 ID，目前为“世界”群的 ID。
-    /// \param senderId 发送者用户 ID。
+    /// \param conversationId 会话 ID。
+    /// \param senderId 发送者用户 ID（原始值，由协议决定）。
+    /// \param senderDisplayName 发送者展示名。
     /// \param content 消息文本内容。
+    /// \param msgType 消息类型（TEXT / SYSTEM 等）。
     /// \param serverTimeMs 服务器时间戳（毫秒）。
     /// \param seq 会话内消息序号。
     void messageReceived(
@@ -618,6 +620,7 @@ signals:
         QString senderId,
         QString senderDisplayName,
         QString content,
+        QString msgType,
         qint64 serverTimeMs,
         qint64 seq
     );
@@ -905,6 +908,7 @@ private:
         auto const sender_id = obj.value("senderId").toString();
         auto const sender_name = obj.value("senderDisplayName").toString();
         auto const content = obj.value("content").toString();
+        auto const msg_type = obj.value("msgType").toString();
         auto const server_time_ms =
             static_cast<qint64>(obj.value("serverTimeMs").toDouble(0.0));
         auto const seq = static_cast<qint64>(obj.value("seq").toDouble(0.0));
@@ -926,6 +930,7 @@ private:
             sender_id,
             sender_name,
             content,
+            msg_type,
             server_time_ms,
             seq
         );
@@ -936,6 +941,7 @@ private:
             sender_id,
             sender_name,
             content,
+            msg_type,
             server_time_ms,
             seq
         );
@@ -957,6 +963,7 @@ private:
             auto const sender_id = message_obj.value("senderId").toString();
             auto const sender_name = message_obj.value("senderDisplayName").toString();
             auto const content = message_obj.value("content").toString();
+            auto const msg_type = message_obj.value("msgType").toString();
             auto const server_time_ms =
                 static_cast<qint64>(message_obj.value("serverTimeMs").toDouble(0.0));
             auto const seq =
@@ -967,6 +974,7 @@ private:
                 sender_id,
                 sender_name,
                 content,
+                msg_type,
                 server_time_ms,
                 seq
             );
@@ -1431,6 +1439,7 @@ private:
     /// \param senderId 发送者 ID。
     /// \param senderDisplayName 发送者显示昵称。
     /// \param content 消息文本。
+    /// \param msgType 消息类型（TEXT / SYSTEM 等）。
     /// \param serverTimeMs 服务器时间戳（毫秒）。
     /// \param seq 会话内序号。
     auto cache_append_message(
@@ -1438,6 +1447,7 @@ private:
         QString const& senderId,
         QString const& senderDisplayName,
         QString const& content,
+        QString const& msgType,
         qint64 serverTimeMs,
         qint64 seq
     ) -> void
@@ -1468,6 +1478,7 @@ private:
         message.insert(QStringLiteral("senderId"), senderId);
         message.insert(QStringLiteral("senderDisplayName"), senderDisplayName);
         message.insert(QStringLiteral("content"), content);
+        message.insert(QStringLiteral("msgType"), msgType);
         message.insert(QStringLiteral("serverTimeMs"), serverTimeMs);
         message.insert(QStringLiteral("seq"), seq);
 
@@ -1529,6 +1540,7 @@ private:
             auto const sender_id = m.value(QStringLiteral("senderId")).toString();
             auto const sender_name = m.value(QStringLiteral("senderDisplayName")).toString();
             auto const content = m.value(QStringLiteral("content")).toString();
+            auto const msg_type = m.value(QStringLiteral("msgType")).toString();
             auto const server_time_ms =
                 static_cast<qint64>(m.value(QStringLiteral("serverTimeMs")).toDouble(0.0));
             auto const seq =
@@ -1539,6 +1551,7 @@ private:
                 sender_id,
                 sender_name,
                 content,
+                msg_type,
                 server_time_ms,
                 seq
             );

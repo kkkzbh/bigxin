@@ -135,11 +135,11 @@ Rectangle {
             Layout.fillHeight: true
             spacing: 0
 
-        // 中间消息区域
-        Rectangle {
-            Layout.fillWidth: true
-            Layout.fillHeight: true
-            color: theme.chatAreaBackground
+            // 中间消息区域
+            Rectangle {
+                Layout.fillWidth: true
+                Layout.fillHeight: true
+                color: theme.chatAreaBackground
 
                 ListView {
                     id: messageList
@@ -150,274 +150,288 @@ Rectangle {
                     clip: true
                     Component.onCompleted: positionViewAtEnd()
 
-                delegate: Item {
-                    width: ListView.view.width
-                    height: Math.max(Math.max(leftRow.implicitHeight, rightRow.implicitHeight), systemRow.implicitHeight)
+                    delegate: Item {
+                        id: messageDelegate
+                        width: ListView.view.width
 
-                    property bool isMine: sender === "me"
-                    property bool isSystem: sender === "system"
-                    property bool showName: root.conversationType === "GROUP" && !isMine && !isSystem
+                        property bool isMine: sender === "me"
+                        property bool isSystem: sender === "system"
+                        property bool isOther: !isMine && !isSystem
+                        property bool showName: root.conversationType === "GROUP" && isOther
 
-                    // 其他人消息：头像在左，气泡在右，整体靠左
-                    Row {
-                        id: leftRow
-                        x: 0
-                        y: (parent.height - implicitHeight) / 2
-                        spacing: 6
-                        visible: !isMine && !isSystem
+                        readonly property real contentHeight: Math.max(
+                            isSystem ? systemBubble.implicitHeight : 0,
+                            isOther ? leftRow.implicitHeight : 0,
+                            isMine ? rightRow.implicitHeight : 0
+                        )
 
-                        Rectangle {
-                            width: 36
-                            height: 36
-                            radius: 6
-                            color: "#4fbf73"
+                        height: contentHeight
 
-                            MouseArea {
-                                id: avatarMouseArea
-                                anchors.fill: parent
-                                acceptedButtons: Qt.RightButton
-                                onClicked: function(mouse) {
-                                    if (mouse.button !== Qt.RightButton)
-                                        return
-                                    if (root.conversationType !== "GROUP")
-                                        return
-                                    if (root.myRole !== "OWNER")
-                                        return
-                                    root.contextTargetUserId = senderId
-                                    root.contextTargetName = senderName
-                                    avatarMenu.close()
-                                    avatarMenu.isMuted = root.isUserMuted(root.contextTargetUserId)
-                                    avatarMenu.popup(parent, mouse.x, mouse.y)
+                        // 其他人消息：头像在左，气泡在右，整体靠左
+                        Row {
+                            id: leftRow
+                            visible: isOther
+                            anchors.top: parent.top
+                            anchors.left: parent.left
+                            spacing: 6
+
+                            Rectangle {
+                                width: 36
+                                height: 36
+                                radius: 6
+                                color: "#4fbf73"
+
+                                MouseArea {
+                                    id: avatarMouseArea
+                                    anchors.fill: parent
+                                    acceptedButtons: Qt.RightButton
+                                    onClicked: function(mouse) {
+                                        if (mouse.button !== Qt.RightButton)
+                                            return
+                                        if (root.conversationType !== "GROUP")
+                                            return
+                                        if (root.myRole !== "OWNER")
+                                            return
+                                        root.contextTargetUserId = senderId
+                                        root.contextTargetName = senderName
+                                        avatarMenu.close()
+                                        avatarMenu.isMuted = root.isUserMuted(root.contextTargetUserId)
+                                        avatarMenu.popup(parent, mouse.x, mouse.y)
+                                    }
+                                }
+
+                                Text {
+                                    anchors.centerIn: parent
+                                    text: "TA"
+                                    color: "#ffffff"
+                                    font.pixelSize: 14
+                                    font.bold: true
                                 }
                             }
 
-                            Text {
-                                anchors.centerIn: parent
-                                text: "TA"
-                                color: "#ffffff"
-                                font.pixelSize: 14
-                                font.bold: true
+                            Column {
+                                spacing: 4
+                                anchors.verticalCenter: parent.verticalCenter
+
+                                Text {
+                                    visible: showName
+                                    text: senderName
+                                    color: theme.textSecondary
+                                    font.pixelSize: 12
+                                    font.bold: false
+                                }
+
+                                Rectangle {
+                                    id: leftBubble
+                                    color: theme.bubbleOther
+                                    radius: 6
+                                    border.color: theme.bubbleOther
+                                    implicitWidth: Math.min(messageList.width * 0.7, leftText.implicitWidth + 20)
+                                    implicitHeight: leftText.implicitHeight + 14
+
+                                    Text {
+                                        id: leftText
+                                        anchors.margins: 8
+                                        anchors.fill: parent
+                                        text: content
+                                        color: theme.bubbleOtherText
+                                        font.pixelSize: 14
+                                        wrapMode: Text.Wrap
+                                    }
+                                }
                             }
                         }
 
-                        Column {
-                            spacing: 4
-                            anchors.verticalCenter: parent.verticalCenter
-
-                            Text {
-                                visible: showName
-                                text: senderName
-                                color: theme.textSecondary
-                                font.pixelSize: 12
-                                font.bold: false
-                            }
+                        // 自己的消息：气泡在左，头像在右，整体靠右
+                        Row {
+                            id: rightRow
+                            visible: isMine
+                            anchors.top: parent.top
+                            anchors.right: parent.right
+                            spacing: 6
 
                             Rectangle {
-                                id: leftBubble
-                                color: theme.bubbleOther
+                                id: rightBubble
+                                color: theme.bubbleMine
                                 radius: 6
-                                border.color: theme.bubbleOther
-                                implicitWidth: Math.min(messageList.width * 0.7, leftText.implicitWidth + 20)
-                                implicitHeight: leftText.implicitHeight + 14
+                                border.color: theme.bubbleMine
+                                implicitWidth: Math.min(messageList.width * 0.7, rightText.implicitWidth + 20)
+                                implicitHeight: rightText.implicitHeight + 14
 
                                 Text {
-                                    id: leftText
+                                    id: rightText
                                     anchors.margins: 8
                                     anchors.fill: parent
                                     text: content
-                                    color: theme.bubbleOtherText
+                                    color: theme.bubbleMineText
                                     font.pixelSize: 14
                                     wrapMode: Text.Wrap
                                 }
                             }
-                        }
-                    }
 
-                    // 自己的消息：气泡在左，头像在右，整体靠右
-                    Row {
-                        id: rightRow
-                        x: parent.width - implicitWidth
-                        y: (parent.height - implicitHeight) / 2
-                        spacing: 6
-                        visible: isMine
+                            Rectangle {
+                                width: 36
+                                height: 36
+                                radius: 6
+                                color: "#ffffff"
 
-                        Rectangle {
-                            id: rightBubble
-                            color: theme.bubbleMine
-                            radius: 6
-                            border.color: theme.bubbleMine
-                            implicitWidth: Math.min(messageList.width * 0.7, rightText.implicitWidth + 20)
-                            implicitHeight: rightText.implicitHeight + 14
-
-                            Text {
-                                id: rightText
-                                anchors.margins: 8
-                                anchors.fill: parent
-                                text: content
-                                color: theme.bubbleMineText
-                                font.pixelSize: 14
-                                wrapMode: Text.Wrap
+                                Text {
+                                    anchors.centerIn: parent
+                                    text: "我"
+                                    color: "#222222"
+                                    font.pixelSize: 14
+                                    font.bold: true
+                                }
                             }
                         }
 
+                        // 系统消息：居中显示
+                        Item {
+                            id: systemRow
+                            visible: isSystem && content && content.trim().length > 0
+                            anchors.top: parent.top
+                            anchors.horizontalCenter: parent.horizontalCenter
+                            width: systemBubble.implicitWidth
+                            height: systemBubble.implicitHeight
+
+                            Rectangle {
+                                id: systemBubble
+                                color: theme.cardBackground
+                                radius: 6
+                                border.color: theme.cardBorder
+                                implicitWidth: Math.min(messageList.width * 0.8, systemText.implicitWidth + 20)
+                                implicitHeight: systemText.implicitHeight + 12
+
+                                Text {
+                                    id: systemText
+                                    anchors.fill: parent
+                                    anchors.margins: 8
+                                    text: content
+                                    color: theme.textPrimary
+                                    font.pixelSize: 12
+                                    font.bold: true
+                                    wrapMode: Text.Wrap
+                                    horizontalAlignment: Text.AlignHCenter
+                                    width: parent.width - 16
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // 底部输入区域
+            Rectangle {
+                Layout.fillWidth: true
+                Layout.preferredHeight: 210
+                color: theme.chatAreaBackground
+                border.color: theme.separatorHorizontal
+                border.width: 1
+
+                ColumnLayout {
+                    anchors.fill: parent
+                    anchors.margins: 10
+                    spacing: 6
+
+                    RowLayout {
+                        Layout.fillWidth: true
+                        spacing: 10
+
+                        ToolButton {
+                            text: "😊"
+                            background: null
+                        }
+                        ToolButton {
+                            text: "📎"
+                            background: null
+                        }
+                        ToolButton {
+                            text: "💻"
+                            background: null
+                        }
+                    }
+
+                    TextArea {
+                        id: inputArea
+                        Layout.fillWidth: true
+                        Layout.fillHeight: true
+                        enabled: !root.isMuted
+                        wrapMode: TextEdit.Wrap
+                        color: theme.textPrimary
+                        font.pixelSize: 20
+                        placeholderText: root.isMuted ? qsTr("已被禁言") : ""
+                        background: Rectangle {
+                            radius: 4
+                            color: theme.chatAreaBackground
+                        }
+
+                        // 禁言提示覆盖层
                         Rectangle {
-                            width: 36
-                            height: 36
-                            radius: 6
-                            color: "#ffffff"
+                            anchors.fill: parent
+                            visible: root.isMuted
+                            color: "transparent"
 
                             Text {
                                 anchors.centerIn: parent
-                                text: "我"
-                                color: "#222222"
-                                font.pixelSize: 14
-                            font.bold: true
-                        }
-                    }
-
-                    // 系统消息：居中显示
-                    Row {
-                        id: systemRow
-                        x: (parent.width - implicitWidth) / 2
-                        y: (parent.height - implicitHeight) / 2
-                        visible: isSystem
-
-                        Rectangle {
-                            color: theme.bubbleOther
-                            radius: 6
-                            border.color: theme.bubbleOther
-                            implicitWidth: systemText.implicitWidth + 20
-                            implicitHeight: systemText.implicitHeight + 12
-
-                            Text {
-                                id: systemText
-                                anchors.fill: parent
-                                anchors.margins: 8
-                                text: content
+                                text: qsTr("已被禁言")
                                 color: theme.textSecondary
-                                font.pixelSize: 12
-                                wrapMode: Text.Wrap
-                                horizontalAlignment: Text.AlignHCenter
+                                font.pixelSize: 14
                             }
                         }
-                    }
-                }
-            }
-        }
-        }
 
-        // 底部输入区域
-        Rectangle {
-            Layout.fillWidth: true
-            Layout.preferredHeight: 210
-            color: theme.chatAreaBackground
-            border.color: theme.separatorHorizontal
-            border.width: 1
-
-            ColumnLayout {
-                anchors.fill: parent
-                anchors.margins: 10
-                spacing: 6
-
-                RowLayout {
-                    Layout.fillWidth: true
-                    spacing: 10
-
-                    ToolButton {
-                        text: "😊"
-                        background: null
-                    }
-                    ToolButton {
-                        text: "📎"
-                        background: null
-                    }
-                    ToolButton {
-                        text: "💻"
-                        background: null
-                    }
-                }
-
-                TextArea {
-                    id: inputArea
-                    Layout.fillWidth: true
-                    Layout.fillHeight: true
-                    enabled: !root.isMuted
-                    wrapMode: TextEdit.Wrap
-                    color: theme.textPrimary
-                    font.pixelSize: 20
-                    placeholderText: root.isMuted ? qsTr("已被禁言") : ""
-                    background: Rectangle {
-                        radius: 4
-                        color: theme.chatAreaBackground
-                    }
-
-                    // 禁言提示覆盖层
-                    Rectangle {
-                        anchors.fill: parent
-                        visible: root.isMuted
-                        color: "transparent"
-
-                        Text {
-                            anchors.centerIn: parent
-                            text: qsTr("已被禁言")
-                            color: theme.textSecondary
-                            font.pixelSize: 14
-                        }
-                    }
-
-                    Keys.onReturnPressed: function(event) {
-                        if (event.modifiers & Qt.ShiftModifier) {
-                            inputArea.text = inputArea.text + "\n"
-                            inputArea.cursorPosition = inputArea.text.length
-                        } else {
-                            if (inputArea.text.length > 0) {
-                                loginBackend.sendMessage(root.conversationId, inputArea.text)
-                                inputArea.text = ""
+                        Keys.onReturnPressed: function(event) {
+                            if (event.modifiers & Qt.ShiftModifier) {
+                                inputArea.text = inputArea.text + "\n"
+                                inputArea.cursorPosition = inputArea.text.length
+                            } else {
+                                if (inputArea.text.length > 0) {
+                                    loginBackend.sendMessage(root.conversationId, inputArea.text)
+                                    inputArea.text = ""
+                                }
                             }
+                            event.accepted = true
                         }
-                        event.accepted = true
-                    }
 
-                    Keys.onEnterPressed: function(event) {
-                        if (event.modifiers & Qt.ShiftModifier) {
-                            inputArea.text = inputArea.text + "\n"
-                            inputArea.cursorPosition = inputArea.text.length
-                        } else {
-                            if (inputArea.text.length > 0) {
-                                loginBackend.sendMessage(root.conversationId, inputArea.text)
-                                inputArea.text = ""
+                        Keys.onEnterPressed: function(event) {
+                            if (event.modifiers & Qt.ShiftModifier) {
+                                inputArea.text = inputArea.text + "\n"
+                                inputArea.cursorPosition = inputArea.text.length
+                            } else {
+                                if (inputArea.text.length > 0) {
+                                    loginBackend.sendMessage(root.conversationId, inputArea.text)
+                                    inputArea.text = ""
+                                }
                             }
+                            event.accepted = true
                         }
-                        event.accepted = true
                     }
-                }
 
-                RowLayout {
-                    Layout.fillWidth: true
-
-                    Item {
+                    RowLayout {
                         Layout.fillWidth: true
-                    }
 
-                    Button {
-                        text: qsTr("发送(S)")
-                        implicitWidth: 96
-                        implicitHeight: 32
-                        enabled: !root.isMuted && inputArea.text.length > 0
-                        background: Rectangle {
-                            radius: 4
-                            color: enabled ? theme.sendButtonEnabled
-                                            : theme.sendButtonDisabled
+                        Item {
+                            Layout.fillWidth: true
                         }
-                        onClicked: {
-                            loginBackend.sendMessage(root.conversationId, inputArea.text)
-                            inputArea.text = ""
+
+                        Button {
+                            text: qsTr("发送(S)")
+                            implicitWidth: 96
+                            implicitHeight: 32
+                            enabled: !root.isMuted && inputArea.text.length > 0
+                            background: Rectangle {
+                                radius: 4
+                                color: enabled ? theme.sendButtonEnabled
+                                                : theme.sendButtonDisabled
+                            }
+                            onClicked: {
+                                loginBackend.sendMessage(root.conversationId, inputArea.text)
+                                inputArea.text = ""
+                            }
                         }
                     }
                 }
             }
         }
-    }
 
         // Tab 1: Contact Detail
         ContactDetailView {
@@ -471,16 +485,37 @@ Rectangle {
     Connections {
         target: loginBackend
 
-        function onMessageReceived(conversationId, senderId, senderDisplayName, content, serverTimeMs, seq) {
+        function onMessageReceived(conversationId,
+                                   senderId,
+                                   senderDisplayName,
+                                   content,
+                                   msgType,
+                                   serverTimeMs,
+                                   seq) {
+            console.log("[ChatArea] onMessageReceived",
+                        "convId=", conversationId,
+                        "senderId=", senderId,
+                        "msgType=", msgType,
+                        "seq=", seq,
+                        "contentRaw=", content)
             if (conversationId !== root.conversationId)
                 return
             const mine = senderId === loginBackend.userId
-            const sys = senderId === "0"
+            const type = (msgType || "").toString()
+            const sys = type === "SYSTEM"
+            const trimmed = (content || "").trim()
+            console.log("[ChatArea] parsedMessage",
+                        "isMine=", mine,
+                        "isSystem=", sys,
+                        "contentTrimmed=", trimmed)
+            // 防御空字符串系统消息：不展示、不占位
+            if (sys && trimmed.length === 0)
+                return
             messageModel.append({
                 sender: sys ? "system" : (mine ? "me" : "other"),
                 senderName: senderDisplayName,
                 senderId: senderId,
-                content: content
+                content: trimmed
             })
             messageList.positionViewAtEnd()
         }

@@ -1605,7 +1605,7 @@ inline auto server::Session::handle_mute_member_req(std::string const& payload)
 
         auto const target_name = target_member->display_name;
         auto const sys_content =
-            "系统消息：已将 " + target_name + " 禁言至 " + std::string{ buf };
+            "已将 " + target_name + " 禁言至 " + std::string{ buf };
 
         auto const stored =
             database::append_text_message(conv_id, user_id_, sys_content, "SYSTEM");
@@ -1673,7 +1673,7 @@ inline auto server::Session::handle_unmute_member_req(std::string const& payload
 
         auto const target_name = target_member->display_name;
         auto const sys_content =
-            "系统消息：已解除 " + target_name + " 的禁言";
+            "已解除 " + target_name + " 的禁言";
         auto const stored =
             database::append_text_message(conv_id, user_id_, sys_content, "SYSTEM");
 

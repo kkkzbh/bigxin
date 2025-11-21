@@ -45,36 +45,11 @@
     </configurations>
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="2dc32154-be48-467c-9695-c2dd10df8b29" name="更改" comment="v0.16 群聊消息显示昵称">
-      <change afterPath="$PROJECT_DIR$/.idea/dataSources/01a9e29b-e2a6-4961-afa0-6a9bca3bd300/storage_v2/_src_/database/chatdb.1inXrg/schema/information_schema.FNRwLQ.meta" afterDir="false" />
+    <list default="true" id="2dc32154-be48-467c-9695-c2dd10df8b29" name="更改" comment="v0.20 禁言解禁，性能重构">
       <change afterPath="$PROJECT_DIR$/AGENTS.md" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/client/qml/resource/input/openai.svg" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/client/qml/resource/sidebar/chat-3-fill.svg" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/client/qml/resource/sidebar/chat-3-line.svg" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/client/qml/resource/sidebar/remix-fill.svg" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/client/qml/resource/sidebar/settings-line.svg" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/client/qml/resource/sidebar/terminal-box-fill.svg" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/client/qml/resource/sidebar/terminal-box-line.svg" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/client/qml/resource/sidebar/user-fill.svg" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/client/qml/resource/sidebar/user-line.svg" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/dataSources/01a9e29b-e2a6-4961-afa0-6a9bca3bd300.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/dataSources/01a9e29b-e2a6-4961-afa0-6a9bca3bd300.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/dataSources/01a9e29b-e2a6-4961-afa0-6a9bca3bd300/storage_v2/_src_/database/chatdb.1inXrg/schema/public.abK9xQ.meta" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/dataSources/01a9e29b-e2a6-4961-afa0-6a9bca3bd300/storage_v2/_src_/database/chatdb.1inXrg/schema/public.abK9xQ.meta" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/sqldialects.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/sqldialects.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/build/CMakeFiles/cmake.check_cache" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/doc/protocol.md" beforeDir="false" afterPath="$PROJECT_DIR$/doc/protocol.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/img/b2名字带空格.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/include/database.h" beforeDir="false" afterPath="$PROJECT_DIR$/include/database.h" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/include/login.backend.h" beforeDir="false" afterPath="$PROJECT_DIR$/include/login.backend.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/include/server.core.h" beforeDir="false" afterPath="$PROJECT_DIR$/include/server.core.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/CMakeLists.txt" beforeDir="false" afterPath="$PROJECT_DIR$/src/CMakeLists.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/client/qml/Login/RegisterWindow.qml" beforeDir="false" afterPath="$PROJECT_DIR$/src/client/qml/Login/RegisterWindow.qml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/client/qml/Main/ChatArea/ChatArea.qml" beforeDir="false" afterPath="$PROJECT_DIR$/src/client/qml/Main/ChatArea/ChatArea.qml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/client/qml/Main/Dialogs/AddFriendDialog.qml" beforeDir="false" afterPath="$PROJECT_DIR$/src/client/qml/Main/Dialogs/AddFriendDialog.qml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/client/qml/Main/Dialogs/StartGroupDialog.qml" beforeDir="false" afterPath="$PROJECT_DIR$/src/client/qml/Main/Dialogs/StartGroupDialog.qml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/client/qml/Main/Main.qml" beforeDir="false" afterPath="$PROJECT_DIR$/src/client/qml/Main/Main.qml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/database/conversation_members.sql" beforeDir="false" afterPath="$PROJECT_DIR$/src/database/conversation_members.sql" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/server/server.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/server/server.cpp" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -192,7 +167,7 @@
       <window_info id="Commit_Guest" show_stripe_button="false" />
       <window_info id="Pull Requests" />
       <window_info id="Learn" show_stripe_button="false" />
-      <window_info active="true" content_ui="combo" id="Project" order="0" visible="true" weight="0.22622585" />
+      <window_info active="true" content_ui="combo" id="Project" order="0" visible="true" weight="0.18567073" />
       <window_info id="Commit" order="1" weight="0.22622585" />
       <window_info id="Structure" order="2" side_tool="true" weight="0.25" />
       <window_info anchor="bottom" id="Database Changes" />
@@ -202,19 +177,19 @@
       <window_info anchor="bottom" id="File Transfer" />
       <window_info anchor="bottom" id="Serial Monitor" />
       <window_info anchor="bottom" id="clangd" />
-      <window_info anchor="bottom" id="Version Control" order="1" weight="0.052440293" />
+      <window_info anchor="bottom" id="Version Control" order="1" weight="0.46780893" />
       <window_info anchor="bottom" id="Problems View" order="2" />
       <window_info anchor="bottom" id="Problems" order="3" />
       <window_info anchor="bottom" id="Debug" order="5" weight="0.47906697" />
       <window_info anchor="bottom" id="Services" order="6" weight="0.40134996" />
       <window_info anchor="bottom" id="Find" order="7" weight="0.33006912" />
       <window_info anchor="bottom" id="CMake" order="8" weight="0.2829699" />
-      <window_info active="true" anchor="bottom" id="Run" order="9" visible="true" weight="0.2829699" />
+      <window_info active="true" anchor="bottom" id="Run" order="9" visible="true" weight="0.1926272" />
       <window_info anchor="bottom" id="PythonProcessOutput" order="10" show_stripe_button="false" weight="0.3762322" />
       <window_info anchor="bottom" id="Vcpkg" order="11" weight="0.3411215" />
-      <window_info anchor="bottom" id="Terminal" order="12" weight="0.40134996" />
+      <window_info anchor="bottom" id="Terminal" order="12" weight="0.34319833" />
       <window_info anchor="bottom" id="TODO" order="13" show_stripe_button="false" weight="0.3762322" />
-      <window_info anchor="bottom" id="Messages" order="14" weight="0.2829699" />
+      <window_info anchor="bottom" id="Messages" order="14" weight="0.29543096" />
       <window_info anchor="right" id="make" side_tool="true" />
       <window_info anchor="right" id="Coverage" side_tool="true" />
       <window_info anchor="right" id="Python Console" />
@@ -223,7 +198,7 @@
       <window_info anchor="right" id="Meson" />
       <window_info anchor="right" id="Notifications" order="0" weight="0.25692308" />
       <window_info anchor="right" id="AIAssistant" order="1" weight="0.25" />
-      <window_info anchor="right" id="Database" order="2" weight="0.25692308" />
+      <window_info anchor="right" id="Database" order="2" weight="0.3072065" />
       <window_info anchor="right" id="Gradle" order="3" weight="0.25" />
       <window_info anchor="right" id="Maven" order="4" weight="0.25" />
       <window_info anchor="right" id="github.copilotToolWindow" order="5" weight="0.34985352" />
@@ -455,7 +430,15 @@
       <option name="project" value="LOCAL" />
       <updated>1763658930160</updated>
     </task>
-    <option name="localTasksCounter" value="10" />
+    <task id="LOCAL-00010" summary="v0.20 禁言解禁，性能重构">
+      <option name="closed" value="true" />
+      <created>1763718822371</created>
+      <option name="number" value="00010" />
+      <option name="presentableId" value="LOCAL-00010" />
+      <option name="project" value="LOCAL" />
+      <updated>1763718822371</updated>
+    </task>
+    <option name="localTasksCounter" value="11" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -487,7 +470,8 @@
     <MESSAGE value="v0.14 添加好友" />
     <MESSAGE value="v0.15 发起群聊" />
     <MESSAGE value="v0.16 群聊消息显示昵称" />
-    <option name="LAST_COMMIT_MESSAGE" value="v0.16 群聊消息显示昵称" />
+    <MESSAGE value="v0.20 禁言解禁，性能重构" />
+    <option name="LAST_COMMIT_MESSAGE" value="v0.20 禁言解禁，性能重构" />
   </component>
   <component name="XSLT-Support.FileAssociations.UIState">
     <expand />
