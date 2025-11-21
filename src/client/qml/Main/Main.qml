@@ -291,9 +291,15 @@ ApplicationWindow {
                                     }
 
                                     ToolButton {
-                                        text: "☰"
+                                        id: detailButton
                                         background: null
-                                        font.pixelSize: 16
+                                        icon.source: "qrc:/qt/qml/WeChatClient/client/qml/resource/ChatArea/list-unordered.svg"
+                                        icon.width: 20
+                                        icon.height: 20
+                                        display: AbstractButton.IconOnly
+                                        onClicked: {
+                                            chatArea.toggleDetailPanel()
+                                        }
                                     }
                                 }
                             }

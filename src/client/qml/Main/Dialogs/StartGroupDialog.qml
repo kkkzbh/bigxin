@@ -168,7 +168,7 @@ Window {
                             delegate: Rectangle {
                                 id: row
                                 width: ListView.view.width
-                                height: visible ? 60 : 0
+                                height: visible ? 68 : 0
                                 color: hovered
                                        ? theme.chatListItemHover
                                        : (root.isSelected(userId)
@@ -192,30 +192,12 @@ Window {
 
                                 RowLayout {
                                     anchors.fill: parent
-                                    anchors.margins: 12
-                                    spacing: 12
+                                    anchors.margins: 10
+                                    spacing: 10
 
-                                    // 圆形勾选框
+                                    // 头像（与会话列表保持一致尺寸）
                                     Rectangle {
-                                        width: 20
-                                        height: 20
-                                        radius: 10
-                                        border.width: 2
-                                        border.color: root.isSelected(userId) ? "#4fbf73" : theme.textSecondary
-                                        color: "transparent"
-
-                                        Rectangle {
-                                            visible: root.isSelected(userId)
-                                            anchors.centerIn: parent
-                                            width: 12
-                                            height: 12
-                                            radius: 6
-                                            color: "#4fbf73"
-                                        }
-                                    }
-
-                                    // 头像
-                                    Rectangle {
+                                        id: avatarRect
                                         width: 42
                                         height: 42
                                         radius: 6
@@ -239,12 +221,34 @@ Window {
                                             color: theme.textPrimary
                                             font.pixelSize: 14
                                             elide: Text.ElideRight
+                                            Layout.fillWidth: true
                                         }
                                         Label {
                                             text: wechatId
                                             color: theme.textMuted
                                             font.pixelSize: 12
                                             elide: Text.ElideRight
+                                            Layout.fillWidth: true
+                                        }
+                                    }
+
+                                    // 圆形勾选框移到右侧，避免拉大头像左侧间距
+                                    Rectangle {
+                                        width: 20
+                                        height: 20
+                                        radius: 10
+                                        border.width: 2
+                                        border.color: root.isSelected(userId) ? "#4fbf73" : theme.textSecondary
+                                        color: "transparent"
+                                        Layout.alignment: Qt.AlignVCenter
+
+                                        Rectangle {
+                                            visible: root.isSelected(userId)
+                                            anchors.centerIn: parent
+                                            width: 12
+                                            height: 12
+                                            radius: 6
+                                            color: "#4fbf73"
                                         }
                                     }
                                 }

@@ -60,6 +60,8 @@ set_source_files_properties(client/qml/Theme.qml
          client/qml/resource/sidebar/terminal-box-line.svg
          client/qml/resource/sidebar/user-fill.svg
          client/qml/resource/sidebar/user-line.svg
+         client/qml/resource/ChatArea/openai.svg
+         client/qml/resource/ChatArea/list-unordered.svg
          SOURCES
          ${CMAKE_SOURCE_DIR}/include/login.backend.h
 )

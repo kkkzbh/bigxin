@@ -100,26 +100,52 @@ Rectangle {
             // --- New Friends Group ---
             Item {
                 Layout.fillWidth: true
-                Layout.preferredHeight: 30
-                
-                RowLayout {
+                Layout.preferredHeight: 34
+
+                Rectangle {
+                    id: newFriendsHeaderBg
                     anchors.fill: parent
-                    anchors.leftMargin: 10
-                    spacing: 5
-                    Text {
-                        text: newFriendsList.visible ? "▼" : "▶"
-                        color: "#7d7d7d"
-                        font.pixelSize: 10
+                    color: headerMouseNewFriends.containsMouse
+                           ? theme.chatListItemHover
+                           : "transparent"
+
+                    RowLayout {
+                        anchors.fill: parent
+                        anchors.leftMargin: 16
+                        anchors.rightMargin: 12
+                        spacing: 8
+
+                        Label {
+                            text: newFriendsList.visible ? "▾" : "▸"
+                            color: theme.textSecondary
+                            font.pixelSize: 14
+                            Layout.alignment: Qt.AlignVCenter
+                        }
+
+                        Label {
+                            text: qsTr("新的朋友")
+                            color: theme.textSecondary
+                            font.pixelSize: 13
+                            Layout.alignment: Qt.AlignVCenter
+                        }
+
+                        Item { Layout.fillWidth: true }
+
+                        Label {
+                            visible: newFriendsModel.count > 0
+                            text: newFriendsModel.count
+                            color: theme.textSecondary
+                            font.pixelSize: 12
+                            Layout.alignment: Qt.AlignVCenter
+                        }
                     }
-                    Text {
-                        text: "新的朋友"
-                        color: "#7d7d7d"
-                        font.pixelSize: 12
+
+                    MouseArea {
+                        id: headerMouseNewFriends
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        onClicked: newFriendsList.visible = !newFriendsList.visible
                     }
-                }
-                MouseArea {
-                    anchors.fill: parent
-                    onClicked: newFriendsList.visible = !newFriendsList.visible
                 }
             }
 
@@ -136,26 +162,52 @@ Rectangle {
             // --- Groups ---
             Item {
                 Layout.fillWidth: true
-                Layout.preferredHeight: 30
+                Layout.preferredHeight: 34
 
-                RowLayout {
+                Rectangle {
+                    id: groupsHeaderBg
                     anchors.fill: parent
-                    anchors.leftMargin: 10
-                    spacing: 5
-                    Text {
-                        text: groupsList.visible ? "▼" : "▶"
-                        color: "#7d7d7d"
-                        font.pixelSize: 10
+                    color: headerMouseGroups.containsMouse
+                           ? theme.chatListItemHover
+                           : "transparent"
+
+                    RowLayout {
+                        anchors.fill: parent
+                        anchors.leftMargin: 16
+                        anchors.rightMargin: 12
+                        spacing: 8
+
+                        Label {
+                            text: groupsList.visible ? "▾" : "▸"
+                            color: theme.textSecondary
+                            font.pixelSize: 14
+                            Layout.alignment: Qt.AlignVCenter
+                        }
+
+                        Label {
+                            text: qsTr("群聊")
+                            color: theme.textSecondary
+                            font.pixelSize: 13
+                            Layout.alignment: Qt.AlignVCenter
+                        }
+
+                        Item { Layout.fillWidth: true }
+
+                        Label {
+                            visible: groupsModel.count > 0
+                            text: groupsModel.count
+                            color: theme.textSecondary
+                            font.pixelSize: 12
+                            Layout.alignment: Qt.AlignVCenter
+                        }
                     }
-                    Text {
-                        text: "群聊"
-                        color: "#7d7d7d"
-                        font.pixelSize: 12
+
+                    MouseArea {
+                        id: headerMouseGroups
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        onClicked: groupsList.visible = !groupsList.visible
                     }
-                }
-                MouseArea {
-                    anchors.fill: parent
-                    onClicked: groupsList.visible = !groupsList.visible
                 }
             }
 
@@ -172,26 +224,52 @@ Rectangle {
             // --- Contacts Group ---
             Item {
                 Layout.fillWidth: true
-                Layout.preferredHeight: 30
-                
-                RowLayout {
+                Layout.preferredHeight: 34
+
+                Rectangle {
+                    id: contactsHeaderBg
                     anchors.fill: parent
-                    anchors.leftMargin: 10
-                    spacing: 5
-                    Text {
-                        text: contactsList.visible ? "▼" : "▶"
-                        color: "#7d7d7d"
-                        font.pixelSize: 10
+                    color: headerMouseContacts.containsMouse
+                           ? theme.chatListItemHover
+                           : "transparent"
+
+                    RowLayout {
+                        anchors.fill: parent
+                        anchors.leftMargin: 16
+                        anchors.rightMargin: 12
+                        spacing: 8
+
+                        Label {
+                            text: contactsList.visible ? "▾" : "▸"
+                            color: theme.textSecondary
+                            font.pixelSize: 14
+                            Layout.alignment: Qt.AlignVCenter
+                        }
+
+                        Label {
+                            text: qsTr("联系人")
+                            color: theme.textSecondary
+                            font.pixelSize: 13
+                            Layout.alignment: Qt.AlignVCenter
+                        }
+
+                        Item { Layout.fillWidth: true }
+
+                        Label {
+                            visible: contactsModel.count > 0
+                            text: contactsModel.count
+                            color: theme.textSecondary
+                            font.pixelSize: 12
+                            Layout.alignment: Qt.AlignVCenter
+                        }
                     }
-                    Text {
-                        text: "联系人"
-                        color: "#7d7d7d"
-                        font.pixelSize: 12
+
+                    MouseArea {
+                        id: headerMouseContacts
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        onClicked: contactsList.visible = !contactsList.visible
                     }
-                }
-                MouseArea {
-                    anchors.fill: parent
-                    onClicked: contactsList.visible = !contactsList.visible
                 }
             }
 
@@ -213,10 +291,12 @@ Rectangle {
         Rectangle {
             id: delegateRoot
             width: ListView.view.width
-            height: 60
+            height: 68
             color: {
                 var isSelected = (root.currentContactId === model.wechatId);
-                return isSelected ? theme.chatListItemSelected : (hovered ? theme.chatListItemHover : "transparent");
+                return isSelected
+                        ? theme.chatListItemSelected
+                        : (hovered ? theme.chatListItemHover : theme.chatListItemNormal);
             }
 
             property bool hovered: false
@@ -244,16 +324,16 @@ Rectangle {
                 spacing: 10
 
                 Rectangle {
-                    width: 36
-                    height: 36
-                    radius: 4
+                    width: 42
+                    height: 42
+                    radius: 6
                     color: model.avatarColor
 
                     Text {
                         anchors.centerIn: parent
                         text: model.name.substring(0, 1)
                         color: "#ffffff"
-                        font.pixelSize: 14
+                        font.pixelSize: 18
                         font.bold: true
                     }
                 }
@@ -263,13 +343,15 @@ Rectangle {
                     spacing: 2
                     Label {
                         text: model.name
-                        color: "#ffffff"
+                        color: theme.textPrimary
                         font.pixelSize: 14
+                        elide: Text.ElideRight
+                        Layout.fillWidth: true
                     }
                     Label {
                         visible: model.type === "request"
                         text: model.msg || ""
-                        color: "#7d7d7d"
+                        color: theme.textSecondary
                         font.pixelSize: 12
                         elide: Text.ElideRight
                         Layout.fillWidth: true
