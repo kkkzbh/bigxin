@@ -149,6 +149,10 @@ namespace server
                         auto payload = handle_conv_members_req(frame.payload);
                         auto msg = protocol::make_line("CONV_MEMBERS_RESP", payload);
                         send_text(std::move(msg));
+                    } else if(frame.command == "LEAVE_CONV_REQ") {
+                        auto payload = handle_leave_conv_req(frame.payload);
+                        auto msg = protocol::make_line("LEAVE_CONV_RESP", payload);
+                        send_text(std::move(msg));
                     } else {
                         // 默认 echo，方便用 nc 观察未知命令。
                         auto payload = std::string{ "{\"command\":\"" + frame.command + "\"}" };
@@ -254,6 +258,10 @@ namespace server
 
         /// \brief 处理会话成员列表请求。
         auto handle_conv_members_req(std::string const& payload) -> std::string;
+
+        /// \brief 处理退群 / 解散群聊请求。
+        /// \param payload LEAVE_CONV_REQ 的 JSON 文本。
+        auto handle_leave_conv_req(std::string const& payload) -> std::string;
 
         /// \brief 构造带错误码的通用错误响应 JSON 串。
         auto make_error_payload(std::string const& code, std::string const& msg) const -> std::string
@@ -1686,6 +1694,146 @@ inline auto server::Session::handle_unmute_member_req(std::string const& payload
         resp["ok"] = true;
         resp["conversationId"] = std::to_string(conv_id);
         resp["targetUserId"] = std::to_string(target_id);
+        return resp.dump();
+    } catch(json::parse_error const&) {
+        return make_error_payload("INVALID_JSON", "请求 JSON 解析失败");
+    } catch(std::exception const& ex) {
+        return make_error_payload("SERVER_ERROR", ex.what());
+    }
+}
+
+inline auto server::Session::handle_leave_conv_req(std::string const& payload) -> std::string
+{
+    using json = nlohmann::json;
+
+    if(!authenticated_) {
+        return make_error_payload("NOT_AUTHENTICATED", "请先登录");
+    }
+
+    try {
+        auto j = payload.empty() ? json::object() : json::parse(payload);
+
+        if(!j.contains("conversationId")) {
+            return make_error_payload("INVALID_PARAM", "缺少 conversationId 字段");
+        }
+
+        auto const conv_str = j.at("conversationId").get<std::string>();
+        auto conv_id = i64{};
+        try {
+            conv_id = std::stoll(conv_str);
+        } catch(std::exception const&) {
+            return make_error_payload("INVALID_PARAM", "conversationId 非法");
+        }
+        if(conv_id <= 0) {
+            return make_error_payload("INVALID_PARAM", "conversationId 非法");
+        }
+
+        // 默认“世界”会话不允许退出 / 解散。
+        try {
+            auto const world_id = database::get_world_conversation_id();
+            if(conv_id == world_id) {
+                return make_error_payload("FORBIDDEN", "无法退出默认会话");
+            }
+        } catch(std::exception const&) {
+            // 若世界会话缺失，忽略该保护。
+        }
+
+        // 校验会话存在且为群聊。
+        std::string conv_type;
+        {
+            auto conn = database::make_connection();
+            pqxx::work tx{ conn };
+
+            auto const query =
+                "SELECT type FROM conversations WHERE id = " + tx.quote(conv_id) + " LIMIT 1";
+
+            auto rows = tx.exec(query);
+            if(rows.empty()) {
+                return make_error_payload("NOT_FOUND", "会话不存在");
+            }
+
+            conv_type = rows[0][0].as<std::string>();
+            tx.commit();
+        }
+
+        if(conv_type != "GROUP") {
+            return make_error_payload("INVALID_PARAM", "仅支持群聊会话");
+        }
+
+        auto const self_member = database::get_conversation_member(conv_id, user_id_);
+        if(!self_member.has_value()) {
+            return make_error_payload("FORBIDDEN", "你不是该会话成员");
+        }
+
+        auto members = database::load_conversation_members(conv_id);
+        auto const member_count = static_cast<i64>(members.size());
+
+        auto const is_owner = (self_member->role == "OWNER");
+        auto const is_dissolve = is_owner || member_count <= 2;
+
+        // 规范化昵称用于系统消息。
+        auto const leaver_name = Session::normalize_whitespace(self_member->display_name);
+
+        if(!is_dissolve) {
+            // 普通成员退出群聊，群继续存在。
+            auto const sys_content = leaver_name + " 退出了群聊";
+            auto const stored =
+                database::append_text_message(conv_id, user_id_, sys_content, "SYSTEM");
+
+            if(server_ != nullptr) {
+                server_->broadcast_system_message(conv_id, stored, sys_content);
+            }
+
+            database::remove_conversation_member(conv_id, user_id_);
+
+            if(server_ != nullptr) {
+                // 退出者的会话列表需要刷新；群内其他成员刷新成员列表。
+                server_->send_conv_list_to(user_id_);
+                server_->send_conv_members(conv_id);
+            }
+
+            json resp;
+            resp["ok"] = true;
+            resp["conversationId"] = std::to_string(conv_id);
+            resp["isDissolved"] = false;
+            resp["memberCountBefore"] = member_count;
+            return resp.dump();
+        }
+
+        // 解散群聊：群主主动操作，或成员数不超过 2 时的任意成员操作。
+        std::vector<i64> member_ids;
+        member_ids.reserve(members.size());
+        for(auto const& m : members) {
+            member_ids.push_back(m.user_id);
+        }
+
+        std::string sys_content;
+        if(is_owner) {
+            sys_content = leaver_name + " 解散了群聊";
+        } else {
+            sys_content = leaver_name + " 退出群聊，群聊已解散";
+        }
+
+        auto const stored =
+            database::append_text_message(conv_id, user_id_, sys_content, "SYSTEM");
+
+        if(server_ != nullptr) {
+            server_->broadcast_system_message(conv_id, stored, sys_content);
+        }
+
+        database::dissolve_conversation(conv_id);
+
+        if(server_ != nullptr) {
+            for(auto const uid : member_ids) {
+                server_->send_conv_list_to(uid);
+            }
+        }
+
+        json resp;
+        resp["ok"] = true;
+        resp["conversationId"] = std::to_string(conv_id);
+        resp["isDissolved"] = true;
+        resp["memberCountBefore"] = member_count;
         return resp.dump();
     } catch(json::parse_error const&) {
         return make_error_payload("INVALID_JSON", "请求 JSON 解析失败");

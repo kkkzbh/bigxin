@@ -246,6 +246,34 @@ public:
         socket_.write(line);
     }
 
+    /// \brief 请求退出 / 解散当前群聊会话。
+    /// \param conversationId 会话 ID。
+    Q_INVOKABLE void leaveConversation(QString const& conversationId)
+    {
+        if(conversationId.isEmpty()) {
+            return;
+        }
+        if(socket_.state() != QAbstractSocket::ConnectedState) {
+            setErrorMessage(QStringLiteral("与服务器的连接已断开"));
+            return;
+        }
+
+        QJsonObject obj;
+        obj.insert(QStringLiteral("conversationId"), conversationId);
+
+        QJsonDocument doc{ obj };
+        auto payload = doc.toJson(QJsonDocument::Compact);
+
+        QByteArray line;
+        line.reserve(14 + 1 + payload.size() + 1);
+        line.append("LEAVE_CONV_REQ");
+        line.append(':');
+        line.append(payload);
+        line.append('\n');
+
+        socket_.write(line);
+    }
+
     /// \brief 请求指定会话的成员列表（含角色与禁言状态）。
     Q_INVOKABLE void requestConversationMembers(QString const& conversationId)
     {
@@ -821,6 +849,8 @@ private:
             handleMuteMemberResponse(obj);
         } else if(command == "UNMUTE_MEMBER_RESP") {
             handleUnmuteMemberResponse(obj);
+        } else if(command == "LEAVE_CONV_RESP") {
+            handleLeaveConversationResponse(obj);
         } else if(command == "ERROR") {
             handleErrorResponse(obj);
         }
@@ -1087,6 +1117,26 @@ private:
         }
 
         emit conversationMembersReady(conv_id, list);
+    }
+
+    /// \brief 处理退群 / 解散群聊响应。
+    auto handleLeaveConversationResponse(QJsonObject const& obj) -> void
+    {
+        auto const ok = obj.value(QStringLiteral("ok")).toBool(false);
+        if(!ok) {
+            auto const msg = obj.value(QStringLiteral("errorMsg")).toString();
+            if(!msg.isEmpty()) {
+                setErrorMessage(msg);
+            }
+            return;
+        }
+
+        auto const conv_id = obj.value(QStringLiteral("conversationId")).toString();
+        auto const dissolved = obj.value(QStringLiteral("isDissolved")).toBool(false);
+        Q_UNUSED(conv_id);
+        Q_UNUSED(dissolved);
+        // 会话列表刷新由服务端主动推送 CONV_LIST_RESP 完成，这里无需额外处理。
+        // 错误信息已通过 errorMessage 属性反馈给界面。
     }
 
     /// \brief 处理禁言响应。

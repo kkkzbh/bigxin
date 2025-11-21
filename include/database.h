@@ -1251,4 +1251,45 @@ namespace database
         tx.commit();
         return members;
     }
+
+    /// \brief 移除指定会话中的一名成员（用于主动退群等场景）。
+    auto inline remove_conversation_member(i64 conversation_id, i64 user_id) -> void
+    {
+        auto conn = make_connection();
+        pqxx::work tx{ conn };
+
+        auto const query =
+            "DELETE FROM conversation_members "
+            "WHERE conversation_id = " + tx.quote(conversation_id) + " "
+            "AND user_id = " + tx.quote(user_id);
+
+        tx.exec(query);
+        tx.commit();
+    }
+
+    /// \brief 解散会话：删除所有消息与成员关系，并删除会话本身。
+    /// \details 当前用于群聊解散逻辑，调用者负责业务校验。
+    auto inline dissolve_conversation(i64 conversation_id) -> void
+    {
+        if(conversation_id <= 0) {
+            return;
+        }
+
+        auto conn = make_connection();
+        pqxx::work tx{ conn };
+
+        auto const delete_messages =
+            "DELETE FROM messages WHERE conversation_id = " + tx.quote(conversation_id);
+        tx.exec(delete_messages);
+
+        auto const delete_members =
+            "DELETE FROM conversation_members WHERE conversation_id = " + tx.quote(conversation_id);
+        tx.exec(delete_members);
+
+        auto const delete_conv =
+            "DELETE FROM conversations WHERE id = " + tx.quote(conversation_id);
+        tx.exec(delete_conv);
+
+        tx.commit();
+    }
 } // namespace database

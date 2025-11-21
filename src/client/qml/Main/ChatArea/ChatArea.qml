@@ -730,7 +730,7 @@ Rectangle {
                     Layout.bottomMargin: 24
                     implicitWidth: 120
                     implicitHeight: 32
-                    text: qsTr("退出群聊")
+                    text: root.myRole === "OWNER" ? qsTr("解散群聊") : qsTr("退出群聊")
                     background: Rectangle {
                         color: "transparent"
                         radius: 4
@@ -745,8 +745,9 @@ Rectangle {
                         verticalAlignment: Text.AlignVCenter
                     }
                     onClicked: {
-                        console.log("退出群聊 clicked for", root.conversationId)
-                        // TODO: 对接后端退出群聊协议
+                        if (!root.conversationId || root.conversationId === "")
+                            return
+                        loginBackend.leaveConversation(root.conversationId)
                     }
                 }
             }
