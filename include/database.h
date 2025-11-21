@@ -8,6 +8,7 @@
 #include <stdexcept>
 #include <string>
 #include <vector>
+#include <optional>
 
 #include <utility.h>
 
@@ -155,6 +156,19 @@ namespace database
         i64 last_server_time_ms{};
     };
 
+    /// \brief 会话成员信息。
+    struct MemberInfo
+    {
+        /// \brief 成员用户 ID。
+        i64 user_id{};
+        /// \brief 显示昵称。
+        std::string display_name{};
+        /// \brief 角色：OWNER / MEMBER。
+        std::string role{};
+        /// \brief 禁言截止毫秒时间戳，0 表示未禁言。
+        i64 muted_until_ms{};
+    };
+
     /// \brief 已持久化消息的简要信息。
     struct StoredMessage
     {
@@ -166,6 +180,8 @@ namespace database
         i64 seq{};
         /// \brief 服务器时间戳（毫秒）。
         i64 server_time_ms{};
+        /// \brief 消息类型。
+        std::string msg_type{};
     };
 
     /// \brief 已加载消息的完整信息，用于构建历史消息响应。
@@ -505,7 +521,8 @@ namespace database
     auto inline append_text_message(
         i64 conversation_id,
         i64 sender_id,
-        std::string const& content
+        std::string const& content,
+        std::string const& msg_type = std::string{ "TEXT" }
     ) -> StoredMessage
     {
         auto conn = make_connection();
@@ -528,7 +545,7 @@ namespace database
             "VALUES (" + tx.quote(conversation_id) + ", "
             + tx.quote(sender_id) + ", "
             + tx.quote(seq) + ", "
-            + tx.quote(std::string{ "TEXT" }) + ", "
+            + tx.quote(msg_type) + ", "
             + tx.quote(content) + ", "
             + tx.quote(now_ms) + ") "
             "RETURNING id";
@@ -546,6 +563,7 @@ namespace database
         stored.id = id;
         stored.seq = seq;
         stored.server_time_ms = now_ms;
+        stored.msg_type = msg_type;
         return stored;
     }
 
@@ -648,11 +666,16 @@ namespace database
     /// \brief 在“世界”会话中追加一条文本消息。
     /// \param sender_id 发送者用户 ID。
     /// \param content 消息文本内容。
+    /// \param msg_type 消息类型，默认 TEXT，可选 SYSTEM。
     /// \return 已写入消息的简要信息。
-    auto inline append_world_text_message(i64 sender_id, std::string const& content) -> StoredMessage
+    auto inline append_world_text_message(
+        i64 sender_id,
+        std::string const& content,
+        std::string const& msg_type = std::string{ "TEXT" }
+    ) -> StoredMessage
     {
         auto const conversation_id = get_world_conversation_id();
-        return append_text_message(conversation_id, sender_id, content);
+        return append_text_message(conversation_id, sender_id, content, msg_type);
     }
 
     /// \brief 拉取指定会话的一批历史消息（向上翻旧消息）。
@@ -698,6 +721,10 @@ namespace database
             msg.msg_type = row[5].as<std::string>();
             msg.content = row[6].as<std::string>();
             msg.server_time_ms = row[7].as<i64>();
+            if(msg.msg_type == "SYSTEM") {
+                msg.sender_id = 0;
+                msg.sender_display_name.clear();
+            }
             messages.push_back(std::move(msg));
         }
 
@@ -747,6 +774,10 @@ namespace database
             msg.msg_type = row[5].as<std::string>();
             msg.content = row[6].as<std::string>();
             msg.server_time_ms = row[7].as<i64>();
+            if(msg.msg_type == "SYSTEM") {
+                msg.sender_id = 0;
+                msg.sender_display_name.clear();
+            }
             messages.push_back(std::move(msg));
         }
 
@@ -1138,5 +1169,86 @@ namespace database
         res.ok = true;
         tx.commit();
         return res;
+    }
+
+    /// \brief 查询会话成员信息。
+    auto inline get_conversation_member(i64 conversation_id, i64 user_id)
+        -> std::optional<MemberInfo>
+    {
+        auto conn = make_connection();
+        pqxx::work tx{ conn };
+
+        auto const query =
+            "SELECT cm.role, cm.muted_until_ms, u.display_name "
+            "FROM conversation_members cm "
+            "JOIN users u ON u.id = cm.user_id "
+            "WHERE cm.conversation_id = " + tx.quote(conversation_id) + " "
+            "AND cm.user_id = " + tx.quote(user_id) + " "
+            "LIMIT 1";
+
+        auto rows = tx.exec(query);
+        tx.commit();
+
+        if(rows.empty()) {
+            return std::nullopt;
+        }
+
+        MemberInfo info{};
+        info.user_id = user_id;
+        info.role = rows[0][0].as<std::string>();
+        info.muted_until_ms = rows[0][1].as<i64>();
+        info.display_name = rows[0][2].as<std::string>();
+        return info;
+    }
+
+    /// \brief 更新会话成员的禁言截止时间（毫秒时间戳，0 表示解禁）。
+    auto inline set_member_mute_until(
+        i64 conversation_id,
+        i64 user_id,
+        i64 muted_until_ms
+    ) -> void
+    {
+        auto conn = make_connection();
+        pqxx::work tx{ conn };
+
+        auto const update =
+            "UPDATE conversation_members "
+            "SET muted_until_ms = " + tx.quote(muted_until_ms) + " "
+            "WHERE conversation_id = " + tx.quote(conversation_id) + " "
+            "AND user_id = " + tx.quote(user_id);
+
+        tx.exec(update);
+        tx.commit();
+    }
+
+    /// \brief 加载指定会话的全部成员（含角色与禁言状态）。
+    auto inline load_conversation_members(i64 conversation_id) -> std::vector<MemberInfo>
+    {
+        auto conn = make_connection();
+        pqxx::work tx{ conn };
+
+        auto const query =
+            "SELECT cm.user_id, cm.role, cm.muted_until_ms, u.display_name "
+            "FROM conversation_members cm "
+            "JOIN users u ON u.id = cm.user_id "
+            "WHERE cm.conversation_id = " + tx.quote(conversation_id) + " "
+            "ORDER BY cm.user_id ASC";
+
+        auto rows = tx.exec(query);
+
+        std::vector<MemberInfo> members;
+        members.reserve(rows.size());
+
+        for(auto const& row : rows) {
+            MemberInfo info{};
+            info.user_id = row[0].as<i64>();
+            info.role = row[1].as<std::string>();
+            info.muted_until_ms = row[2].as<i64>();
+            info.display_name = row[3].as<std::string>();
+            members.push_back(std::move(info));
+        }
+
+        tx.commit();
+        return members;
     }
 } // namespace database

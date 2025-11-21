@@ -13,7 +13,7 @@ auto main(int argc, char** argv) -> int
     auto port = u16(5555);
     if(argc > 1) {
         port = static_cast<unsigned short>(std::strtoul(argv[1], nullptr, 10));
-    }
+    };
 
     auto runner = IoRunner{ 8 };
     start_server(runner.executor(), port);

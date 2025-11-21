@@ -37,8 +37,11 @@ set_source_files_properties(client/qml/Theme.qml
          QML_FILES
          client/qml/Theme.qml
          client/qml/Main/Dialogs/AddFriendDialog.qml
+         client/qml/Main/Dialogs/MySpinBox.qml
          client/qml/Main/Dialogs/PlusMenu.qml
          client/qml/Main/Dialogs/SettingsDialog.qml
+         client/qml/Main/Dialogs/UserContextMenu.qml
+         client/qml/Main/Dialogs/MuteMemberDialog.qml
          client/qml/Main/Dialogs/StartGroupDialog.qml
          client/qml/Login/Login.qml
          client/qml/Login/RegisterWindow.qml

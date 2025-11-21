@@ -1,8 +1,10 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
+import QtQuick.Window
 
 import WeChatClient as AppTheme
+import "../Dialogs"
 
 Rectangle {
     id: root
@@ -21,6 +23,18 @@ Rectangle {
     // 当前会话标题 / 昵称，用于标题栏显示。
     property string conversationTitle: ""
 
+    // 当前会话成员信息缓存：以 userId 为键。
+    property var memberMap: ({})
+    // 当前用户在会话中的角色。
+    property string myRole: ""
+    // 当前用户是否被禁言。
+    property bool isMuted: false
+    property real mutedUntilMs: 0
+
+    // 右键菜单上下文
+    property string contextTargetUserId: ""
+    property string contextTargetName: ""
+
     // 正常聊天界面，仅在有选中会话时显示
     property int currentTab: 0
     property string contactName: ""
@@ -29,6 +43,85 @@ Rectangle {
     property string requestStatus: ""
     property string contactUserId: ""
     property string contactRequestId: ""
+
+    Timer {
+        id: muteCountdown
+        interval: 1000
+        running: root.isMuted
+        repeat: true
+        onTriggered: {
+            if (root.mutedUntilMs > 0 && Date.now() >= root.mutedUntilMs) {
+                root.isMuted = false
+                root.mutedUntilMs = 0
+                running = false
+            }
+        }
+    }
+
+    function updateMembers(members) {
+        var map = {}
+        for (var i = 0; i < members.length; ++i) {
+            var m = members[i]
+            map[m.userId] = m
+        }
+        root.memberMap = map
+
+        var selfId = loginBackend.userId
+        if (selfId && map[selfId]) {
+            root.myRole = map[selfId].role
+            root.mutedUntilMs = map[selfId].mutedUntilMs
+            root.isMuted = map[selfId].mutedUntilMs > Date.now()
+            muteCountdown.running = root.isMuted
+        } else {
+            root.myRole = ""
+            root.mutedUntilMs = 0
+            root.isMuted = false
+            muteCountdown.running = false
+        }
+    }
+
+    function isUserMuted(userId) {
+        var m = memberMap[userId]
+        if (!m || !m.mutedUntilMs) return false
+        return m.mutedUntilMs > Date.now()
+    }
+
+    UserContextMenu {
+        id: avatarMenu
+        parent: Overlay.overlay
+        conversationId: root.conversationId
+        targetUserId: root.contextTargetUserId
+        targetUserName: root.contextTargetName
+        isMuted: root.isUserMuted(root.contextTargetUserId)
+
+        onMuteRequested: {
+            if (!root.muteDialog) {
+                root.muteDialog = muteDialogComponent.createObject(root, {
+                    transientParent: root.Window.window
+                })
+            }
+            root.muteDialog.conversationId = root.conversationId
+            root.muteDialog.targetUserId = root.contextTargetUserId
+            root.muteDialog.show()
+            root.muteDialog.raise()
+            root.muteDialog.requestActivate()
+        }
+
+        onUnmuteRequested: {
+            loginBackend.unmuteMember(root.conversationId, root.contextTargetUserId)
+        }
+    }
+
+    property var muteDialog: null
+
+    Component {
+        id: muteDialogComponent
+        MuteMemberDialog {
+            onMuteConfirmed: function(convId, userId, duration) {
+                loginBackend.muteMember(convId, userId, duration)
+            }
+        }
+    }
 
     StackLayout {
         anchors.fill: parent
@@ -68,8 +161,8 @@ Rectangle {
                     // 其他人消息：头像在左，气泡在右，整体靠左
                     Row {
                         id: leftRow
-                        anchors.left: parent.left
-                        anchors.verticalCenter: parent.verticalCenter
+                        x: 0
+                        y: (parent.height - implicitHeight) / 2
                         spacing: 6
                         visible: !isMine && !isSystem
 
@@ -78,6 +171,25 @@ Rectangle {
                             height: 36
                             radius: 6
                             color: "#4fbf73"
+
+                            MouseArea {
+                                id: avatarMouseArea
+                                anchors.fill: parent
+                                acceptedButtons: Qt.RightButton
+                                onClicked: function(mouse) {
+                                    if (mouse.button !== Qt.RightButton)
+                                        return
+                                    if (root.conversationType !== "GROUP")
+                                        return
+                                    if (root.myRole !== "OWNER")
+                                        return
+                                    root.contextTargetUserId = senderId
+                                    root.contextTargetName = senderName
+                                    avatarMenu.close()
+                                    avatarMenu.isMuted = root.isUserMuted(root.contextTargetUserId)
+                                    avatarMenu.popup(parent, mouse.x, mouse.y)
+                                }
+                            }
 
                             Text {
                                 anchors.centerIn: parent
@@ -124,8 +236,8 @@ Rectangle {
                     // 自己的消息：气泡在左，头像在右，整体靠右
                     Row {
                         id: rightRow
-                        anchors.right: parent.right
-                        anchors.verticalCenter: parent.verticalCenter
+                        x: parent.width - implicitWidth
+                        y: (parent.height - implicitHeight) / 2
                         spacing: 6
                         visible: isMine
 
@@ -166,8 +278,8 @@ Rectangle {
                     // 系统消息：居中显示
                     Row {
                         id: systemRow
-                        anchors.horizontalCenter: parent.horizontalCenter
-                        anchors.verticalCenter: parent.verticalCenter
+                        x: (parent.width - implicitWidth) / 2
+                        y: (parent.height - implicitHeight) / 2
                         visible: isSystem
 
                         Rectangle {
@@ -229,13 +341,28 @@ Rectangle {
                     id: inputArea
                     Layout.fillWidth: true
                     Layout.fillHeight: true
+                    enabled: !root.isMuted
                     wrapMode: TextEdit.Wrap
                     color: theme.textPrimary
                     font.pixelSize: 20
-                    placeholderText: ""
+                    placeholderText: root.isMuted ? qsTr("已被禁言") : ""
                     background: Rectangle {
                         radius: 4
                         color: theme.chatAreaBackground
+                    }
+
+                    // 禁言提示覆盖层
+                    Rectangle {
+                        anchors.fill: parent
+                        visible: root.isMuted
+                        color: "transparent"
+
+                        Text {
+                            anchors.centerIn: parent
+                            text: qsTr("已被禁言")
+                            color: theme.textSecondary
+                            font.pixelSize: 14
+                        }
                     }
 
                     Keys.onReturnPressed: function(event) {
@@ -276,7 +403,7 @@ Rectangle {
                         text: qsTr("发送(S)")
                         implicitWidth: 96
                         implicitHeight: 32
-                        enabled: inputArea.text.length > 0
+                        enabled: !root.isMuted && inputArea.text.length > 0
                         background: Rectangle {
                             radius: 4
                             color: enabled ? theme.sendButtonEnabled
@@ -330,8 +457,14 @@ Rectangle {
     // 当会话发生变化时，清空当前消息，并通过后端打开会话（先尝试从本地缓存加载，再必要时请求服务器历史）。
     onConversationIdChanged: {
         messageModel.clear()
+        memberMap = ({})
+        myRole = ""
+        isMuted = false
         if (conversationId !== "") {
             loginBackend.openConversation(conversationId)
+            if (conversationType === "GROUP") {
+                loginBackend.requestConversationMembers(conversationId)
+            }
         }
     }
 
@@ -346,9 +479,19 @@ Rectangle {
             messageModel.append({
                 sender: sys ? "system" : (mine ? "me" : "other"),
                 senderName: senderDisplayName,
+                senderId: senderId,
                 content: content
             })
             messageList.positionViewAtEnd()
+        }
+    }
+
+    Connections {
+        target: loginBackend
+        function onConversationMembersReady(conversationId, members) {
+            if (conversationId !== root.conversationId)
+                return
+            updateMembers(members)
         }
     }
 }

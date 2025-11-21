@@ -226,11 +226,11 @@ ApplicationWindow {
     // 注册成功提示框：点击确定后关闭注册窗口，回到登录。
     Dialog {
         id: successDialog
+        parent: Overlay.overlay
+        anchors.centerIn: parent
         modal: true
         width: 320
         height: 140
-        x: (registerWindow.width - width) / 2
-        y: (registerWindow.height - height) / 2
         standardButtons: Dialog.Ok
         title: qsTr("注册成功")
 

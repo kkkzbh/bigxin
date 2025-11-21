@@ -246,6 +246,32 @@ public:
         socket_.write(line);
     }
 
+    /// \brief 请求指定会话的成员列表（含角色与禁言状态）。
+    Q_INVOKABLE void requestConversationMembers(QString const& conversationId)
+    {
+        if(socket_.state() != QAbstractSocket::ConnectedState) {
+            return;
+        }
+        if(conversationId.isEmpty()) {
+            return;
+        }
+
+        QJsonObject obj;
+        obj.insert(QStringLiteral("conversationId"), conversationId);
+
+        QJsonDocument doc{ obj };
+        auto payload = doc.toJson(QJsonDocument::Compact);
+
+        QByteArray line;
+        line.reserve(16 + 1 + payload.size() + 1);
+        line.append("CONV_MEMBERS_REQ");
+        line.append(':');
+        line.append(payload);
+        line.append('\n');
+
+        socket_.write(line);
+    }
+
     /// \brief 向服务器请求当前用户的好友列表，用于通讯录联系人页签。
     Q_INVOKABLE void requestFriendList()
     {
@@ -433,6 +459,71 @@ public:
         socket_.write(line);
     }
 
+    /// \brief 禁言指定成员。
+    Q_INVOKABLE void muteMember(
+        QString const& conversationId,
+        QString const& targetUserId,
+        qint64 durationSeconds
+    )
+    {
+        if(conversationId.isEmpty() || targetUserId.isEmpty()) {
+            return;
+        }
+        if(durationSeconds <= 0) {
+            setErrorMessage(QStringLiteral("禁言时长必须大于 0"));
+            return;
+        }
+        if(socket_.state() != QAbstractSocket::ConnectedState) {
+            setErrorMessage(QStringLiteral("与服务器的连接已断开"));
+            return;
+        }
+
+        QJsonObject obj;
+        obj.insert(QStringLiteral("conversationId"), conversationId);
+        obj.insert(QStringLiteral("targetUserId"), targetUserId);
+        obj.insert(QStringLiteral("durationSeconds"), static_cast<qint64>(durationSeconds));
+
+        QJsonDocument doc{ obj };
+        auto payload = doc.toJson(QJsonDocument::Compact);
+
+        QByteArray line;
+        line.reserve(16 + 1 + payload.size() + 1);
+        line.append("MUTE_MEMBER_REQ");
+        line.append(':');
+        line.append(payload);
+        line.append('\n');
+
+        socket_.write(line);
+    }
+
+    /// \brief 解除指定成员禁言。
+    Q_INVOKABLE void unmuteMember(QString const& conversationId, QString const& targetUserId)
+    {
+        if(conversationId.isEmpty() || targetUserId.isEmpty()) {
+            return;
+        }
+        if(socket_.state() != QAbstractSocket::ConnectedState) {
+            setErrorMessage(QStringLiteral("与服务器的连接已断开"));
+            return;
+        }
+
+        QJsonObject obj;
+        obj.insert(QStringLiteral("conversationId"), conversationId);
+        obj.insert(QStringLiteral("targetUserId"), targetUserId);
+
+        QJsonDocument doc{ obj };
+        auto payload = doc.toJson(QJsonDocument::Compact);
+
+        QByteArray line;
+        line.reserve(18 + 1 + payload.size() + 1);
+        line.append("UNMUTE_MEMBER_REQ");
+        line.append(':');
+        line.append(payload);
+        line.append('\n');
+
+        socket_.write(line);
+    }
+
     /// \brief 请求指定会话的一页历史消息。
     /// \param conversationId 会话 ID。
     Q_INVOKABLE void requestHistory(QString const& conversationId)
@@ -534,6 +625,11 @@ signals:
     /// \brief 会话列表发生变化时发出，QML 通过该信号重建模型。
     /// \param conversations 由 QVariantMap 组成的列表，每个元素代表一个会话。
     void conversationsReset(QVariantList conversations);
+
+    /// \brief 会话成员列表就绪时发出（CONV_MEMBERS_RESP）。
+    /// \param conversationId 会话 ID。
+    /// \param members 成员列表，元素包含 userId / displayName / role / mutedUntilMs。
+    void conversationMembersReady(QString conversationId, QVariantList members);
 
     /// \brief 好友列表发生变化时发出，QML 用于重建通讯录联系人模型。
     /// \param friends 由 QVariantMap 组成的列表，每个元素代表一个好友。
@@ -716,6 +812,14 @@ private:
             handleOpenSingleConvResponse(obj);
         } else if(command == "CREATE_GROUP_RESP") {
             handleCreateGroupResponse(obj);
+        } else if(command == "CONV_MEMBERS_RESP") {
+            handleConversationMembersResponse(obj);
+        } else if(command == "MUTE_MEMBER_RESP") {
+            handleMuteMemberResponse(obj);
+        } else if(command == "UNMUTE_MEMBER_RESP") {
+            handleUnmuteMemberResponse(obj);
+        } else if(command == "ERROR") {
+            handleErrorResponse(obj);
         }
     }
 
@@ -943,6 +1047,81 @@ private:
         }
 
         emit conversationsReset(list);
+    }
+
+    /// \brief 处理会话成员列表响应。
+    auto handleConversationMembersResponse(QJsonObject const& obj) -> void
+    {
+        auto const ok = obj.value(QStringLiteral("ok")).toBool(false);
+        if(!ok) {
+            auto const msg = obj.value(QStringLiteral("errorMsg")).toString();
+            if(!msg.isEmpty()) {
+                setErrorMessage(msg);
+            }
+            return;
+        }
+
+        auto const conv_id = obj.value(QStringLiteral("conversationId")).toString();
+        auto const array = obj.value(QStringLiteral("members")).toArray();
+
+        QVariantList list;
+        list.reserve(array.size());
+
+        for(auto const& item : array) {
+            auto const m = item.toObject();
+            QVariantMap map;
+            map.insert(QStringLiteral("userId"), m.value(QStringLiteral("userId")).toString());
+            map.insert(QStringLiteral("displayName"), m.value(QStringLiteral("displayName")).toString());
+            map.insert(QStringLiteral("role"), m.value(QStringLiteral("role")).toString());
+            map.insert(QStringLiteral("mutedUntilMs"),
+                       static_cast<qint64>(m.value(QStringLiteral("mutedUntilMs")).toDouble(0)));
+            list.push_back(map);
+        }
+
+        emit conversationMembersReady(conv_id, list);
+    }
+
+    /// \brief 处理禁言响应。
+    auto handleMuteMemberResponse(QJsonObject const& obj) -> void
+    {
+        auto const ok = obj.value(QStringLiteral("ok")).toBool(false);
+        if(!ok) {
+            auto const msg = obj.value(QStringLiteral("errorMsg")).toString();
+            if(!msg.isEmpty()) {
+                setErrorMessage(msg);
+            }
+            return;
+        }
+        auto const conv_id = obj.value(QStringLiteral("conversationId")).toString();
+        if(!conv_id.isEmpty()) {
+            requestConversationMembers(conv_id);
+        }
+    }
+
+    /// \brief 处理解禁响应。
+    auto handleUnmuteMemberResponse(QJsonObject const& obj) -> void
+    {
+        auto const ok = obj.value(QStringLiteral("ok")).toBool(false);
+        if(!ok) {
+            auto const msg = obj.value(QStringLiteral("errorMsg")).toString();
+            if(!msg.isEmpty()) {
+                setErrorMessage(msg);
+            }
+            return;
+        }
+        auto const conv_id = obj.value(QStringLiteral("conversationId")).toString();
+        if(!conv_id.isEmpty()) {
+            requestConversationMembers(conv_id);
+        }
+    }
+
+    /// \brief 处理通用错误响应。
+    auto handleErrorResponse(QJsonObject const& obj) -> void
+    {
+        auto const msg = obj.value(QStringLiteral("errorMsg")).toString();
+        if(!msg.isEmpty()) {
+            setErrorMessage(msg);
+        }
     }
 
     /// \brief 处理好友列表响应，转为 QVariantList 通知 QML。

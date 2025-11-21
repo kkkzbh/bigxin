@@ -154,12 +154,7 @@ ApplicationWindow {
                                     color: addButton.hovered ? "#2f3035" : "transparent"
                                 }
                                 onClicked: {
-                                    const point = addButton.mapToItem(window.contentItem,
-                                                                     addButton.width / 2,
-                                                                     addButton.height)
-                                    addMenu.x = point.x - addMenu.implicitWidth / 2
-                                    addMenu.y = topBar.height - 6
-                                    addMenu.open()
+                                    addMenu.popup(addButton, addButton.width / 2 - addMenu.implicitWidth / 2, addButton.height - 6)
                                 }
                             }
                         }

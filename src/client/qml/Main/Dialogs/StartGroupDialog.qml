@@ -383,12 +383,12 @@ Window {
 
     Dialog {
         id: successDialog
+        parent: Overlay.overlay
+        anchors.centerIn: parent
         modal: true
         focus: true
         dim: true
         closePolicy: Popup.NoAutoClose
-        x: (root.width - width) / 2
-        y: (root.height - height) / 2
         implicitWidth: 280
         implicitHeight: 160
         background: Rectangle {
@@ -474,6 +474,7 @@ Window {
         function onGroupCreated(conversationId, title) {
             okBtn.enabled = true
             successDialog.open()
+            successDialog.forceActiveFocus()
         }
     }
 

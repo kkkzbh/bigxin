@@ -7,9 +7,15 @@ CREATE TABLE IF NOT EXISTS conversation_members (
     user_id         BIGINT NOT NULL REFERENCES users(id),
     -- 角色：'OWNER' / 'MEMBER' 等。
     role            TEXT   NOT NULL DEFAULT 'MEMBER',
+    -- 禁言截止时间，毫秒级 Unix 时间戳；0 表示未禁言。
+    muted_until_ms  BIGINT NOT NULL DEFAULT 0,
     -- 加入会话时间。
     joined_at       TIMESTAMPTZ NOT NULL DEFAULT now(),
     -- 该用户在此会话中最后读到的消息序号，用于计算未读。
     last_read_seq   BIGINT NOT NULL DEFAULT 0,
     PRIMARY KEY (conversation_id, user_id)
 );
+
+-- 兼容已有部署的无损迁移。
+ALTER TABLE conversation_members
+    ADD COLUMN IF NOT EXISTS muted_until_ms BIGINT NOT NULL DEFAULT 0;

@@ -340,11 +340,10 @@ Window {
     Popup {
         id: addSuccessDialog
         parent: root.contentItem
+        anchors.centerIn: parent
         modal: true
         focus: true
         closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
-        x: (parent.width - width) / 2
-        y: (parent.height - height) / 2
         width: 260
         background: Rectangle {
             radius: 8

@@ -48,7 +48,7 @@ SEND_MSG:{"conversationId":"grp-123","senderId":"u_001","clientMsgId":"cli-1","m
 - `clientMsgId`：客户端生成的消息 ID，用于发送重试时的幂等去重。
 - `serverMsgId`：服务器生成的消息 ID，全局唯一。
 - `msgType`：消息类型，字符串枚举。
-  - 当前：`"TEXT"`。
+  - 当前：`"TEXT"`, `"SYSTEM"`。
   - 未来扩展：`"IMAGE"`, `"FILE"`, `"AUDIO"` 等。
 - `serverTimeMs`：服务器写入时间戳，毫秒级 Unix 时间。
 - `seq`：会话内递增消息序号，用于排序、历史拉取和游标控制。
@@ -73,6 +73,13 @@ SEND_MSG:{"conversationId":"grp-123","senderId":"u_001","clientMsgId":"cli-1","m
 - 会话列表：
   - `CONV_LIST_REQ` (C → S)
   - `CONV_LIST_RESP` (S → C)
+- 会话成员 / 禁言：
+  - `CONV_MEMBERS_REQ` (C → S)
+  - `CONV_MEMBERS_RESP` (S → C)
+  - `MUTE_MEMBER_REQ` (C → S)
+  - `MUTE_MEMBER_RESP` (S → C)
+  - `UNMUTE_MEMBER_REQ` (C → S)
+  - `UNMUTE_MEMBER_RESP` (S → C)
 - 用户资料：
   - `PROFILE_UPDATE` (C → S)
   - `PROFILE_UPDATE_RESP` (S → C)

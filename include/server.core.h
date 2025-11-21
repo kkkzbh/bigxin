@@ -11,6 +11,10 @@
 #include <string>
 #include <vector>
 #include <algorithm>
+#include <ctime>
+#include <utility>
+#include <unordered_map>
+#include <unordered_set>
 
 #include <protocol.h>
 #include <utility.h>
@@ -133,6 +137,18 @@ namespace server
                         auto payload = handle_open_single_conv_req(frame.payload);
                         auto msg = protocol::make_line("OPEN_SINGLE_CONV_RESP", payload);
                         send_text(std::move(msg));
+                    } else if(frame.command == "MUTE_MEMBER_REQ") {
+                        auto payload = handle_mute_member_req(frame.payload);
+                        auto msg = protocol::make_line("MUTE_MEMBER_RESP", payload);
+                        send_text(std::move(msg));
+                    } else if(frame.command == "UNMUTE_MEMBER_REQ") {
+                        auto payload = handle_unmute_member_req(frame.payload);
+                        auto msg = protocol::make_line("UNMUTE_MEMBER_RESP", payload);
+                        send_text(std::move(msg));
+                    } else if(frame.command == "CONV_MEMBERS_REQ") {
+                        auto payload = handle_conv_members_req(frame.payload);
+                        auto msg = protocol::make_line("CONV_MEMBERS_RESP", payload);
+                        send_text(std::move(msg));
                     } else {
                         // 默认 echo，方便用 nc 观察未知命令。
                         auto payload = std::string{ "{\"command\":\"" + frame.command + "\"}" };
@@ -184,44 +200,7 @@ namespace server
         }
 
         /// \brief 处理登录命令，返回 LOGIN_RESP 的 JSON 串。
-        auto handle_login(std::string const& payload) -> std::string
-        {
-            using json = nlohmann::json;
-
-            try {
-                auto j = json::parse(payload);
-
-                if(!j.contains("account") || !j.contains("password")) {
-                    return make_error_payload("INVALID_PARAM", "缺少必要字段");
-                }
-
-                auto const account = j.at("account").get<std::string>();
-                auto const password = j.at("password").get<std::string>();
-
-                auto const result = database::login_user(account, password);
-                if(!result.ok) {
-                    return make_error_payload(result.error_code, result.error_msg);
-                }
-
-                authenticated_ = true;
-                user_id_ = result.user.id;
-                account_ = result.user.account;
-                display_name_ = result.user.display_name;
-
-                auto const world_id = database::get_world_conversation_id();
-
-                json resp;
-                resp["ok"] = true;
-                resp["userId"] = std::to_string(user_id_);
-                resp["displayName"] = display_name_;
-                resp["worldConversationId"] = std::to_string(world_id);
-                return resp.dump();
-            } catch(json::parse_error const&) {
-                return make_error_payload("INVALID_JSON", "请求 JSON 解析失败");
-            } catch(std::exception const& ex) {
-                return make_error_payload("SERVER_ERROR", ex.what());
-            }
-        }
+        auto handle_login(std::string const& payload) -> std::string;
 
         /// \brief 处理发送消息命令，在“世界”会话中写入并广播。
         /// \param payload SEND_MSG 的 JSON 文本。
@@ -266,6 +245,15 @@ namespace server
         /// \brief 处理打开单聊会话的请求，返回 OPEN_SINGLE_CONV_RESP 的 JSON 串。
         /// \param payload OPEN_SINGLE_CONV_REQ 的 JSON 文本。
         auto handle_open_single_conv_req(std::string const& payload) -> std::string;
+
+        /// \brief 处理群成员禁言请求。
+        auto handle_mute_member_req(std::string const& payload) -> std::string;
+
+        /// \brief 处理群成员解禁请求。
+        auto handle_unmute_member_req(std::string const& payload) -> std::string;
+
+        /// \brief 处理会话成员列表请求。
+        auto handle_conv_members_req(std::string const& payload) -> std::string;
 
         /// \brief 构造带错误码的通用错误响应 JSON 串。
         auto make_error_payload(std::string const& code, std::string const& msg) const -> std::string
@@ -394,6 +382,8 @@ namespace server
 
         asio::ip::tcp::acceptor acceptor_;
         std::vector<std::shared_ptr<Session>> sessions_{};
+        /// \brief 按 user_id 建立的在线会话索引，一位多连时存多条 weak_ptr。
+        std::unordered_multimap<i64, std::weak_ptr<Session>> sessions_by_user_{};
 
         /// \brief 从会话列表中移除一个已经结束的 Session。
         auto remove_session(Session* ptr) -> void
@@ -404,6 +394,77 @@ namespace server
                 [ptr](std::shared_ptr<Session> const& s) { return s.get() == ptr; }
             );
             sessions_.erase(it, sessions_.end());
+
+            for(auto map_it = sessions_by_user_.begin(); map_it != sessions_by_user_.end(); ) {
+                auto locked = map_it->second.lock();
+                if(!locked || locked.get() == ptr) {
+                    map_it = sessions_by_user_.erase(map_it);
+                } else {
+                    ++map_it;
+                }
+            }
+        }
+
+        /// \brief 将已鉴权的会话加入 user_id 索引。
+        auto index_authenticated_session(std::shared_ptr<Session> const& session) -> void
+        {
+            if(!session || !session->is_authenticated()) {
+                return;
+            }
+
+            auto const uid = session->user_id();
+            auto range = sessions_by_user_.equal_range(uid);
+            for(auto it = range.first; it != range.second; ) {
+                auto existing = it->second.lock();
+                if(!existing || existing.get() == session.get()) {
+                    it = sessions_by_user_.erase(it);
+                } else {
+                    ++it;
+                }
+            }
+
+            sessions_by_user_.emplace(uid, session);
+        }
+
+        /// \brief 遍历指定用户的在线会话（自动清理过期 weak_ptr）。
+        template<class Fn>
+        auto for_user_sessions(i64 user_id, Fn&& fn) -> void
+        {
+            auto range = sessions_by_user_.equal_range(user_id);
+            for(auto it = range.first; it != range.second; ) {
+                if(auto s = it->second.lock()) {
+                    std::forward<Fn>(fn)(s);
+                    ++it;
+                } else {
+                    it = sessions_by_user_.erase(it);
+                }
+            }
+        }
+
+        /// \brief 遍历所有已鉴权会话，过程中过滤空指针并清理失效 weak_ptr 索引。
+        template<class Fn>
+        auto for_all_authenticated(Fn&& fn) -> void
+        {
+            for(auto it = sessions_.begin(); it != sessions_.end(); ) {
+                if(!(*it)) {
+                    it = sessions_.erase(it);
+                    continue;
+                }
+                if(!(*it)->is_authenticated()) {
+                    ++it;
+                    continue;
+                }
+                std::forward<Fn>(fn)(*it);
+                ++it;
+            }
+
+            for(auto map_it = sessions_by_user_.begin(); map_it != sessions_by_user_.end(); ) {
+                if(map_it->second.expired()) {
+                    map_it = sessions_by_user_.erase(map_it);
+                } else {
+                    ++map_it;
+                }
+            }
         }
 
         /// \brief 主动向指定用户推送一份最新的“新的朋友”列表。
@@ -438,18 +499,11 @@ namespace server
                 auto const line =
                     protocol::make_line("FRIEND_REQ_LIST_RESP", resp.dump());
 
-                for(auto const& s : sessions_) {
-                    if(!s) {
-                        continue;
+                for_user_sessions(target_user_id, [&line](std::shared_ptr<Session> const& s) {
+                    if(s->authenticated_) {
+                        s->send_text(line);
                     }
-                    if(!s->authenticated_) {
-                        continue;
-                    }
-                    if(s->user_id_ != target_user_id) {
-                        continue;
-                    }
-                    s->send_text(line);
-                }
+                });
             } catch(std::exception const&) {
                 // 失败时静默忽略，等待客户端下次主动拉取。
             }
@@ -485,15 +539,11 @@ namespace server
                 resp["friends"] = std::move(items);
                 auto const line = protocol::make_line("FRIEND_LIST_RESP", resp.dump());
 
-                for(auto const& s : sessions_) {
-                    if(!s || !s->is_authenticated()) {
-                        continue;
+                for_user_sessions(target_user_id, [&line](std::shared_ptr<Session> const& s) {
+                    if(s->is_authenticated()) {
+                        s->send_text(line);
                     }
-                    if(s->user_id() != target_user_id) {
-                        continue;
-                    }
-                    s->send_text(line);
-                }
+                });
             } catch(std::exception const&) {
                 // 忽略推送失败。
             }
@@ -528,17 +578,75 @@ namespace server
                 resp["conversations"] = std::move(items);
                 auto const line = protocol::make_line("CONV_LIST_RESP", resp.dump());
 
-                for(auto const& s : sessions_) {
-                    if(!s || !s->is_authenticated()) {
-                        continue;
+                for_user_sessions(target_user_id, [&line](std::shared_ptr<Session> const& s) {
+                    if(s->is_authenticated()) {
+                        s->send_text(line);
                     }
-                    if(s->user_id() != target_user_id) {
-                        continue;
-                    }
-                    s->send_text(line);
-                }
+                });
             } catch(std::exception const&) {
                 // 忽略推送失败。
+            }
+        }
+
+        /// \brief 推送指定会话的成员列表给会话成员（或指定用户）。
+        /// \param conversation_id 会话 ID。
+        /// \param only_user_id 若大于 0，则仅向该用户推送；为 0 时向所有在线群成员推送。
+        auto send_conv_members(i64 conversation_id, i64 only_user_id = 0) -> void
+        {
+            using json = nlohmann::json;
+
+            if(conversation_id <= 0) {
+                return;
+            }
+
+            std::vector<database::MemberInfo> members;
+            try {
+                members = database::load_conversation_members(conversation_id);
+            } catch(std::exception const&) {
+                return;
+            }
+
+            json resp;
+            resp["ok"] = true;
+            resp["conversationId"] = std::to_string(conversation_id);
+
+            json arr = json::array();
+            for(auto const& m : members) {
+                json obj;
+                obj["userId"] = std::to_string(m.user_id);
+                obj["displayName"] = m.display_name;
+                obj["role"] = m.role;
+                obj["mutedUntilMs"] = m.muted_until_ms;
+                arr.push_back(std::move(obj));
+            }
+            resp["members"] = std::move(arr);
+
+            auto const line = protocol::make_line("CONV_MEMBERS_RESP", resp.dump());
+            std::unordered_set<i64> member_ids;
+            member_ids.reserve(members.size());
+            for(auto const& m : members) {
+                member_ids.insert(m.user_id);
+            }
+
+            if(only_user_id > 0 && !member_ids.contains(only_user_id)) {
+                return; // 指定用户不在会话成员内
+            }
+
+            auto const send_to = [&line, this](i64 uid) {
+                for_user_sessions(uid, [&line](std::shared_ptr<Session> const& session) {
+                    if(session->is_authenticated()) {
+                        session->send_text(line);
+                    }
+                });
+            };
+
+            if(only_user_id > 0) {
+                send_to(only_user_id);
+                return;
+            }
+
+            for(auto const uid : member_ids) {
+                send_to(uid);
             }
         }
 
@@ -557,7 +665,7 @@ namespace server
             push["serverMsgId"] = std::to_string(stored.id);
             push["senderId"] = "0";
             push["senderDisplayName"] = "";
-            push["msgType"] = "TEXT";
+            push["msgType"] = stored.msg_type.empty() ? "TEXT" : stored.msg_type;
             push["serverTimeMs"] = stored.server_time_ms;
             push["seq"] = stored.seq;
             push["content"] = content;
@@ -581,18 +689,20 @@ namespace server
                 member_ids.clear(); // broadcast to all authenticated if query failed.
             }
 
-            auto const is_target = [&member_ids](i64 uid) -> bool {
-                if(member_ids.empty()) {
-                    return true;
-                }
-                return std::find(member_ids.begin(), member_ids.end(), uid)
-                       != member_ids.end();
-            };
-
-            for(auto const& session : sessions_) {
-                if(session && session->is_authenticated() && is_target(session->user_id())) {
+            auto const send_line = [&line](std::shared_ptr<Session> const& session) {
+                if(session->is_authenticated()) {
                     session->send_text(line);
                 }
+            };
+
+            if(member_ids.empty()) {
+                for_all_authenticated(send_line);
+                return;
+            }
+
+            std::unordered_set<i64> member_set{ member_ids.begin(), member_ids.end() };
+            for(auto const uid : member_set) {
+                for_user_sessions(uid, send_line);
             }
         }
 
@@ -612,28 +722,45 @@ namespace server
             push["conversationId"] = std::to_string(stored.conversation_id);
             // 会话类型用于前端展示，不影响路由逻辑。
             std::string conv_type{ "GROUP" };
-            std::string sender_name;
-            try {
-                auto conn = database::make_connection();
-                pqxx::work tx{ conn };
-                auto const query =
-                    "SELECT c.type, u.display_name FROM conversations c "
-                    "JOIN users u ON u.id = " + tx.quote(sender_id) + " "
-                    "WHERE c.id = " + tx.quote(stored.conversation_id) + " LIMIT 1";
-                auto rows = tx.exec(query);
-                if(!rows.empty()) {
-                    conv_type = rows[0][0].as<std::string>();
-                    sender_name = rows[0][1].as<std::string>();
+            {
+                try {
+                    auto conn = database::make_connection();
+                    pqxx::work tx{ conn };
+                    auto const query =
+                        "SELECT type FROM conversations "
+                        "WHERE id = " + tx.quote(stored.conversation_id) + " LIMIT 1";
+                    auto rows = tx.exec(query);
+                    if(!rows.empty()) {
+                        conv_type = rows[0][0].as<std::string>();
+                    }
+                    tx.commit();
+                } catch(std::exception const&) {
+                    // 保底使用 GROUP。
                 }
-                tx.commit();
-            } catch(std::exception const&) {
-                // 保底使用 GROUP。
+            }
+            std::string sender_name;
+            if(sender_id > 0 && stored.msg_type != "SYSTEM") {
+                try {
+                    auto conn = database::make_connection();
+                    pqxx::work tx{ conn };
+                    auto const query =
+                        "SELECT display_name FROM users WHERE id = " + tx.quote(sender_id)
+                        + " LIMIT 1";
+                    auto rows = tx.exec(query);
+                    if(!rows.empty()) {
+                        sender_name = rows[0][0].as<std::string>();
+                    }
+                    tx.commit();
+                } catch(std::exception const&) {
+                    // 忽略查找失败。
+                }
             }
             push["conversationType"] = conv_type;
             push["serverMsgId"] = std::to_string(stored.id);
-            push["senderId"] = std::to_string(sender_id);
+            push["senderId"] = (stored.msg_type == "SYSTEM") ? std::string{ "0" }
+                                                             : std::to_string(sender_id);
             push["senderDisplayName"] = sender_name;
-            push["msgType"] = "TEXT";
+            push["msgType"] = stored.msg_type.empty() ? "TEXT" : stored.msg_type;
             push["serverTimeMs"] = stored.server_time_ms;
             push["seq"] = stored.seq;
             push["content"] = content;
@@ -659,23 +786,68 @@ namespace server
                 member_ids.clear();
             }
 
-            auto const is_target = [&member_ids](i64 uid) -> bool {
-                if(member_ids.empty()) {
-                    return true;
-                }
-                return std::find(member_ids.begin(), member_ids.end(), uid)
-                       != member_ids.end();
-            };
-
-            for(auto const& session : sessions_) {
-                if(session && session->is_authenticated() && is_target(session->user_id())) {
+            auto const send_line = [&line](std::shared_ptr<Session> const& session) {
+                if(session->is_authenticated()) {
                     session->send_text(line);
                 }
+            };
+
+            if(member_ids.empty()) {
+                for_all_authenticated(send_line);
+                return;
+            }
+
+            std::unordered_set<i64> member_set{ member_ids.begin(), member_ids.end() };
+            for(auto const uid : member_set) {
+                for_user_sessions(uid, send_line);
             }
         }
     };
 
 } // namespace server
+
+inline auto server::Session::handle_login(std::string const& payload) -> std::string
+{
+    using json = nlohmann::json;
+
+    try {
+        auto j = json::parse(payload);
+
+        if(!j.contains("account") || !j.contains("password")) {
+            return make_error_payload("INVALID_PARAM", "缺少必要字段");
+        }
+
+        auto const account = j.at("account").get<std::string>();
+        auto const password = j.at("password").get<std::string>();
+
+        auto const result = database::login_user(account, password);
+        if(!result.ok) {
+            return make_error_payload(result.error_code, result.error_msg);
+        }
+
+        authenticated_ = true;
+        user_id_ = result.user.id;
+        account_ = result.user.account;
+        display_name_ = result.user.display_name;
+
+        if(server_ != nullptr) {
+            server_->index_authenticated_session(shared_from_this());
+        }
+
+        auto const world_id = database::get_world_conversation_id();
+
+        json resp;
+        resp["ok"] = true;
+        resp["userId"] = std::to_string(user_id_);
+        resp["displayName"] = display_name_;
+        resp["worldConversationId"] = std::to_string(world_id);
+        return resp.dump();
+    } catch(json::parse_error const&) {
+        return make_error_payload("INVALID_JSON", "请求 JSON 解析失败");
+    } catch(std::exception const& ex) {
+        return make_error_payload("SERVER_ERROR", ex.what());
+    }
+}
 
 inline auto server::Session::handle_send_msg(std::string const& payload) -> void
 {
@@ -705,6 +877,32 @@ inline auto server::Session::handle_send_msg(std::string const& payload) -> void
         }
         if(conversation_id <= 0) {
             conversation_id = database::get_world_conversation_id();
+        }
+
+        // 禁言校验（仅对群成员存在禁言记录的会话生效）。
+        if(auto const member = database::get_conversation_member(conversation_id, user_id_)) {
+            auto const now_ms = std::chrono::duration_cast<std::chrono::milliseconds>(
+                                    std::chrono::system_clock::now().time_since_epoch()
+                                )
+                                    .count();
+            if(member->muted_until_ms > now_ms) {
+                std::time_t tt = std::chrono::system_clock::to_time_t(
+                    std::chrono::system_clock::time_point{
+                        std::chrono::milliseconds{ member->muted_until_ms }
+                    }
+                );
+                std::tm tm = *std::localtime(&tt);
+                char buf[32]{};
+                std::snprintf(buf, sizeof(buf), "%04d-%02d-%02d %02d:%02d:%02d",
+                    tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday,
+                    tm.tm_hour, tm.tm_min, tm.tm_sec);
+
+                auto const err =
+                    make_error_payload("MUTED", std::string{ "你已被禁言至 " } + buf);
+                auto msg = protocol::make_line("ERROR", err);
+                send_text(std::move(msg));
+                return;
+            }
         }
 
         auto const content = j.at("content").get<std::string>();
@@ -819,7 +1017,8 @@ inline auto server::Session::handle_conv_list_req(std::string const& payload) ->
     try {
         if(!payload.empty() && payload != "{}") {
             // 预留将来扩展过滤参数，目前仅校验 JSON 格式。
-            (void)json::parse(payload);
+            auto _ = json::parse(payload);
+            (void)_;
         }
 
         auto const conversations = database::load_user_conversations(user_id_);
@@ -909,7 +1108,8 @@ inline auto server::Session::handle_friend_list_req(std::string const& payload) 
     try {
         if(!payload.empty() && payload != "{}") {
             // 目前好友列表不支持过滤参数，仅校验 JSON 格式。
-            (void)json::parse(payload);
+            auto _ = json::parse(payload);
+            (void)_;
         }
 
         auto const friends = database::load_user_friends(user_id_);
@@ -1045,7 +1245,8 @@ inline auto server::Session::handle_friend_req_list_req(std::string const& paylo
 
     try {
         if(!payload.empty() && payload != "{}") {
-            (void)json::parse(payload);
+            auto _ = json::parse(payload);
+            (void)_;
         }
 
         auto const requests = database::load_incoming_friend_requests(user_id_);
@@ -1273,6 +1474,218 @@ inline auto server::Session::handle_open_single_conv_req(std::string const& payl
         resp["ok"] = true;
         resp["conversationId"] = std::to_string(conv_id);
         resp["conversationType"] = "SINGLE";
+        return resp.dump();
+    } catch(json::parse_error const&) {
+        return make_error_payload("INVALID_JSON", "请求 JSON 解析失败");
+    } catch(std::exception const& ex) {
+        return make_error_payload("SERVER_ERROR", ex.what());
+    }
+}
+
+inline auto server::Session::handle_conv_members_req(std::string const& payload)
+    -> std::string
+{
+    using json = nlohmann::json;
+
+    if(!authenticated_) {
+        return make_error_payload("NOT_AUTHENTICATED", "请先登录");
+    }
+
+    try {
+        auto j = payload.empty() ? json::object() : json::parse(payload);
+        if(!j.contains("conversationId")) {
+            return make_error_payload("INVALID_PARAM", "缺少 conversationId 字段");
+        }
+
+        auto const conv_str = j.at("conversationId").get<std::string>();
+        auto conv_id = i64{};
+        try {
+            conv_id = std::stoll(conv_str);
+        } catch(std::exception const&) {
+            return make_error_payload("INVALID_PARAM", "conversationId 非法");
+        }
+        if(conv_id <= 0) {
+            return make_error_payload("INVALID_PARAM", "conversationId 非法");
+        }
+
+        auto const member = database::get_conversation_member(conv_id, user_id_);
+        if(!member.has_value()) {
+            return make_error_payload("FORBIDDEN", "你不是该会话成员");
+        }
+
+        auto members = database::load_conversation_members(conv_id);
+
+        json resp;
+        resp["ok"] = true;
+        resp["conversationId"] = std::to_string(conv_id);
+        json arr = json::array();
+        for(auto const& m : members) {
+            json obj;
+            obj["userId"] = std::to_string(m.user_id);
+            obj["displayName"] = m.display_name;
+            obj["role"] = m.role;
+            obj["mutedUntilMs"] = m.muted_until_ms;
+            arr.push_back(std::move(obj));
+        }
+        resp["members"] = std::move(arr);
+        return resp.dump();
+    } catch(json::parse_error const&) {
+        return make_error_payload("INVALID_JSON", "请求 JSON 解析失败");
+    } catch(std::exception const& ex) {
+        return make_error_payload("SERVER_ERROR", ex.what());
+    }
+}
+
+inline auto server::Session::handle_mute_member_req(std::string const& payload)
+    -> std::string
+{
+    using json = nlohmann::json;
+
+    if(!authenticated_) {
+        return make_error_payload("NOT_AUTHENTICATED", "请先登录");
+    }
+
+    try {
+        auto j = payload.empty() ? json::object() : json::parse(payload);
+        if(!j.contains("conversationId") || !j.contains("targetUserId") || !j.contains("durationSeconds")) {
+            return make_error_payload("INVALID_PARAM", "缺少必要字段");
+        }
+
+        auto conv_id = i64{};
+        auto target_id = i64{};
+        auto duration = i64{};
+        try {
+            conv_id = std::stoll(j.at("conversationId").get<std::string>());
+            target_id = std::stoll(j.at("targetUserId").get<std::string>());
+        } catch(std::exception const&) {
+            return make_error_payload("INVALID_PARAM", "conversationId 或 targetUserId 非法");
+        }
+        duration = j.at("durationSeconds").get<i64>();
+
+        if(conv_id <= 0 || target_id <= 0) {
+            return make_error_payload("INVALID_PARAM", "参数非法");
+        }
+        if(duration <= 0) {
+            return make_error_payload("INVALID_PARAM", "禁言时长必须大于 0");
+        }
+
+        auto const self_member = database::get_conversation_member(conv_id, user_id_);
+        if(!self_member.has_value()) {
+            return make_error_payload("FORBIDDEN", "你不是该会话成员");
+        }
+        if(self_member->role != "OWNER") {
+            return make_error_payload("FORBIDDEN", "仅群主可禁言成员");
+        }
+
+        auto const target_member = database::get_conversation_member(conv_id, target_id);
+        if(!target_member.has_value()) {
+            return make_error_payload("NOT_FOUND", "目标成员不存在");
+        }
+        if(target_member->role == "OWNER") {
+            return make_error_payload("FORBIDDEN", "不能禁言群主");
+        }
+
+        auto const now_ms = std::chrono::duration_cast<std::chrono::milliseconds>(
+                                std::chrono::system_clock::now().time_since_epoch()
+                            )
+                                .count();
+        auto const muted_until_ms = now_ms + duration * 1000;
+
+        database::set_member_mute_until(conv_id, target_id, muted_until_ms);
+
+        // 系统消息
+        auto const tp =
+            std::chrono::system_clock::time_point{ std::chrono::milliseconds{ muted_until_ms } };
+        std::time_t tt = std::chrono::system_clock::to_time_t(tp);
+        std::tm tm = *std::localtime(&tt);
+        char buf[32]{};
+        std::snprintf(buf, sizeof(buf), "%04d-%02d-%02d %02d:%02d:%02d",
+            tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday,
+            tm.tm_hour, tm.tm_min, tm.tm_sec);
+
+        auto const target_name = target_member->display_name;
+        auto const sys_content =
+            "系统消息：已将 " + target_name + " 禁言至 " + std::string{ buf };
+
+        auto const stored =
+            database::append_text_message(conv_id, user_id_, sys_content, "SYSTEM");
+
+        if(server_ != nullptr) {
+            server_->broadcast_system_message(conv_id, stored, sys_content);
+            server_->send_conv_members(conv_id);
+        }
+
+        json resp;
+        resp["ok"] = true;
+        resp["conversationId"] = std::to_string(conv_id);
+        resp["targetUserId"] = std::to_string(target_id);
+        resp["mutedUntilMs"] = muted_until_ms;
+        return resp.dump();
+    } catch(json::parse_error const&) {
+        return make_error_payload("INVALID_JSON", "请求 JSON 解析失败");
+    } catch(std::exception const& ex) {
+        return make_error_payload("SERVER_ERROR", ex.what());
+    }
+}
+
+inline auto server::Session::handle_unmute_member_req(std::string const& payload)
+    -> std::string
+{
+    using json = nlohmann::json;
+
+    if(!authenticated_) {
+        return make_error_payload("NOT_AUTHENTICATED", "请先登录");
+    }
+
+    try {
+        auto j = payload.empty() ? json::object() : json::parse(payload);
+
+        if(!j.contains("conversationId") || !j.contains("targetUserId")) {
+            return make_error_payload("INVALID_PARAM", "缺少必要字段");
+        }
+
+        auto conv_id = i64{};
+        auto target_id = i64{};
+        try {
+            conv_id = std::stoll(j.at("conversationId").get<std::string>());
+            target_id = std::stoll(j.at("targetUserId").get<std::string>());
+        } catch(std::exception const&) {
+            return make_error_payload("INVALID_PARAM", "conversationId 或 targetUserId 非法");
+        }
+        if(conv_id <= 0 || target_id <= 0) {
+            return make_error_payload("INVALID_PARAM", "参数非法");
+        }
+
+        auto const self_member = database::get_conversation_member(conv_id, user_id_);
+        if(!self_member.has_value()) {
+            return make_error_payload("FORBIDDEN", "你不是该会话成员");
+        }
+        if(self_member->role != "OWNER") {
+            return make_error_payload("FORBIDDEN", "仅群主可解除禁言");
+        }
+
+        auto const target_member = database::get_conversation_member(conv_id, target_id);
+        if(!target_member.has_value()) {
+            return make_error_payload("NOT_FOUND", "目标成员不存在");
+        }
+
+        database::set_member_mute_until(conv_id, target_id, 0);
+
+        auto const target_name = target_member->display_name;
+        auto const sys_content =
+            "系统消息：已解除 " + target_name + " 的禁言";
+        auto const stored =
+            database::append_text_message(conv_id, user_id_, sys_content, "SYSTEM");
+
+        if(server_ != nullptr) {
+            server_->broadcast_system_message(conv_id, stored, sys_content);
+            server_->send_conv_members(conv_id);
+        }
+
+        json resp;
+        resp["ok"] = true;
+        resp["conversationId"] = std::to_string(conv_id);
+        resp["targetUserId"] = std::to_string(target_id);
         return resp.dump();
     } catch(json::parse_error const&) {
         return make_error_payload("INVALID_JSON", "请求 JSON 解析失败");
