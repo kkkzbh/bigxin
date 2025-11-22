@@ -8,7 +8,7 @@ target_include_directories(libchat INTERFACE
 
 target_link_libraries(libchat
         INTERFACE
-        asio::asio
+        asio
         libpqxx::pqxx
 )
 
@@ -30,6 +30,8 @@ add_executable(server
 target_link_libraries(server
         PRIVATE
         libchat
+        STDEXEC::asioexec_asio
+        tbb
 )
 
 add_executable(client
@@ -90,4 +92,15 @@ target_link_libraries(client
         Qt6::Quick
         Qt6::QuickControls2
         Qt6::Network
+)
+
+
+add_executable(MAN
+        main.cpp
+)
+
+target_link_libraries(MAN
+        PRIVATE
+        STDEXEC::asioexec_asio
+        tbb
 )

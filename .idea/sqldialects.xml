@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="SqlDialectMappings">
-    <file url="file://$PROJECT_DIR$/src/database/conversation_members.sql" dialect="PostgreSQL" />
-    <file url="file://$PROJECT_DIR$/src/database/conversations.sql" dialect="PostgreSQL" />
-    <file url="file://$PROJECT_DIR$/src/database/friend_requests.sql" dialect="PostgreSQL" />
-    <file url="file://$PROJECT_DIR$/src/database/friends.sql" dialect="PostgreSQL" />
-    <file url="file://$PROJECT_DIR$/src/database/messages.sql" dialect="PostgreSQL" />
-    <file url="file://$PROJECT_DIR$/src/database/single_conversations.sql" dialect="PostgreSQL" />
-    <file url="file://$PROJECT_DIR$/src/database/users.sql" dialect="PostgreSQL" />
+    <file url="file://$PROJECT_DIR$/src/database/sql/conversation_members.sql" dialect="PostgreSQL" />
+    <file url="file://$PROJECT_DIR$/src/database/sql/conversations.sql" dialect="PostgreSQL" />
+    <file url="file://$PROJECT_DIR$/src/database/sql/friend_requests.sql" dialect="PostgreSQL" />
+    <file url="file://$PROJECT_DIR$/src/database/sql/friends.sql" dialect="PostgreSQL" />
+    <file url="file://$PROJECT_DIR$/src/database/sql/messages.sql" dialect="PostgreSQL" />
+    <file url="file://$PROJECT_DIR$/src/database/sql/single_conversations.sql" dialect="PostgreSQL" />
+    <file url="file://$PROJECT_DIR$/src/database/sql/users.sql" dialect="PostgreSQL" />
     <file url="PROJECT" dialect="PostgreSQL" />
   </component>
 </project>

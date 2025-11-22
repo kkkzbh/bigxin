@@ -1,6 +1,8 @@
 #pragma once
 
 #include <asio.hpp>
+#include <stdexec/execution.hpp>
+#include <asioexec/use_sender.hpp>
 
 #include <memory>
 #include <string>
@@ -38,12 +40,12 @@ struct Server
         );
     }
 
-private:
-    friend struct Session;
-
     /// \brief 接收连接并为每个连接启动一个 Session 协程。
     /// \return 协程完成时返回 void（通常不会返回）。
     auto run() -> asio::awaitable<void>;
+
+private:
+    friend struct Session;
 
     /// \brief 从会话列表中移除一个已经结束的 Session。
     auto remove_session(Session* ptr) -> void;
@@ -131,13 +133,18 @@ private:
     std::unordered_multimap<i64, std::weak_ptr<Session>> sessions_by_user_{};
 };
 
-/// \brief 方便 main 调用的启动入口，内部维护单例 Server。
+/// \brief 方便 main 调用的启动入口，返回服务器运行协程。
+/// \param exec 关联的 Asio 执行器。
+/// \param port 要监听的本地端口。
 auto inline start_server(asio::any_io_executor exec, u16 port) -> void
 {
-    auto static server = Server{ exec, port };
-    auto static started = false;
-    if(!started) {
-        server.start_accept();
-        started = true;
-    }
+    auto snd = asio::co_spawn (
+        exec,
+        [exec, port] -> asio::awaitable<void> {
+            auto server = Server{ exec, port };
+            co_await server.run();
+        },
+        asioexec::use_sender
+    );
+    stdexec::sync_wait(snd);
 }

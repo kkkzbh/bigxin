@@ -23,6 +23,9 @@ CPMAddPackage(
     NAME stdexec
     GITHUB_REPOSITORY NVIDIA/stdexec
     GIT_TAG main
+    OPTIONS
+        "STDEXEC_ENABLE_ASIO ON"
+        "STDEXEC_ASIO_IMPLEMENTATION standalone"
 )
 
 CPMAddPackage(

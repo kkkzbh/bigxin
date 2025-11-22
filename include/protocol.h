@@ -34,10 +34,10 @@ namespace protocol
             throw std::runtime_error{ "protocol error: missing ':'" };
         }
 
-        Frame f{};
-        f.command.assign(line.substr(0, pos));
-        f.payload.assign(line.substr(pos + 1));
-        return f;
+        return {
+            std::string(line.substr(0, pos)),
+            std::string(line.substr(pos + 1))
+        };
     }
 
     /// \brief 组装一行 "COMMAND:{...}\\n"。
@@ -46,12 +46,8 @@ namespace protocol
     /// \return 已经带有结尾换行符的完整文本行。
     auto inline make_line(std::string_view command, std::string_view payload) -> std::string
     {
-        std::string out;
-        out.reserve(command.size() + payload.size() + 2);
-        out.append(command);
-        out.push_back(':');
-        out.append(payload);
-        out.push_back('\n');
-        return out;
+        using namespace std::string_literals;
+        using namespace std::string_view_literals;
+        return ""s + command + ":"sv + payload;
     }
 } // namespace protocol

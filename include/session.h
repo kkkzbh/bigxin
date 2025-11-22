@@ -1,6 +1,7 @@
 #pragma once
 
 #include <asio.hpp>
+
 #include <nlohmann/json.hpp>
 
 #include <print>
@@ -60,7 +61,7 @@ struct Session : std::enable_shared_from_this<Session>
         {
             try {
                 while(true) {
-                    co_await asio::async_read_until(
+                    co_await asio::async_read_until (
                         socket_, buffer_, '\n', asio::use_awaitable
                     );
 

@@ -4,7 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="BackendCodeEditorMiscSettings">
-    <option name="/Default/Environment/Hierarchy/GeneratedFilesCacheKey/Timestamp/@EntryValue" value="18" type="long" />
+    <option name="/Default/Environment/Hierarchy/GeneratedFilesCacheKey/Timestamp/@EntryValue" value="3" type="long" />
     <option name="/Default/Housekeeping/FeatureSuggestion/FeatureSuggestionManager/DisabledSuggesters/=SwitchToGoToActionSuggester/@EntryIndexedValue" value="true" type="bool" />
     <option name="/Default/Housekeeping/GlobalSettingsUpgraded/IsUpgraded/@EntryValue" value="true" type="bool" />
     <option name="/Default/Housekeeping/OptionsDialog/SelectedPageId/@EntryValue" value="CppFormatterOtherPage" type="string" />
@@ -21,84 +21,93 @@
   </component>
   <component name="CMakeRunConfigurationManager">
     <generated>
-      <config projectName="JuXin" targetName="client_qmltyperegistration" />
-      <config projectName="JuXin" targetName="NightlyUpdate" />
-      <config projectName="JuXin" targetName="ExperimentalUpdate" />
-      <config projectName="JuXin" targetName="ContinuousConfigure" />
-      <config projectName="JuXin" targetName="Nightly" />
-      <config projectName="JuXin" targetName="client_qmllint" />
-      <config projectName="JuXin" targetName="all_qmltyperegistrations" />
-      <config projectName="JuXin" targetName="ExperimentalMemCheck" />
-      <config projectName="JuXin" targetName="example.benchmark.static_thread_pool_nested_old" />
-      <config projectName="JuXin" targetName="example.hello_coro" />
-      <config projectName="JuXin" targetName="example.server_theme.then_upon" />
-      <config projectName="JuXin" targetName="ContinuousUpdate" />
-      <config projectName="JuXin" targetName="NightlySubmit" />
-      <config projectName="JuXin" targetName="__CMAKE__CXX26@synth_6ca556088a15" />
-      <config projectName="JuXin" targetName="module_client_aotstats_target" />
-      <config projectName="JuXin" targetName="ExperimentalSubmit" />
-      <config projectName="JuXin" targetName="NightlyConfigure" />
-      <config projectName="JuXin" targetName="Experimental" />
-      <config projectName="JuXin" targetName="NightlyMemCheck" />
-      <config projectName="JuXin" targetName="example.benchmark.static_thread_pool_bulk_enqueue" />
-      <config projectName="JuXin" targetName="ExperimentalStart" />
-      <config projectName="JuXin" targetName="ExperimentalConfigure" />
-      <config projectName="JuXin" targetName="client" />
-      <config projectName="JuXin" targetName="NightlyMemoryCheck" />
-      <config projectName="JuXin" targetName="example.server_theme.split_bulk" />
-      <config projectName="JuXin" targetName="server" />
-      <config projectName="JuXin" targetName="stdexec" />
-      <config projectName="JuXin" targetName="client_copy_res" />
-      <config projectName="JuXin" targetName="example.server_theme.on_transfer" />
-      <config projectName="JuXin" targetName="ExperimentalBuild" />
-      <config projectName="JuXin" targetName="ContinuousMemCheck" />
-      <config projectName="JuXin" targetName="ContinuousStart" />
-      <config projectName="JuXin" targetName="ExperimentalCoverage" />
-      <config projectName="JuXin" targetName="example.retry" />
-      <config projectName="JuXin" targetName="example.benchmark.static_thread_pool_nested" />
-      <config projectName="JuXin" targetName="NightlyBuild" />
-      <config projectName="JuXin" targetName="example.benchmark.static_thread_pool" />
-      <config projectName="JuXin" targetName="client_other_files" />
-      <config projectName="JuXin" targetName="ContinuousBuild" />
-      <config projectName="JuXin" targetName="example.scope" />
-      <config projectName="JuXin" targetName="ContinuousCoverage" />
-      <config projectName="JuXin" targetName="example.benchmark.static_thread_pool_bulk_enqueue_nested" />
-      <config projectName="JuXin" targetName="example.benchmark.static_thread_pool_old" />
-      <config projectName="JuXin" targetName="example.io_uring" />
-      <config projectName="JuXin" targetName="NightlyTest" />
       <config projectName="JuXin" targetName="example.server_theme.let_value" />
-      <config projectName="JuXin" targetName="client_copy_qml" />
-      <config projectName="JuXin" targetName="ContinuousSubmit" />
+      <config projectName="JuXin" targetName="example.benchmark.asio_thread_pool" />
+      <config projectName="JuXin" targetName="NightlyMemoryCheck" folderName="CTestDashboardTargets" />
+      <config projectName="JuXin" targetName="example.scope" />
+      <config projectName="JuXin" targetName="example.benchmark.static_thread_pool_old" />
+      <config projectName="JuXin" targetName="example.benchmark.static_thread_pool_nested_old" />
+      <config projectName="JuXin" targetName="client_other_files" />
       <config projectName="JuXin" targetName="all_aotstats" />
-      <config projectName="JuXin" targetName="all_qmllint_module" />
-      <config projectName="JuXin" targetName="client_qmllint_json" />
-      <config projectName="JuXin" targetName="ExperimentalTest" />
-      <config projectName="JuXin" targetName="system_context" />
-      <config projectName="JuXin" targetName="example.then" />
-      <config projectName="JuXin" targetName="client_qmllint_module" />
-      <config projectName="JuXin" targetName="all_qmllint_json" />
-      <config projectName="JuXin" targetName="all_qmllint" />
-      <config projectName="JuXin" targetName="ContinuousTest" />
-      <config projectName="JuXin" targetName="Continuous" />
-      <config projectName="JuXin" targetName="NightlyCoverage" />
-      <config projectName="JuXin" targetName="NightlyStart" />
+      <config projectName="JuXin" targetName="ExperimentalMemCheck" folderName="CTestDashboardTargets" />
+      <config projectName="JuXin" targetName="ExperimentalStart" folderName="CTestDashboardTargets" />
+      <config projectName="JuXin" targetName="ContinuousConfigure" folderName="CTestDashboardTargets" />
+      <config projectName="JuXin" targetName="NightlyMemCheck" folderName="CTestDashboardTargets" />
+      <config projectName="JuXin" targetName="example.hello_coro" />
+      <config projectName="JuXin" targetName="NightlyStart" folderName="CTestDashboardTargets" />
+      <config projectName="JuXin" targetName="ExperimentalSubmit" folderName="CTestDashboardTargets" />
+      <config projectName="JuXin" targetName="example.benchmark.static_thread_pool_bulk_enqueue_nested" />
+      <config projectName="JuXin" targetName="example.server_theme.on_transfer" />
+      <config projectName="JuXin" targetName="ContinuousStart" folderName="CTestDashboardTargets" />
+      <config projectName="JuXin" targetName="ContinuousBuild" folderName="CTestDashboardTargets" />
+      <config projectName="JuXin" targetName="NightlyTest" folderName="CTestDashboardTargets" />
+      <config projectName="JuXin" targetName="example.benchmark.static_thread_pool_bulk_enqueue" />
+      <config projectName="JuXin" targetName="asioexec_asio" />
+      <config projectName="JuXin" targetName="Nightly" folderName="CTestDashboardTargets" />
       <config projectName="JuXin" targetName="example.hello_world" />
+      <config projectName="JuXin" targetName="ContinuousSubmit" folderName="CTestDashboardTargets" />
+      <config projectName="JuXin" targetName="NightlySubmit" folderName="CTestDashboardTargets" />
+      <config projectName="JuXin" targetName="ExperimentalBuild" folderName="CTestDashboardTargets" />
+      <config projectName="JuXin" targetName="example.then" />
+      <config projectName="JuXin" targetName="example.io_uring" />
+      <config projectName="JuXin" targetName="NightlyBuild" folderName="CTestDashboardTargets" />
+      <config projectName="JuXin" targetName="example.benchmark.static_thread_pool_nested" />
+      <config projectName="JuXin" targetName="NightlyConfigure" folderName="CTestDashboardTargets" />
+      <config projectName="JuXin" targetName="client" />
+      <config projectName="JuXin" targetName="server" />
+      <config projectName="JuXin" targetName="ExperimentalCoverage" folderName="CTestDashboardTargets" />
+      <config projectName="JuXin" targetName="example.server_theme.split_bulk" />
+      <config projectName="JuXin" targetName="__CMAKE__CXX26@synth_6ca556088a15" />
+      <config projectName="JuXin" targetName="example.retry" />
+      <config projectName="JuXin" targetName="ContinuousCoverage" folderName="CTestDashboardTargets" />
+      <config projectName="JuXin" targetName="ExperimentalTest" folderName="CTestDashboardTargets" />
+      <config projectName="JuXin" targetName="MAN" />
+      <config projectName="JuXin" targetName="ContinuousUpdate" folderName="CTestDashboardTargets" />
+      <config projectName="JuXin" targetName="example.server_theme.then_upon" />
+      <config projectName="JuXin" targetName="stdexec" />
+      <config projectName="JuXin" targetName="ExperimentalConfigure" folderName="CTestDashboardTargets" />
+      <config projectName="JuXin" targetName="example.benchmark.static_thread_pool" />
+      <config projectName="JuXin" targetName="system_context" />
+      <config projectName="JuXin" targetName="stdexec_asio_pool" />
+      <config projectName="JuXin" targetName="ContinuousTest" folderName="CTestDashboardTargets" />
+      <config projectName="JuXin" targetName="Experimental" folderName="CTestDashboardTargets" />
+      <config projectName="JuXin" targetName="NightlyUpdate" folderName="CTestDashboardTargets" />
+      <config projectName="JuXin" targetName="ContinuousMemCheck" folderName="CTestDashboardTargets" />
+      <config projectName="JuXin" targetName="NightlyCoverage" folderName="CTestDashboardTargets" />
+      <config projectName="JuXin" targetName="ExperimentalUpdate" folderName="CTestDashboardTargets" />
+      <config projectName="JuXin" targetName="Continuous" folderName="CTestDashboardTargets" />
     </generated>
   </component>
   <component name="CMakeSettings">
     <configurations>
-      <configuration PROFILE_NAME="Debug" ENABLED="true" CONFIG_NAME="Debug" TOOLCHAIN_NAME="GCC15" GENERATION_OPTIONS="-Wno-dev -DCMAKE_TOOLCHAIN_FILE=/home/kkkzbh/vcpkg/scripts/buildsystems/vcpkg.cmake -DQt6_DIR=/opt/Qt/6.9.0/gcc_64/lib/cmake/Qt6" />
+      <configuration PROFILE_NAME="Debug" ENABLED="true" CONFIG_NAME="Debug" GENERATION_OPTIONS="-Wno-dev -DCMAKE_TOOLCHAIN_FILE=/home/kkkzbh/vcpkg/scripts/buildsystems/vcpkg.cmake -DQt6_DIR=/opt/Qt/6.9.0/gcc_64/lib/cmake/Qt6" />
     </configurations>
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="2dc32154-be48-467c-9695-c2dd10df8b29" name="更改" comment="v0.24 解散/退出群聊">
+    <list default="true" id="2dc32154-be48-467c-9695-c2dd10df8b29" name="更改" comment="v0.25 大规模重构代码组织">
+      <change beforePath="$PROJECT_DIR$/.idea/chat.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/chat.iml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/dataSources.local.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/dataSources.local.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/dataSources/01a9e29b-e2a6-4961-afa0-6a9bca3bd300.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/dataSources/01a9e29b-e2a6-4961-afa0-6a9bca3bd300.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/data_source_mapping.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/data_source_mapping.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/editor.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/editor.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/sqldialects.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/sqldialects.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/vcs.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/CMakeLists.txt" beforeDir="false" afterPath="$PROJECT_DIR$/CMakeLists.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/include/database.h" beforeDir="false" afterPath="$PROJECT_DIR$/include/database.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/include/login.backend.h" beforeDir="false" afterPath="$PROJECT_DIR$/include/login.backend.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cmake-build-debug/_deps/stdexec-src/cmake/import_standalone_asio.cmake" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-debug/_deps/stdexec-src/cmake/import_standalone_asio.cmake" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/include/iorunner.h" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/include/protocol.h" beforeDir="false" afterPath="$PROJECT_DIR$/include/protocol.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/include/server.core.h" beforeDir="false" afterPath="$PROJECT_DIR$/include/server.core.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/include/server.h" beforeDir="false" afterPath="$PROJECT_DIR$/include/server.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/include/session.h" beforeDir="false" afterPath="$PROJECT_DIR$/include/session.h" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/CMakeLists.txt" beforeDir="false" afterPath="$PROJECT_DIR$/src/CMakeLists.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/client/qml/Login/RegisterWindow.qml" beforeDir="false" afterPath="$PROJECT_DIR$/src/client/qml/Login/RegisterWindow.qml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/database/conversation_members.sql" beforeDir="false" afterPath="$PROJECT_DIR$/src/database/sql/conversation_members.sql" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/database/conversations.sql" beforeDir="false" afterPath="$PROJECT_DIR$/src/database/sql/conversations.sql" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/database/friend_requests.sql" beforeDir="false" afterPath="$PROJECT_DIR$/src/database/sql/friend_requests.sql" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/database/friends.sql" beforeDir="false" afterPath="$PROJECT_DIR$/src/database/sql/friends.sql" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/database/messages.sql" beforeDir="false" afterPath="$PROJECT_DIR$/src/database/sql/messages.sql" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/database/single_conversations.sql" beforeDir="false" afterPath="$PROJECT_DIR$/src/database/sql/single_conversations.sql" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/database/users.sql" beforeDir="false" afterPath="$PROJECT_DIR$/src/database/sql/users.sql" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/server/server.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/server/server.cpp" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -107,6 +116,7 @@
     <option name="LAST_RESOLUTION" value="IGNORE" />
   </component>
   <component name="ClangdSettings">
+    <option name="clangdShowErrors" value="false" />
     <option name="formatViaClangd" value="false" />
   </component>
   <component name="ExecutionTargetManager" SELECTED_TARGET="CMakeBuildProfile:Debug" />
@@ -145,8 +155,8 @@
 }</component>
   <component name="HighlightingSettingsPerFile">
     <setting file="file://$PROJECT_DIR$/src/client/client.cpp" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/src/main.cpp" root0="FORCE_HIGHLIGHTING" />
     <setting file="file:///usr/local/gcc16-1116/include/c++/16.0.0/bits/atomic_base.h" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock://main.cpp" root0="SKIP_HIGHLIGHTING" />
   </component>
   <component name="MacroExpansionManager">
     <option name="directoryName" value="4aTo6yeX" />
@@ -172,6 +182,8 @@
   <component name="PropertiesComponent">{
   &quot;keyToString&quot;: {
     &quot;ASKED_SHARE_PROJECT_CONFIGURATION_FILES&quot;: &quot;true&quot;,
+    &quot;CMake 应用程序.MAN.executor&quot;: &quot;Run&quot;,
+    &quot;CMake 应用程序.asioexec_example.executor&quot;: &quot;Run&quot;,
     &quot;CMake 应用程序.client.executor&quot;: &quot;Run&quot;,
     &quot;CMake 应用程序.client_gui.executor&quot;: &quot;Run&quot;,
     &quot;CMake 应用程序.import_std_asio_repro.executor&quot;: &quot;Run&quot;,
@@ -217,42 +229,42 @@
       <window_info id="Commit_Guest" show_stripe_button="false" />
       <window_info id="Pull Requests" />
       <window_info id="Learn" show_stripe_button="false" />
-      <window_info active="true" content_ui="combo" id="Project" order="0" visible="true" weight="0.27938873" />
-      <window_info id="Commit" order="1" weight="0.27938873" />
+      <window_info active="true" content_ui="combo" id="Project" order="0" visible="true" weight="0.20108244" />
+      <window_info id="Commit" order="1" weight="0.25" />
       <window_info id="Structure" order="2" side_tool="true" weight="0.25" />
       <window_info anchor="bottom" id="Database Changes" />
       <window_info anchor="bottom" id="TypeScript" />
       <window_info anchor="bottom" id="GitHub Copilot MCP Log" show_stripe_button="false" />
       <window_info anchor="bottom" id="Python Packages" />
+      <window_info anchor="bottom" id="TODO" />
       <window_info anchor="bottom" id="File Transfer" />
       <window_info anchor="bottom" id="Serial Monitor" />
+      <window_info anchor="bottom" id="PythonProcessOutput" />
+      <window_info anchor="bottom" id="Vcpkg" />
       <window_info anchor="bottom" id="clangd" />
-      <window_info anchor="bottom" id="Version Control" order="0" weight="0.27183968" />
-      <window_info anchor="bottom" id="Problems View" order="1" weight="0.21806386" />
-      <window_info anchor="bottom" id="Problems" order="2" />
+      <window_info anchor="bottom" id="Version Control" order="0" />
+      <window_info anchor="bottom" id="Problems" order="1" />
+      <window_info anchor="bottom" id="Problems View" order="2" />
       <window_info anchor="bottom" id="Debug" order="3" weight="0.47906697" />
-      <window_info anchor="bottom" id="Services" order="4" weight="0.40134996" />
-      <window_info anchor="bottom" id="Find" order="5" weight="0.33006912" />
-      <window_info anchor="bottom" id="CMake" order="6" weight="0.25745118" />
-      <window_info active="true" anchor="bottom" id="Run" order="7" visible="true" weight="0.20709148" />
-      <window_info anchor="bottom" id="PythonProcessOutput" order="8" show_stripe_button="false" weight="0.3762322" />
-      <window_info anchor="bottom" id="Vcpkg" order="9" weight="0.3411215" />
-      <window_info anchor="bottom" id="TODO" order="10" weight="0.25745118" />
-      <window_info anchor="bottom" id="Terminal" order="11" weight="0.46916753" />
-      <window_info anchor="bottom" id="Messages" order="12" weight="0.39619732" />
+      <window_info anchor="bottom" id="Terminal" order="3" weight="0.031282052" />
+      <window_info anchor="bottom" id="Services" order="4" />
+      <window_info anchor="bottom" id="CMake" order="5" weight="0.25830817" />
+      <window_info active="true" anchor="bottom" id="Run" order="6" visible="true" weight="0.08358975" />
+      <window_info anchor="bottom" id="Messages" order="7" weight="0.1625641" />
+      <window_info anchor="bottom" id="Find" order="7" weight="0.33006912" />
       <window_info anchor="right" id="make" side_tool="true" />
       <window_info anchor="right" id="Coverage" side_tool="true" />
       <window_info anchor="right" id="Python Console" />
       <window_info anchor="right" id="PlatformIO" />
       <window_info anchor="right" id="GitHub Coding Agent Jobs" show_stripe_button="false" />
       <window_info anchor="right" id="Meson" />
-      <window_info anchor="right" id="Notifications" order="0" weight="0.25692308" />
+      <window_info anchor="right" content_ui="combo" id="Notifications" order="0" weight="0.25" />
       <window_info anchor="right" id="AIAssistant" order="1" weight="0.25" />
-      <window_info anchor="right" id="Database" order="3" weight="0.3072065" />
-      <window_info anchor="right" id="Gradle" order="4" weight="0.25" />
-      <window_info anchor="right" id="Maven" order="5" weight="0.25" />
-      <window_info anchor="right" id="github.copilotToolWindow" order="6" weight="0.34985352" />
-      <window_info anchor="right" id="GitHub Copilot Chat" order="7" show_stripe_button="false" weight="0.34985352" />
+      <window_info anchor="right" id="Gradle" order="3" weight="0.25" />
+      <window_info anchor="right" id="Maven" order="4" weight="0.25" />
+      <window_info anchor="right" id="Database" order="5" weight="0.25" />
+      <window_info anchor="right" id="github.copilotToolWindow" order="5" weight="0.34985352" />
+      <window_info anchor="right" id="GitHub Copilot Chat" order="6" show_stripe_button="false" weight="0.34985352" />
     </layout>
   </component>
   <component name="RecentsManager">
@@ -264,153 +276,154 @@
       <recent name="$PROJECT_DIR$" />
     </key>
     <key name="MoveFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/src/database/sql" />
       <recent name="$PROJECT_DIR$/src/client/qml/resource/ChatArea" />
       <recent name="$PROJECT_DIR$/img/head" />
       <recent name="$PROJECT_DIR$/doc" />
     </key>
   </component>
   <component name="RunManager" selected="CMake 应用程序.client">
-    <configuration default="true" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true">
+    <configuration name="Continuous" type="CMakeRunConfiguration" factoryName="Application" folderName="CTestDashboardTargets" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="JuXin" TARGET_NAME="Continuous" CONFIG_NAME="Debug">
       <method v="2">
         <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
       </method>
     </configuration>
-    <configuration name="Continuous" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="JuXin" TARGET_NAME="Continuous" CONFIG_NAME="Debug">
+    <configuration name="ContinuousBuild" type="CMakeRunConfiguration" factoryName="Application" folderName="CTestDashboardTargets" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="JuXin" TARGET_NAME="ContinuousBuild" CONFIG_NAME="Debug">
       <method v="2">
         <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
       </method>
     </configuration>
-    <configuration name="ContinuousBuild" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="JuXin" TARGET_NAME="ContinuousBuild" CONFIG_NAME="Debug">
+    <configuration name="ContinuousConfigure" type="CMakeRunConfiguration" factoryName="Application" folderName="CTestDashboardTargets" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="JuXin" TARGET_NAME="ContinuousConfigure" CONFIG_NAME="Debug">
       <method v="2">
         <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
       </method>
     </configuration>
-    <configuration name="ContinuousConfigure" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="JuXin" TARGET_NAME="ContinuousConfigure" CONFIG_NAME="Debug">
+    <configuration name="ContinuousCoverage" type="CMakeRunConfiguration" factoryName="Application" folderName="CTestDashboardTargets" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="JuXin" TARGET_NAME="ContinuousCoverage" CONFIG_NAME="Debug">
       <method v="2">
         <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
       </method>
     </configuration>
-    <configuration name="ContinuousCoverage" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="JuXin" TARGET_NAME="ContinuousCoverage" CONFIG_NAME="Debug">
+    <configuration name="ContinuousMemCheck" type="CMakeRunConfiguration" factoryName="Application" folderName="CTestDashboardTargets" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="JuXin" TARGET_NAME="ContinuousMemCheck" CONFIG_NAME="Debug">
       <method v="2">
         <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
       </method>
     </configuration>
-    <configuration name="ContinuousMemCheck" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="JuXin" TARGET_NAME="ContinuousMemCheck" CONFIG_NAME="Debug">
+    <configuration name="ContinuousStart" type="CMakeRunConfiguration" factoryName="Application" folderName="CTestDashboardTargets" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="JuXin" TARGET_NAME="ContinuousStart" CONFIG_NAME="Debug">
       <method v="2">
         <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
       </method>
     </configuration>
-    <configuration name="ContinuousStart" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="JuXin" TARGET_NAME="ContinuousStart" CONFIG_NAME="Debug">
+    <configuration name="ContinuousSubmit" type="CMakeRunConfiguration" factoryName="Application" folderName="CTestDashboardTargets" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="JuXin" TARGET_NAME="ContinuousSubmit" CONFIG_NAME="Debug">
       <method v="2">
         <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
       </method>
     </configuration>
-    <configuration name="ContinuousSubmit" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="JuXin" TARGET_NAME="ContinuousSubmit" CONFIG_NAME="Debug">
+    <configuration name="ContinuousTest" type="CMakeRunConfiguration" factoryName="Application" folderName="CTestDashboardTargets" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="JuXin" TARGET_NAME="ContinuousTest" CONFIG_NAME="Debug">
       <method v="2">
         <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
       </method>
     </configuration>
-    <configuration name="ContinuousTest" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="JuXin" TARGET_NAME="ContinuousTest" CONFIG_NAME="Debug">
+    <configuration name="ContinuousUpdate" type="CMakeRunConfiguration" factoryName="Application" folderName="CTestDashboardTargets" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="JuXin" TARGET_NAME="ContinuousUpdate" CONFIG_NAME="Debug">
       <method v="2">
         <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
       </method>
     </configuration>
-    <configuration name="ContinuousUpdate" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="JuXin" TARGET_NAME="ContinuousUpdate" CONFIG_NAME="Debug">
+    <configuration name="Experimental" type="CMakeRunConfiguration" factoryName="Application" folderName="CTestDashboardTargets" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="JuXin" TARGET_NAME="Experimental" CONFIG_NAME="Debug">
       <method v="2">
         <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
       </method>
     </configuration>
-    <configuration name="Experimental" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="JuXin" TARGET_NAME="Experimental" CONFIG_NAME="Debug">
+    <configuration name="ExperimentalBuild" type="CMakeRunConfiguration" factoryName="Application" folderName="CTestDashboardTargets" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="JuXin" TARGET_NAME="ExperimentalBuild" CONFIG_NAME="Debug">
       <method v="2">
         <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
       </method>
     </configuration>
-    <configuration name="ExperimentalBuild" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="JuXin" TARGET_NAME="ExperimentalBuild" CONFIG_NAME="Debug">
+    <configuration name="ExperimentalConfigure" type="CMakeRunConfiguration" factoryName="Application" folderName="CTestDashboardTargets" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="JuXin" TARGET_NAME="ExperimentalConfigure" CONFIG_NAME="Debug">
       <method v="2">
         <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
       </method>
     </configuration>
-    <configuration name="ExperimentalConfigure" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="JuXin" TARGET_NAME="ExperimentalConfigure" CONFIG_NAME="Debug">
+    <configuration name="ExperimentalCoverage" type="CMakeRunConfiguration" factoryName="Application" folderName="CTestDashboardTargets" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="JuXin" TARGET_NAME="ExperimentalCoverage" CONFIG_NAME="Debug">
       <method v="2">
         <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
       </method>
     </configuration>
-    <configuration name="ExperimentalCoverage" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="JuXin" TARGET_NAME="ExperimentalCoverage" CONFIG_NAME="Debug">
+    <configuration name="ExperimentalMemCheck" type="CMakeRunConfiguration" factoryName="Application" folderName="CTestDashboardTargets" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="JuXin" TARGET_NAME="ExperimentalMemCheck" CONFIG_NAME="Debug">
       <method v="2">
         <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
       </method>
     </configuration>
-    <configuration name="ExperimentalMemCheck" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="JuXin" TARGET_NAME="ExperimentalMemCheck" CONFIG_NAME="Debug">
+    <configuration name="ExperimentalStart" type="CMakeRunConfiguration" factoryName="Application" folderName="CTestDashboardTargets" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="JuXin" TARGET_NAME="ExperimentalStart" CONFIG_NAME="Debug">
       <method v="2">
         <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
       </method>
     </configuration>
-    <configuration name="ExperimentalStart" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="JuXin" TARGET_NAME="ExperimentalStart" CONFIG_NAME="Debug">
+    <configuration name="ExperimentalSubmit" type="CMakeRunConfiguration" factoryName="Application" folderName="CTestDashboardTargets" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="JuXin" TARGET_NAME="ExperimentalSubmit" CONFIG_NAME="Debug">
       <method v="2">
         <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
       </method>
     </configuration>
-    <configuration name="ExperimentalSubmit" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="JuXin" TARGET_NAME="ExperimentalSubmit" CONFIG_NAME="Debug">
+    <configuration name="ExperimentalTest" type="CMakeRunConfiguration" factoryName="Application" folderName="CTestDashboardTargets" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="JuXin" TARGET_NAME="ExperimentalTest" CONFIG_NAME="Debug">
       <method v="2">
         <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
       </method>
     </configuration>
-    <configuration name="ExperimentalTest" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="JuXin" TARGET_NAME="ExperimentalTest" CONFIG_NAME="Debug">
+    <configuration name="ExperimentalUpdate" type="CMakeRunConfiguration" factoryName="Application" folderName="CTestDashboardTargets" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="JuXin" TARGET_NAME="ExperimentalUpdate" CONFIG_NAME="Debug">
       <method v="2">
         <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
       </method>
     </configuration>
-    <configuration name="ExperimentalUpdate" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="JuXin" TARGET_NAME="ExperimentalUpdate" CONFIG_NAME="Debug">
+    <configuration name="MAN" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="JuXin" TARGET_NAME="MAN" CONFIG_NAME="Debug" RUN_TARGET_PROJECT_NAME="JuXin" RUN_TARGET_NAME="MAN">
       <method v="2">
         <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
       </method>
     </configuration>
-    <configuration name="Nightly" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="JuXin" TARGET_NAME="Nightly" CONFIG_NAME="Debug">
+    <configuration name="Nightly" type="CMakeRunConfiguration" factoryName="Application" folderName="CTestDashboardTargets" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="JuXin" TARGET_NAME="Nightly" CONFIG_NAME="Debug">
       <method v="2">
         <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
       </method>
     </configuration>
-    <configuration name="NightlyBuild" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="JuXin" TARGET_NAME="NightlyBuild" CONFIG_NAME="Debug">
+    <configuration name="NightlyBuild" type="CMakeRunConfiguration" factoryName="Application" folderName="CTestDashboardTargets" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="JuXin" TARGET_NAME="NightlyBuild" CONFIG_NAME="Debug">
       <method v="2">
         <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
       </method>
     </configuration>
-    <configuration name="NightlyConfigure" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="JuXin" TARGET_NAME="NightlyConfigure" CONFIG_NAME="Debug">
+    <configuration name="NightlyConfigure" type="CMakeRunConfiguration" factoryName="Application" folderName="CTestDashboardTargets" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="JuXin" TARGET_NAME="NightlyConfigure" CONFIG_NAME="Debug">
       <method v="2">
         <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
       </method>
     </configuration>
-    <configuration name="NightlyCoverage" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="JuXin" TARGET_NAME="NightlyCoverage" CONFIG_NAME="Debug">
+    <configuration name="NightlyCoverage" type="CMakeRunConfiguration" factoryName="Application" folderName="CTestDashboardTargets" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="JuXin" TARGET_NAME="NightlyCoverage" CONFIG_NAME="Debug">
       <method v="2">
         <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
       </method>
     </configuration>
-    <configuration name="NightlyMemCheck" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="JuXin" TARGET_NAME="NightlyMemCheck" CONFIG_NAME="Debug">
+    <configuration name="NightlyMemCheck" type="CMakeRunConfiguration" factoryName="Application" folderName="CTestDashboardTargets" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="JuXin" TARGET_NAME="NightlyMemCheck" CONFIG_NAME="Debug">
       <method v="2">
         <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
       </method>
     </configuration>
-    <configuration name="NightlyMemoryCheck" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="JuXin" TARGET_NAME="NightlyMemoryCheck" CONFIG_NAME="Debug">
+    <configuration name="NightlyMemoryCheck" type="CMakeRunConfiguration" factoryName="Application" folderName="CTestDashboardTargets" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="JuXin" TARGET_NAME="NightlyMemoryCheck" CONFIG_NAME="Debug">
       <method v="2">
         <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
       </method>
     </configuration>
-    <configuration name="NightlyStart" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="JuXin" TARGET_NAME="NightlyStart" CONFIG_NAME="Debug">
+    <configuration name="NightlyStart" type="CMakeRunConfiguration" factoryName="Application" folderName="CTestDashboardTargets" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="JuXin" TARGET_NAME="NightlyStart" CONFIG_NAME="Debug">
       <method v="2">
         <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
       </method>
     </configuration>
-    <configuration name="NightlySubmit" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="JuXin" TARGET_NAME="NightlySubmit" CONFIG_NAME="Debug">
+    <configuration name="NightlySubmit" type="CMakeRunConfiguration" factoryName="Application" folderName="CTestDashboardTargets" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="JuXin" TARGET_NAME="NightlySubmit" CONFIG_NAME="Debug">
       <method v="2">
         <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
       </method>
     </configuration>
-    <configuration name="NightlyTest" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="JuXin" TARGET_NAME="NightlyTest" CONFIG_NAME="Debug">
+    <configuration name="NightlyTest" type="CMakeRunConfiguration" factoryName="Application" folderName="CTestDashboardTargets" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="JuXin" TARGET_NAME="NightlyTest" CONFIG_NAME="Debug">
       <method v="2">
         <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
       </method>
     </configuration>
-    <configuration name="NightlyUpdate" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="JuXin" TARGET_NAME="NightlyUpdate" CONFIG_NAME="Debug">
+    <configuration name="NightlyUpdate" type="CMakeRunConfiguration" factoryName="Application" folderName="CTestDashboardTargets" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="JuXin" TARGET_NAME="NightlyUpdate" CONFIG_NAME="Debug">
       <method v="2">
         <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
       </method>
@@ -420,40 +433,12 @@
         <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
       </method>
     </configuration>
-    <configuration name="all_qmllint" type="CMakeRunConfiguration" factoryName="Application" folderName="QtInternalTargets/QmlLinter" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="JuXin" TARGET_NAME="all_qmllint" CONFIG_NAME="Debug">
-      <method v="2">
-        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
-      </method>
-    </configuration>
-    <configuration name="all_qmllint_json" type="CMakeRunConfiguration" factoryName="Application" folderName="QtInternalTargets/QmlLinter" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="JuXin" TARGET_NAME="all_qmllint_json" CONFIG_NAME="Debug">
-      <method v="2">
-        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
-      </method>
-    </configuration>
-    <configuration name="all_qmllint_module" type="CMakeRunConfiguration" factoryName="Application" folderName="QtInternalTargets/QmlLinter" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="JuXin" TARGET_NAME="all_qmllint_module" CONFIG_NAME="Debug">
-      <method v="2">
-        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
-      </method>
-    </configuration>
-    <configuration name="all_qmltyperegistrations" type="CMakeRunConfiguration" factoryName="Application" folderName="QtInternalTargets" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="JuXin" TARGET_NAME="all_qmltyperegistrations" CONFIG_NAME="Debug">
+    <configuration name="asioexec_asio" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="JuXin" TARGET_NAME="asioexec_asio" CONFIG_NAME="Debug">
       <method v="2">
         <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
       </method>
     </configuration>
     <configuration name="client" type="CMakeRunConfiguration" factoryName="Application" singleton="false" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="JuXin" TARGET_NAME="client" CONFIG_NAME="Debug" RUN_TARGET_PROJECT_NAME="JuXin" RUN_TARGET_NAME="client">
-      <envs>
-        <env name="QT_QPA_PLATFORM" value="xcb" />
-      </envs>
-      <method v="2">
-        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
-      </method>
-    </configuration>
-    <configuration name="client_copy_qml" type="CMakeRunConfiguration" factoryName="Application" folderName="QtInternalTargets" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="JuXin" TARGET_NAME="client_copy_qml" CONFIG_NAME="Debug">
-      <method v="2">
-        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
-      </method>
-    </configuration>
-    <configuration name="client_copy_res" type="CMakeRunConfiguration" factoryName="Application" folderName="QtInternalTargets" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="JuXin" TARGET_NAME="client_copy_res" CONFIG_NAME="Debug">
       <method v="2">
         <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
       </method>
@@ -463,22 +448,7 @@
         <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
       </method>
     </configuration>
-    <configuration name="client_qmllint" type="CMakeRunConfiguration" factoryName="Application" folderName="QtInternalTargets/QmlLinter" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="JuXin" TARGET_NAME="client_qmllint" CONFIG_NAME="Debug">
-      <method v="2">
-        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
-      </method>
-    </configuration>
-    <configuration name="client_qmllint_json" type="CMakeRunConfiguration" factoryName="Application" folderName="QtInternalTargets/QmlLinter" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="JuXin" TARGET_NAME="client_qmllint_json" CONFIG_NAME="Debug">
-      <method v="2">
-        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
-      </method>
-    </configuration>
-    <configuration name="client_qmllint_module" type="CMakeRunConfiguration" factoryName="Application" folderName="QtInternalTargets/QmlLinter" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="JuXin" TARGET_NAME="client_qmllint_module" CONFIG_NAME="Debug">
-      <method v="2">
-        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
-      </method>
-    </configuration>
-    <configuration name="client_qmltyperegistration" type="CMakeRunConfiguration" factoryName="Application" folderName="QtInternalTargets" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="JuXin" TARGET_NAME="client_qmltyperegistration" CONFIG_NAME="Debug">
+    <configuration name="example.benchmark.asio_thread_pool" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="JuXin" TARGET_NAME="example.benchmark.asio_thread_pool" CONFIG_NAME="Debug" RUN_TARGET_PROJECT_NAME="JuXin" RUN_TARGET_NAME="example.benchmark.asio_thread_pool">
       <method v="2">
         <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
       </method>
@@ -563,11 +533,6 @@
         <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
       </method>
     </configuration>
-    <configuration name="module_client_aotstats_target" type="CMakeRunConfiguration" factoryName="Application" folderName="QtInternalTargets" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="JuXin" TARGET_NAME="module_client_aotstats_target" CONFIG_NAME="Debug">
-      <method v="2">
-        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
-      </method>
-    </configuration>
     <configuration name="server" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="JuXin" TARGET_NAME="server" CONFIG_NAME="Debug" RUN_TARGET_PROJECT_NAME="JuXin" RUN_TARGET_NAME="server">
       <method v="2">
         <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
@@ -578,23 +543,17 @@
         <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
       </method>
     </configuration>
+    <configuration name="stdexec_asio_pool" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="JuXin" TARGET_NAME="stdexec_asio_pool" CONFIG_NAME="Debug">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
     <configuration name="system_context" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="JuXin" TARGET_NAME="system_context" CONFIG_NAME="Debug">
       <method v="2">
         <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
       </method>
     </configuration>
     <list>
-      <item itemvalue="CMake 应用程序.all_qmltyperegistrations" />
-      <item itemvalue="CMake 应用程序.client_copy_qml" />
-      <item itemvalue="CMake 应用程序.client_copy_res" />
-      <item itemvalue="CMake 应用程序.client_qmltyperegistration" />
-      <item itemvalue="CMake 应用程序.module_client_aotstats_target" />
-      <item itemvalue="CMake 应用程序.all_qmllint" />
-      <item itemvalue="CMake 应用程序.all_qmllint_json" />
-      <item itemvalue="CMake 应用程序.all_qmllint_module" />
-      <item itemvalue="CMake 应用程序.client_qmllint" />
-      <item itemvalue="CMake 应用程序.client_qmllint_json" />
-      <item itemvalue="CMake 应用程序.client_qmllint_module" />
       <item itemvalue="CMake 应用程序.Continuous" />
       <item itemvalue="CMake 应用程序.ContinuousBuild" />
       <item itemvalue="CMake 应用程序.ContinuousConfigure" />
@@ -623,10 +582,13 @@
       <item itemvalue="CMake 应用程序.NightlySubmit" />
       <item itemvalue="CMake 应用程序.NightlyTest" />
       <item itemvalue="CMake 应用程序.NightlyUpdate" />
+      <item itemvalue="CMake 应用程序.MAN" />
       <item itemvalue="CMake 应用程序.all_aotstats" />
       <item itemvalue="CMake 应用程序.client" />
       <item itemvalue="CMake 应用程序.client_other_files" />
       <item itemvalue="CMake 应用程序.server" />
+      <item itemvalue="CMake 应用程序.asioexec_asio" />
+      <item itemvalue="CMake 应用程序.example.benchmark.asio_thread_pool" />
       <item itemvalue="CMake 应用程序.example.benchmark.static_thread_pool" />
       <item itemvalue="CMake 应用程序.example.benchmark.static_thread_pool_bulk_enqueue" />
       <item itemvalue="CMake 应用程序.example.benchmark.static_thread_pool_bulk_enqueue_nested" />
@@ -644,6 +606,7 @@
       <item itemvalue="CMake 应用程序.example.server_theme.then_upon" />
       <item itemvalue="CMake 应用程序.example.then" />
       <item itemvalue="CMake 应用程序.stdexec" />
+      <item itemvalue="CMake 应用程序.stdexec_asio_pool" />
       <item itemvalue="CMake 应用程序.system_context" />
     </list>
   </component>
@@ -685,7 +648,10 @@
       <workItem from="1763567344651" duration="7052000" />
       <workItem from="1763610851895" duration="9000" />
       <workItem from="1763617697109" duration="8803000" />
-      <workItem from="1763817104604" duration="4453000" />
+      <workItem from="1763817104604" duration="14340000" />
+      <workItem from="1763831511423" duration="1612000" />
+      <workItem from="1763837917393" duration="9000" />
+      <workItem from="1763838208458" duration="5208000" />
     </task>
     <task id="LOCAL-00001" summary="基础CMAKE，示例程序">
       <option name="closed" value="true" />
@@ -775,7 +741,15 @@
       <option name="project" value="LOCAL" />
       <updated>1763732416781</updated>
     </task>
-    <option name="localTasksCounter" value="12" />
+    <task id="LOCAL-00012" summary="v0.25 大规模重构代码组织">
+      <option name="closed" value="true" />
+      <created>1763821528927</created>
+      <option name="number" value="00012" />
+      <option name="presentableId" value="LOCAL-00012" />
+      <option name="project" value="LOCAL" />
+      <updated>1763821528927</updated>
+    </task>
+    <option name="localTasksCounter" value="13" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -809,7 +783,8 @@
     <MESSAGE value="v0.16 群聊消息显示昵称" />
     <MESSAGE value="v0.20 禁言解禁，性能重构" />
     <MESSAGE value="v0.21 系统消息显示" />
-    <option name="LAST_COMMIT_MESSAGE" value="v0.21 系统消息显示" />
+    <MESSAGE value="v0.25 大规模重构代码组织" />
+    <option name="LAST_COMMIT_MESSAGE" value="v0.25 大规模重构代码组织" />
   </component>
   <component name="XSLT-Support.FileAssociations.UIState">
     <expand />

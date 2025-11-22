@@ -213,10 +213,11 @@ ApplicationWindow {
                             return
                         }
                         loginBackend.clearError()
-                        loginBackend.registerAccount(
+                        loginBackend.registerAccount (
                                     regAccountField.text,
                                     regPasswordField.text,
-                                    regConfirmField.text)
+                                    regConfirmField.text
+                        )
                     }
                 }
             }
