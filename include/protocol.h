@@ -19,7 +19,7 @@ namespace protocol
     /// \param line 包含命令和负载的整行字符串视图。
     /// \return 拆分后的 Frame 结构。
     /// \throws std::runtime_error 当行为空或缺少冒号时抛出。
-    auto parse_line(std::string_view line) -> Frame
+    auto inline parse_line(std::string_view line) -> Frame
     {
         // 去掉结尾的 '\r' '\n'
         while(!line.empty() && (line.back() == '\n' || line.back() == '\r')) {
@@ -44,7 +44,7 @@ namespace protocol
     /// \param command 命令名。
     /// \param payload JSON 负载字符串。
     /// \return 已经带有结尾换行符的完整文本行。
-    auto make_line(std::string_view command, std::string_view payload) -> std::string
+    auto inline make_line(std::string_view command, std::string_view payload) -> std::string
     {
         std::string out;
         out.reserve(command.size() + payload.size() + 2);

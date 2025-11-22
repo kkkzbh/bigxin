@@ -14,6 +14,17 @@ target_link_libraries(libchat
 
 add_executable(server
         server/server.cpp
+        server/session/auth.cpp
+        server/session/message.cpp
+        server/session/friend.cpp
+        server/session/conversation.cpp
+        server/server/broadcast.cpp
+        server/server/push.cpp
+        database/connection.cpp
+        database/auth.cpp
+        database/friend.cpp
+        database/conversation.cpp
+        database/message.cpp
 )
 
 target_link_libraries(server
@@ -23,6 +34,10 @@ target_link_libraries(server
 
 add_executable(client
         client/client.cpp
+        client/backend/network_manager.cpp
+        client/backend/message_cache.cpp
+        client/backend/protocol_handler.cpp
+        client/backend/login_backend.cpp
 )
 
 # 让 Theme.qml 在 QML 模块中以 singleton 形式注册
@@ -64,6 +79,9 @@ set_source_files_properties(client/qml/Theme.qml
          client/qml/resource/ChatArea/list-unordered.svg
          SOURCES
          ${CMAKE_SOURCE_DIR}/include/login.backend.h
+         ${CMAKE_SOURCE_DIR}/include/network_manager.h
+         ${CMAKE_SOURCE_DIR}/include/message_cache.h
+         ${CMAKE_SOURCE_DIR}/include/protocol_handler.h
 )
 
 target_link_libraries(client

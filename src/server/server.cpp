@@ -2,7 +2,8 @@
 #include <print>
 #include <iorunner.h>
 #include <utility.h>
-#include <server.core.h>
+#include <session.h>
+#include <server.h>
 
 /// \brief 程序入口：启动 IoRunner 和 TCP 服务器，便于用 nc 调试协议。
 /// \param argc 命令行参数个数。
@@ -12,7 +13,7 @@ auto main(int argc, char** argv) -> int
 {
     auto port = u16(5555);
     if(argc > 1) {
-        port = static_cast<unsigned short>(std::strtoul(argv[1], nullptr, 10));
+        auto _ = std::from_chars(argv[1], argv[1] + std::strlen(argv[1]), port,10);
     };
 
     auto runner = IoRunner{ 8 };

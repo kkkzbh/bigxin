@@ -1,0 +1,81 @@
+#include <session.h>
+#include <server.h>
+
+#include <database.h>
+
+using nlohmann::json;
+
+auto Session::handle_register(std::string const& payload) -> std::string
+{
+    try {
+        auto j = json::parse(payload);
+
+        if(!j.contains("account") || !j.contains("password") || !j.contains("confirmPassword")) {
+            return make_error_payload("INVALID_PARAM", "缺少必要字段");
+        }
+
+        auto const account = j.at("account").get<std::string>();
+        auto const password = j.at("password").get<std::string>();
+        auto const confirm = j.at("confirmPassword").get<std::string>();
+
+        if(password != confirm) {
+            return make_error_payload("PASSWORD_MISMATCH", "两次密码不一致");
+        }
+
+        auto const result = database::register_user(account, password);
+        if(!result.ok) {
+            return make_error_payload(result.error_code, result.error_msg);
+        }
+
+        json resp;
+        resp["ok"] = true;
+        resp["userId"] = std::to_string(result.user.id);
+        resp["displayName"] = result.user.display_name;
+        return resp.dump();
+    } catch(json::parse_error const&) {
+        return make_error_payload("INVALID_JSON", "请求 JSON 解析失败");
+    } catch(std::exception const& ex) {
+        return make_error_payload("SERVER_ERROR", ex.what());
+    }
+}
+
+auto Session::handle_login(std::string const& payload) -> std::string
+{
+    try {
+        auto j = json::parse(payload);
+
+        if(!j.contains("account") || !j.contains("password")) {
+            return make_error_payload("INVALID_PARAM", "缺少必要字段");
+        }
+
+        auto const account = j.at("account").get<std::string>();
+        auto const password = j.at("password").get<std::string>();
+
+        auto const result = database::login_user(account, password);
+        if(!result.ok) {
+            return make_error_payload(result.error_code, result.error_msg);
+        }
+
+        authenticated_ = true;
+        user_id_ = result.user.id;
+        account_ = result.user.account;
+        display_name_ = result.user.display_name;
+
+        if(server_ != nullptr) {
+            server_->index_authenticated_session(shared_from_this());
+        }
+
+        auto const world_id = database::get_world_conversation_id();
+
+        json resp;
+        resp["ok"] = true;
+        resp["userId"] = std::to_string(user_id_);
+        resp["displayName"] = display_name_;
+        resp["worldConversationId"] = std::to_string(world_id);
+        return resp.dump();
+    } catch(json::parse_error const&) {
+        return make_error_payload("INVALID_JSON", "请求 JSON 解析失败");
+    } catch(std::exception const& ex) {
+        return make_error_payload("SERVER_ERROR", ex.what());
+    }
+}
