@@ -12,6 +12,14 @@
             </PerProfileState>
           </value>
         </entry>
+        <entry key="Release">
+          <value>
+            <PerProfileState>
+              <option name="myQmlPath" value="/opt/Qt/6.9.0/gcc_64/qml" />
+              <option name="myQtBinPath" value="/opt/Qt/6.9.0/gcc_64/bin" />
+            </PerProfileState>
+          </value>
+        </entry>
       </map>
     </option>
   </component>

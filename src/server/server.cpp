@@ -11,8 +11,6 @@
 #include <session.h>
 #include <server.h>
 
-namespace ex = stdexec;
-
 /// \brief 程序入口：启动 IoRunner 和 TCP 服务器，便于用 nc 调试协议。
 /// \param argc 命令行参数个数。
 /// \param argv 命令行参数数组，argv[1] 可选指定端口。
@@ -26,5 +24,5 @@ auto main(int argc, char** argv) -> int
     auto pool = execpools::asio_thread_pool{ 8u };
     std::println("chat server listening on port {}", port);
 
-    start_server(pool.get_executor(), port);
+    stdexec::sync_wait(async_start_server(pool.get_executor(),port));
 }

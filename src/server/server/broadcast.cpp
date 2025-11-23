@@ -6,6 +6,8 @@
 #include <pqxx/pqxx>
 
 #include <nlohmann/json.hpp>
+#include <asioexec/use_sender.hpp>
+#include <exec/task.hpp>
 
 #include <algorithm>
 #include <print>
@@ -13,12 +15,13 @@
 #include <vector>
 
 using nlohmann::json;
+using asio::use_awaitable;
 
 auto Server::run() -> asio::awaitable<void>
 {
     try {
         while(true) {
-            auto socket = co_await acceptor_.async_accept(asio::use_awaitable);
+            auto socket = co_await acceptor_.async_accept(use_awaitable);
 
             auto const endpoint = socket.remote_endpoint();
             auto const addr = endpoint.address().to_string();
@@ -33,7 +36,6 @@ auto Server::run() -> asio::awaitable<void>
                 [this, session]() -> asio::awaitable<void> {
                     co_await session->run();
                     remove_session(session.get());
-                    co_return;
                 },
                 asio::detached
             );

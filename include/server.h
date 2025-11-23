@@ -3,6 +3,7 @@
 #include <asio.hpp>
 #include <stdexec/execution.hpp>
 #include <asioexec/use_sender.hpp>
+#include <exec/task.hpp>
 
 #include <memory>
 #include <string>
@@ -30,15 +31,15 @@ struct Server
         : acceptor_(exec, asio::ip::tcp::endpoint{ asio::ip::tcp::v4(), port })
     {}
 
-    /// \brief 启动异步 accept 协程。
-    auto start_accept() -> void
-    {
-        asio::co_spawn(
-            acceptor_.get_executor(),
-            run(),
-            asio::detached
-        );
-    }
+    // /// \brief 启动异步 accept 协程。
+    // auto start_accept() -> void
+    // {
+    //     asio::co_spawn(
+    //         acceptor_.get_executor(),
+    //         run(),
+    //         asio::detached
+    //     );
+    // }
 
     /// \brief 接收连接并为每个连接启动一个 Session 协程。
     /// \return 协程完成时返回 void（通常不会返回）。
@@ -136,15 +137,14 @@ private:
 /// \brief 方便 main 调用的启动入口，返回服务器运行协程。
 /// \param exec 关联的 Asio 执行器。
 /// \param port 要监听的本地端口。
-auto inline start_server(asio::any_io_executor exec, u16 port) -> void
+auto inline async_start_server(asio::any_io_executor exec, u16 port) -> stdexec::sender auto
 {
-    auto snd = asio::co_spawn (
+    return asio::co_spawn (
         exec,
         [exec, port] -> asio::awaitable<void> {
-            auto server = Server{ exec, port };
+            auto server = Server{ exec,port };
             co_await server.run();
         },
         asioexec::use_sender
     );
-    stdexec::sync_wait(snd);
 }
