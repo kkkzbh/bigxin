@@ -145,6 +145,11 @@ auto Session::handle_create_group_req(std::string const& payload) -> std::string
 
         auto const conv_id = database::create_group_conversation(user_id_, members, name);
 
+        // 清除新会话的缓存(虽然是新创建,但确保一致性)
+        if(server_ != nullptr) {
+            server_->invalidate_conversation_cache(conv_id);
+        }
+
         // 取实际群名
         std::string conv_name{ "群聊" };
         {
@@ -220,6 +225,11 @@ auto Session::handle_open_single_conv_req(std::string const& payload) -> std::st
         }
 
         auto const conv_id = database::get_or_create_single_conversation(user_id_, peer_id);
+
+        // 清除单聊会话缓存(可能是新创建的)
+        if(server_ != nullptr) {
+            server_->invalidate_conversation_cache(conv_id);
+        }
 
         json resp;
         resp["ok"] = true;
@@ -554,6 +564,11 @@ auto Session::handle_leave_conv_req(std::string const& payload) -> std::string
         }
 
         database::dissolve_conversation(conv_id);
+
+        // 清除会话缓存
+        if(server_ != nullptr) {
+            server_->invalidate_conversation_cache(conv_id);
+        }
 
         if(server_ != nullptr) {
             for(auto const uid : member_ids) {

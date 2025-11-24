@@ -235,6 +235,15 @@ private:
     /// \param line 已经包含换行符的完整协议行。
     auto send_text(std::string line) -> void
     {
+        // 检查缓冲区是否超限,防止慢客户端导致内存无限增长
+        if(outgoing_bytes_ + line.size() > MAX_OUTGOING_BYTES) {
+            std::println("session write buffer overflow ({}MB), closing connection",
+                        (outgoing_bytes_ + line.size()) / (1024 * 1024));
+            socket_.close();
+            return;
+        }
+        
+        outgoing_bytes_ += line.size();
         outgoing_.push_back(std::move(line));
         if(writing_) {
             return;
@@ -250,6 +259,7 @@ private:
                     while(!self->outgoing_.empty()) {
                         auto current = std::move(self->outgoing_.front());
                         self->outgoing_.pop_front();
+                        self->outgoing_bytes_ -= current.size();
                         co_await asio::async_write (
                             self->socket_, asio::buffer(current), asio::use_awaitable
                         );
@@ -279,6 +289,8 @@ private:
     asio::streambuf buffer_;
     Server* server_{ nullptr };
     std::deque<std::string> outgoing_{};
+    size_t outgoing_bytes_{ 0 }; ///< 当前缓冲区总字节数
+    static constexpr size_t MAX_OUTGOING_BYTES = 10 * 1024 * 1024; ///< 最大缓冲区 10MB
     bool writing_{ false };
 
     /// \brief 是否已通过 LOGIN 鉴权。

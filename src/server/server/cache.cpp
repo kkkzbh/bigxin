@@ -1,0 +1,95 @@
+#include <server.h>
+#include <database.h>
+#include <pqxx/pqxx>
+
+#include <optional>
+#include <print>
+
+auto Server::get_conversation_cache(i64 conversation_id) -> std::optional<ConversationCache>
+{
+    if(conversation_id <= 0) {
+        return std::nullopt;
+    }
+
+    // 先尝试从缓存获取
+    {
+        std::lock_guard lock{ cache_mutex_ };
+        auto it = conv_cache_.find(conversation_id);
+        if(it != conv_cache_.end()) {
+            // 更新最后访问时间
+            it->second.last_access = std::chrono::steady_clock::now();
+            return it->second;
+        }
+    }
+
+    // 缓存未命中,从数据库加载
+    try {
+        auto conn = database::make_connection();
+        pqxx::work tx{ conn };
+
+        // 查询会话类型
+        auto const conv_query =
+            "SELECT type FROM conversations WHERE id = " 
+            + tx.quote(conversation_id) + " LIMIT 1";
+        auto conv_rows = tx.exec(conv_query);
+        
+        std::string conv_type{ "GROUP" };
+        if(!conv_rows.empty()) {
+            conv_type = conv_rows[0][0].as<std::string>();
+        }
+
+        // 查询成员列表
+        auto const members_query =
+            "SELECT user_id FROM conversation_members WHERE conversation_id = "
+            + tx.quote(conversation_id);
+        auto member_rows = tx.exec(members_query);
+
+        std::vector<i64> member_ids;
+        member_ids.reserve(member_rows.size());
+        for(auto const& row : member_rows) {
+            member_ids.push_back(row[0].as<i64>());
+        }
+
+        tx.commit();
+
+        // 插入缓存
+        ConversationCache cache{
+            .member_ids = std::move(member_ids),
+            .type = std::move(conv_type),
+            .last_access = std::chrono::steady_clock::now()
+        };
+
+        {
+            std::lock_guard lock{ cache_mutex_ };
+            conv_cache_[conversation_id] = cache;
+        }
+
+        return cache;
+
+    } catch(std::exception const& ex) {
+        std::println("Failed to load conversation cache for {}: {}", 
+                    conversation_id, ex.what());
+        return std::nullopt;
+    }
+}
+
+auto Server::invalidate_conversation_cache(i64 conversation_id) -> void
+{
+    if(conversation_id <= 0) {
+        return;
+    }
+
+    std::lock_guard lock{ cache_mutex_ };
+    conv_cache_.erase(conversation_id);
+}
+
+auto Server::cleanup_expired_cache() -> void
+{
+    std::lock_guard lock{ cache_mutex_ };
+    auto const now = std::chrono::steady_clock::now();
+
+    std::erase_if(conv_cache_, [&](auto const& pair) {
+        auto const age = now - pair.second.last_access;
+        return age > CACHE_EXPIRE_DURATION;
+    });
+}

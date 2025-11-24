@@ -7,9 +7,13 @@ using nlohmann::json;
 
 auto Session::handle_register(std::string const& payload) -> std::string
 {
-    try {
-        auto j = json::parse(payload);
+    // 使用非抛出版本的JSON解析,减少异常开销
+    auto j = json::parse(payload, nullptr, false);
+    if(j.is_discarded()) {
+        return make_error_payload("INVALID_JSON", "请求 JSON 解析失败");
+    }
 
+    try {
         if(!j.contains("account") || !j.contains("password") || !j.contains("confirmPassword")) {
             return make_error_payload("INVALID_PARAM", "缺少必要字段");
         }
@@ -32,8 +36,6 @@ auto Session::handle_register(std::string const& payload) -> std::string
         resp["userId"] = std::to_string(result.user.id);
         resp["displayName"] = result.user.display_name;
         return resp.dump();
-    } catch(json::parse_error const&) {
-        return make_error_payload("INVALID_JSON", "请求 JSON 解析失败");
     } catch(std::exception const& ex) {
         return make_error_payload("SERVER_ERROR", ex.what());
     }
@@ -41,9 +43,13 @@ auto Session::handle_register(std::string const& payload) -> std::string
 
 auto Session::handle_login(std::string const& payload) -> std::string
 {
-    try {
-        auto j = json::parse(payload);
+    // 使用非抛出版本的JSON解析
+    auto j = json::parse(payload, nullptr, false);
+    if(j.is_discarded()) {
+        return make_error_payload("INVALID_JSON", "请求 JSON 解析失败");
+    }
 
+    try {
         if(!j.contains("account") || !j.contains("password")) {
             return make_error_payload("INVALID_PARAM", "缺少必要字段");
         }

@@ -97,23 +97,17 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="2dc32154-be48-467c-9695-c2dd10df8b29" name="更改" comment="v0.27 Release">
-      <change beforePath="$PROJECT_DIR$/.idea/data_source_mapping.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/data_source_mapping.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/inspectionProfiles/Project_Default.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/inspectionProfiles/Project_Default.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/sqldialects.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/sqldialects.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/vcs.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/cmake-build-debug/_deps/stdexec-src/cmake/import_standalone_asio.cmake" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-debug/_deps/stdexec-src/cmake/import_standalone_asio.cmake" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/cmake-build-release/_deps/stdexec-src/cmake/import_standalone_asio.cmake" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-release/_deps/stdexec-src/cmake/import_standalone_asio.cmake" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/doc/refactoring.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/include/protocol.h" beforeDir="false" afterPath="$PROJECT_DIR$/include/protocol.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/include/database/connection.h" beforeDir="false" afterPath="$PROJECT_DIR$/include/database/connection.h" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/include/server.h" beforeDir="false" afterPath="$PROJECT_DIR$/include/server.h" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/include/session.h" beforeDir="false" afterPath="$PROJECT_DIR$/include/session.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/database/conversation.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/database/conversation.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/database/message.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/database/message.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/database/sql/conversation_members.sql" beforeDir="false" afterPath="$PROJECT_DIR$/src/database/sql/conversation_members.sql" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/main.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/server/server.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/server/server.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/CMakeLists.txt" beforeDir="false" afterPath="$PROJECT_DIR$/src/CMakeLists.txt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/server/server/broadcast.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/server/server/broadcast.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/server/session/auth.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/server/session/auth.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/server/session/conversation.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/server/session/conversation.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/server/session/message.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/server/session/message.cpp" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -249,8 +243,8 @@
       <window_info id="Commit_Guest" show_stripe_button="false" />
       <window_info id="Pull Requests" />
       <window_info id="Learn" show_stripe_button="false" />
-      <window_info content_ui="combo" id="Project" order="0" weight="0.22150113" />
-      <window_info active="true" id="Commit" order="1" visible="true" weight="0.22150113" />
+      <window_info active="true" content_ui="combo" id="Project" order="0" visible="true" weight="0.2213762" />
+      <window_info id="Commit" order="1" weight="0.22150113" />
       <window_info id="Structure" order="2" side_tool="true" weight="0.25" />
       <window_info anchor="bottom" id="Database Changes" />
       <window_info anchor="bottom" id="TypeScript" />
@@ -260,15 +254,15 @@
       <window_info anchor="bottom" id="Serial Monitor" />
       <window_info anchor="bottom" id="PythonProcessOutput" />
       <window_info anchor="bottom" id="clangd" />
-      <window_info anchor="bottom" id="Version Control" order="0" weight="0.2548718" />
+      <window_info anchor="bottom" id="Version Control" order="0" weight="0.3708134" />
       <window_info anchor="bottom" id="Problems" order="1" />
       <window_info anchor="bottom" id="Problems View" order="2" weight="0.029640429" />
       <window_info anchor="bottom" id="Debug" order="3" weight="0.47906697" />
-      <window_info anchor="bottom" id="Terminal" order="3" weight="0.32679427" />
+      <window_info anchor="bottom" id="Terminal" order="3" weight="0.3708134" />
       <window_info anchor="bottom" id="Services" order="4" weight="0.029186603" />
       <window_info anchor="bottom" id="CMake" order="5" weight="0.31435406" />
-      <window_info active="true" anchor="bottom" id="Run" order="6" visible="true" weight="0.145933" />
-      <window_info anchor="bottom" id="Messages" order="7" weight="0.029186603" />
+      <window_info active="true" anchor="bottom" id="Run" order="6" visible="true" weight="0.3708134" />
+      <window_info anchor="bottom" id="Messages" order="7" weight="0.3708134" />
       <window_info anchor="bottom" id="Vcpkg" order="8" weight="0.28181818" />
       <window_info anchor="bottom" id="TODO" order="9" weight="0.28181818" />
       <window_info anchor="bottom" id="Find" order="11" weight="0.33006912" />
@@ -282,7 +276,7 @@
       <window_info anchor="right" id="AIAssistant" order="1" weight="0.25" />
       <window_info anchor="right" id="Gradle" order="2" weight="0.25" />
       <window_info anchor="right" id="Maven" order="3" weight="0.25" />
-      <window_info active="true" anchor="right" id="Database" order="4" visible="true" weight="0.30276525" />
+      <window_info active="true" anchor="right" id="Database" order="4" visible="true" weight="0.19486746" />
       <window_info anchor="right" id="github.copilotToolWindow" order="5" weight="0.34985352" />
       <window_info anchor="right" id="GitHub Copilot Chat" order="6" show_stripe_button="false" weight="0.34985352" />
     </layout>
@@ -303,9 +297,9 @@
     </key>
   </component>
   <component name="RunManager" selected="CMake 应用程序.client">
-    <configuration default="true" type="CLionExternalRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true">
+    <configuration default="true" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true">
       <method v="2">
-        <option name="CLION.EXTERNAL.BUILD" enabled="true" />
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
       </method>
     </configuration>
     <configuration name="Continuous" type="CMakeRunConfiguration" factoryName="Application" folderName="CTestDashboardTargets" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="JuXin" TARGET_NAME="Continuous" CONFIG_NAME="Debug">
@@ -748,6 +742,7 @@
       <workItem from="1763838208458" duration="5208000" />
       <workItem from="1763882682154" duration="26740000" />
       <workItem from="1763970857175" duration="1648000" />
+      <workItem from="1763973588341" duration="1961000" />
     </task>
     <task id="LOCAL-00001" summary="基础CMAKE，示例程序">
       <option name="closed" value="true" />

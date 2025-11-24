@@ -9,6 +9,9 @@
 #include <string>
 #include <unordered_map>
 #include <ranges>
+#include <vector>
+#include <mutex>
+#include <chrono>
 
 #include <utility.h>
 
@@ -114,6 +117,34 @@ private:
     
     /// \brief 按 user_id 建立的在线会话索引,一位多连时存多条 weak_ptr。
     std::unordered_multimap<i64, std::weak_ptr<Session>> sessions_by_user_{};
+
+public:
+    /// \brief 会话缓存条目,包含成员列表和类型。
+    struct ConversationCache {
+        std::vector<i64> member_ids;          ///< 会话成员ID列表
+        std::string type;                      ///< 会话类型 ("SINGLE" 或 "GROUP")
+        std::chrono::steady_clock::time_point last_access; ///< 最后访问时间
+    };
+
+    /// \brief 获取会话缓存(带自动加载和更新)。
+    /// \param conversation_id 会话ID。
+    /// \return 可选的缓存条目,失败时返回空。
+    auto get_conversation_cache(i64 conversation_id) -> std::optional<ConversationCache>;
+
+    /// \brief 清除指定会话的缓存(当成员变动时调用)。
+    /// \param conversation_id 会话ID。
+    auto invalidate_conversation_cache(i64 conversation_id) -> void;
+
+    /// \brief 清理过期缓存(超过5分钟未访问)。
+    auto cleanup_expired_cache() -> void;
+
+private:
+    /// \brief 会话成员列表缓存。
+    std::unordered_map<i64, ConversationCache> conv_cache_{};
+    /// \brief 保护缓存的互斥锁。
+    std::mutex cache_mutex_{};
+    /// \brief 缓存过期时间(5分钟)。
+    static constexpr auto CACHE_EXPIRE_DURATION = std::chrono::minutes(5);
 };
 
 /// \brief 方便 main 调用的启动入口，返回服务器运行协程。

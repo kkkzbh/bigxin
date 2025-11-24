@@ -120,21 +120,10 @@ auto Server::broadcast_system_message(
 
     auto const line = protocol::make_line("MSG_PUSH", push.dump());
 
+    // 使用缓存获取成员列表,大幅减少数据库查询
     std::vector<i64> member_ids;
-    try {
-        auto conn = database::make_connection();
-        pqxx::work tx{ conn };
-        auto const query =
-            "SELECT user_id FROM conversation_members WHERE conversation_id = "
-            + tx.quote(conversation_id);
-        auto rows = tx.exec(query);
-        member_ids.reserve(rows.size());
-        for(auto const& row : rows) {
-            member_ids.push_back(row[0].as<i64>());
-        }
-        tx.commit();
-    } catch(std::exception const&) {
-        member_ids.clear(); // broadcast to all authenticated if query failed.
+    if(auto cache = get_conversation_cache(conversation_id)) {
+        member_ids = cache->member_ids;
     }
 
     auto const send_line = [&line](std::shared_ptr<Session> const& session) {
@@ -159,26 +148,22 @@ auto Server::broadcast_world_message(database::StoredMessage const& stored,i64 s
     json push;
     push["conversationId"] = std::to_string(stored.conversation_id);
     
-    // 优化：单个事务完成所有查询，从 3 次连接减少到 1 次
+    // 优化：使用缓存获取会话信息,从 3 次数据库查询减少到 0-1 次
     std::string conv_type{ "GROUP" };
     std::string sender_name;
     std::vector<i64> member_ids;
     
-    try {
-        auto conn = database::make_connection();
-        pqxx::work tx{ conn };
-        
-        // 查询 1: 会话类型
-        auto const conv_query =
-            "SELECT type FROM conversations "
-            "WHERE id = " + tx.quote(stored.conversation_id) + " LIMIT 1";
-        auto conv_rows = tx.exec(conv_query);
-        if(!conv_rows.empty()) {
-            conv_type = conv_rows[0][0].as<std::string>();
-        }
-        
-        // 查询 2: 发送者昵称（仅非系统消息需要）
-        if(sender_id > 0 && stored.msg_type != "SYSTEM") {
+    // 从缓存获取会话类型和成员列表
+    if(auto cache = get_conversation_cache(stored.conversation_id)) {
+        conv_type = cache->type;
+        member_ids = cache->member_ids;
+    }
+    
+    // 发送者昵称仅在需要时查询（暂不缓存用户信息）
+    if(sender_id > 0 && stored.msg_type != "SYSTEM") {
+        try {
+            auto conn = database::make_connection();
+            pqxx::work tx{ conn };
             auto const sender_query =
                 "SELECT display_name FROM users WHERE id = " + tx.quote(sender_id)
                 + " LIMIT 1";
@@ -186,22 +171,10 @@ auto Server::broadcast_world_message(database::StoredMessage const& stored,i64 s
             if(!sender_rows.empty()) {
                 sender_name = sender_rows[0][0].as<std::string>();
             }
+            tx.commit();
+        } catch(std::exception const&) {
+            // 失败时使用空字符串
         }
-        
-        // 查询 3: 会话成员列表
-        auto const members_query =
-            "SELECT user_id FROM conversation_members WHERE conversation_id = "
-            + tx.quote(stored.conversation_id);
-        auto member_rows = tx.exec(members_query);
-        member_ids.reserve(member_rows.size());
-        for(auto const& row : member_rows) {
-            member_ids.push_back(row[0].as<i64>());
-        }
-        
-        tx.commit();
-    } catch(std::exception const&) {
-        // 查询失败时使用默认值
-        member_ids.clear();
     }
     
     push["conversationType"] = conv_type;

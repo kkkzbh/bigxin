@@ -20,6 +20,7 @@ add_executable(server
         server/session/conversation.cpp
         server/server/broadcast.cpp
         server/server/push.cpp
+        server/server/cache.cpp
         database/connection.cpp
         database/auth.cpp
         database/friend.cpp

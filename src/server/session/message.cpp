@@ -16,9 +16,16 @@ auto Session::handle_send_msg(std::string const& payload) -> void
         return;
     }
 
-    try {
-        auto j = json::parse(payload);
+    // 使用非抛出版本的JSON解析,减少异常开销
+    auto j = json::parse(payload, nullptr, false);
+    if(j.is_discarded()) {
+        auto const err = make_error_payload("INVALID_JSON", "请求 JSON 解析失败");
+        auto msg = protocol::make_line("ERROR", err);
+        send_text(std::move(msg));
+        return;
+    }
 
+    try {
         if(!j.contains("content")) {
             auto const err = make_error_payload("INVALID_PARAM", "缺少 content 字段");
             auto msg = protocol::make_line("ERROR", err);
@@ -81,10 +88,6 @@ auto Session::handle_send_msg(std::string const& payload) -> void
         if(server_ != nullptr) {
             server_->broadcast_world_message(stored, user_id_, content);
         }
-    } catch(json::parse_error const&) {
-        auto const err = make_error_payload("INVALID_JSON", "请求 JSON 解析失败");
-        auto msg = protocol::make_line("ERROR", err);
-        send_text(std::move(msg));
     } catch(std::exception const& ex) {
         auto const err = make_error_payload("SERVER_ERROR", ex.what());
         auto msg = protocol::make_line("ERROR", err);
@@ -98,9 +101,13 @@ auto Session::handle_history_req(std::string const& payload) -> std::string
         return make_error_payload("NOT_AUTHENTICATED", "请先登录");
     }
 
-    try {
-        auto j = json::parse(payload);
+    // 使用非抛出版本的JSON解析
+    auto j = json::parse(payload, nullptr, false);
+    if(j.is_discarded()) {
+        return make_error_payload("INVALID_JSON", "请求 JSON 解析失败");
+    }
 
+    try {
         auto before_seq = i64{};
         auto after_seq = i64{};
         auto limit = i64{ 50 };

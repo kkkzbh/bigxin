@@ -8,7 +8,7 @@ namespace database
 {
     /// \brief 创建到 PostgreSQL 的连接。
     /// \details 使用 pg_service.conf 中的 service=chatdb 约定。
-    auto make_connection() -> pqxx::connection;
+    auto make_connection() -> pqxx::connection; // 已经引入pgbouncer支持
 
     /// \brief 生成一个随机昵称，例如"微信用户123456"。
     /// \details 使用线程安全的内部随机数引擎。
