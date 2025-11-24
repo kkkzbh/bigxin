@@ -3,6 +3,7 @@
 #include <stdexec/execution.hpp>
 #include <execpools/asio/asio_thread_pool.hpp>
 #include <asioexec/use_sender.hpp>
+#include <thread>
 
 #include <chrono>
 
@@ -13,7 +14,7 @@ namespace ex = stdexec;
 
 auto main() -> int
 {
-    auto pool = execpools::asio_thread_pool{ 3uz };
+    auto pool = execpools::asio_thread_pool{ std::thread::hardware_concurrency() };
     using timer = asioexec::asio_impl::system_timer;
     auto executor = pool.get_executor();
     using std::tuple;

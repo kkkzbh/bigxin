@@ -9,7 +9,7 @@
 #include <asioexec/use_sender.hpp>
 #include <exec/task.hpp>
 
-#include <algorithm>
+#include <optional>
 #include <print>
 #include <unordered_set>
 #include <vector>
@@ -29,11 +29,12 @@ auto Server::run() -> asio::awaitable<void>
             std::println("new connection from: {}:{}", addr, port);
 
             auto session = std::make_shared<Session>(std::move(socket), *this);
-            sessions_.push_back(session);
-
-            asio::co_spawn(
-                acceptor_.get_executor(),
+            
+            // 使用 strand 保证线程安全
+            asio::co_spawn (
+                strand_,
                 [this, session]() -> asio::awaitable<void> {
+                    sessions_[session.get()] = session;
                     co_await session->run();
                     remove_session(session.get());
                 },
@@ -47,19 +48,35 @@ auto Server::run() -> asio::awaitable<void>
 
 auto Server::remove_session(Session* ptr) -> void
 {
-    auto it = std::remove_if(
-        sessions_.begin(),
-        sessions_.end(),
-        [ptr](std::shared_ptr<Session> const& s) { return s.get() == ptr; }
-    );
-    sessions_.erase(it, sessions_.end());
+    if(!ptr) {
+        return;
+    }
 
-    for(auto map_it = sessions_by_user_.begin(); map_it != sessions_by_user_.end(); ) {
-        auto locked = map_it->second.lock();
-        if(!locked || locked.get() == ptr) {
-            map_it = sessions_by_user_.erase(map_it);
-        } else {
-            ++map_it;
+    // O(1) 从主 map 中删除
+    auto it = sessions_.find(ptr);
+    if(it == sessions_.end()) {
+        return;
+    }
+
+    // 如果已认证,记录其 user_id 以便高效清理 sessions_by_user_
+    std::optional<i64> uid;
+    if(it->second && it->second->is_authenticated()) {
+        uid = it->second->user_id();
+    }
+
+    sessions_.erase(it);
+
+    // 仅在已认证的情况下清理 sessions_by_user_
+    // 优化: 仅遍历该用户的会话 O(k), k 是该用户的设备数
+    if(uid.has_value()) {
+        auto range = sessions_by_user_.equal_range(uid.value());
+        for(auto map_it = range.first; map_it != range.second; ) {
+            auto locked = map_it->second.lock();
+            if(!locked || locked.get() == ptr) {
+                map_it = sessions_by_user_.erase(map_it);
+            } else {
+                ++map_it;
+            }
         }
     }
 }
@@ -137,49 +154,56 @@ auto Server::broadcast_system_message(
     }
 }
 
-auto Server::broadcast_world_message(
-    database::StoredMessage const& stored,
-    i64 sender_id,
-    std::string const& content
-) -> void
+auto Server::broadcast_world_message(database::StoredMessage const& stored,i64 sender_id,std::string const& content) -> void
 {
     json push;
     push["conversationId"] = std::to_string(stored.conversation_id);
-    // 会话类型用于前端展示，不影响路由逻辑。
+    
+    // 优化：单个事务完成所有查询，从 3 次连接减少到 1 次
     std::string conv_type{ "GROUP" };
-    {
-        try {
-            auto conn = database::make_connection();
-            pqxx::work tx{ conn };
-            auto const query =
-                "SELECT type FROM conversations "
-                "WHERE id = " + tx.quote(stored.conversation_id) + " LIMIT 1";
-            auto rows = tx.exec(query);
-            if(!rows.empty()) {
-                conv_type = rows[0][0].as<std::string>();
-            }
-            tx.commit();
-        } catch(std::exception const&) {
-            // 保底使用 GROUP。
-        }
-    }
     std::string sender_name;
-    if(sender_id > 0 && stored.msg_type != "SYSTEM") {
-        try {
-            auto conn = database::make_connection();
-            pqxx::work tx{ conn };
-            auto const query =
+    std::vector<i64> member_ids;
+    
+    try {
+        auto conn = database::make_connection();
+        pqxx::work tx{ conn };
+        
+        // 查询 1: 会话类型
+        auto const conv_query =
+            "SELECT type FROM conversations "
+            "WHERE id = " + tx.quote(stored.conversation_id) + " LIMIT 1";
+        auto conv_rows = tx.exec(conv_query);
+        if(!conv_rows.empty()) {
+            conv_type = conv_rows[0][0].as<std::string>();
+        }
+        
+        // 查询 2: 发送者昵称（仅非系统消息需要）
+        if(sender_id > 0 && stored.msg_type != "SYSTEM") {
+            auto const sender_query =
                 "SELECT display_name FROM users WHERE id = " + tx.quote(sender_id)
                 + " LIMIT 1";
-            auto rows = tx.exec(query);
-            if(!rows.empty()) {
-                sender_name = rows[0][0].as<std::string>();
+            auto sender_rows = tx.exec(sender_query);
+            if(!sender_rows.empty()) {
+                sender_name = sender_rows[0][0].as<std::string>();
             }
-            tx.commit();
-        } catch(std::exception const&) {
-            // 忽略查找失败。
         }
+        
+        // 查询 3: 会话成员列表
+        auto const members_query =
+            "SELECT user_id FROM conversation_members WHERE conversation_id = "
+            + tx.quote(stored.conversation_id);
+        auto member_rows = tx.exec(members_query);
+        member_ids.reserve(member_rows.size());
+        for(auto const& row : member_rows) {
+            member_ids.push_back(row[0].as<i64>());
+        }
+        
+        tx.commit();
+    } catch(std::exception const&) {
+        // 查询失败时使用默认值
+        member_ids.clear();
     }
+    
     push["conversationType"] = conv_type;
     push["serverMsgId"] = std::to_string(stored.id);
     push["senderId"] = (stored.msg_type == "SYSTEM") ? std::string{ "0" }
@@ -191,25 +215,6 @@ auto Server::broadcast_world_message(
     push["content"] = content;
 
     auto const line = protocol::make_line("MSG_PUSH", push.dump());
-
-    // 仅向会话成员中在线的用户广播。
-    std::vector<i64> member_ids;
-    try {
-        auto conn = database::make_connection();
-        pqxx::work tx{ conn };
-        auto const query =
-            "SELECT user_id FROM conversation_members WHERE conversation_id = "
-            + tx.quote(stored.conversation_id);
-        auto rows = tx.exec(query);
-        member_ids.reserve(rows.size());
-        for(auto const& row : rows) {
-            member_ids.push_back(row[0].as<i64>());
-        }
-        tx.commit();
-    } catch(std::exception const&) {
-        // 如果查询失败，退化为广播给所有在线用户。
-        member_ids.clear();
-    }
 
     auto const send_line = [&line](std::shared_ptr<Session> const& session) {
         if(session->is_authenticated()) {

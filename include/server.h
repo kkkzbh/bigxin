@@ -7,8 +7,8 @@
 
 #include <memory>
 #include <string>
-#include <vector>
 #include <unordered_map>
+#include <ranges>
 
 #include <utility.h>
 
@@ -24,22 +24,13 @@ struct Session;
 /// \brief 简单 TCP 服务器：监听端口并为每个连接创建一个 Session。
 struct Server
 {
-    /// \brief 使用给定执行器和端口构造服务器。
+    /// rief 使用给定执行器和端口构造服务器。
     /// \param exec 关联的 Asio 执行器。
     /// \param port 要监听的本地端口。
-    Server(asio::any_io_executor exec, u16 port)
+    Server(asio::any_io_executor exec, u16 port) 
         : acceptor_(exec, asio::ip::tcp::endpoint{ asio::ip::tcp::v4(), port })
+        , strand_(exec)
     {}
-
-    // /// \brief 启动异步 accept 协程。
-    // auto start_accept() -> void
-    // {
-    //     asio::co_spawn(
-    //         acceptor_.get_executor(),
-    //         run(),
-    //         asio::detached
-    //     );
-    // }
 
     /// \brief 接收连接并为每个连接启动一个 Session 协程。
     /// \return 协程完成时返回 void（通常不会返回）。
@@ -54,14 +45,13 @@ private:
     /// \brief 将已鉴权的会话加入 user_id 索引。
     auto index_authenticated_session(std::shared_ptr<Session> const& session) -> void;
 
-    /// \brief 遍历指定用户的在线会话（自动清理过期 weak_ptr）。
-    template<class Fn>
-    auto for_user_sessions(i64 user_id, Fn&& fn) -> void
+    /// \brief 遍历指定用户的在线会话。
+    template<typename Fn>
+    auto for_user_sessions(i64 user_id, Fn fn) -> void
     {
-        auto range = sessions_by_user_.equal_range(user_id);
-        for(auto it = range.first; it != range.second; ) {
+        for(auto [it,end] = sessions_by_user_.equal_range(user_id); it != end; ) {
             if(auto s = it->second.lock()) {
-                std::forward<Fn>(fn)(s);
+                fn(s);
                 ++it;
             } else {
                 it = sessions_by_user_.erase(it);
@@ -70,29 +60,23 @@ private:
     }
 
     /// \brief 遍历所有已鉴权会话，过程中过滤空指针并清理失效 weak_ptr 索引。
-    template<class Fn>
-    auto for_all_authenticated_sessions(Fn&& fn) -> void
+    template<typename Fn>
+    auto for_all_authenticated_sessions(Fn fn) -> void
     {
-        for(auto it = sessions_.begin(); it != sessions_.end(); ) {
-            if(!(*it)) {
-                it = sessions_.erase(it);
+        for(auto const& session_ptr : sessions_ | std::views::values) {
+            if(not session_ptr or not session_ptr->is_authenticated()) {
                 continue;
             }
-            if(!(*it)->is_authenticated()) {
-                ++it;
-                continue;
-            }
-            std::forward<Fn>(fn)(*it);
-            ++it;
+            fn(session_ptr);
         }
 
-        for(auto map_it = sessions_by_user_.begin(); map_it != sessions_by_user_.end(); ) {
-            if(map_it->second.expired()) {
-                map_it = sessions_by_user_.erase(map_it);
-            } else {
-                ++map_it;
+        std::erase_if (
+            sessions_by_user_,
+            [](auto const& p) {
+                auto const& [_,wptr] = p;
+                return wptr.expired();
             }
-        }
+        );
     }
 
     /// \brief 主动向指定用户推送一份最新的“新的朋友”列表。
@@ -112,25 +96,23 @@ private:
     auto send_conv_members(i64 conversation_id, i64 only_user_id = 0) -> void;
 
     /// \brief 将系统消息以 MSG_PUSH 形式广播给指定会话成员。
-    auto broadcast_system_message(
-        i64 conversation_id,
-        database::StoredMessage const& stored,
-        std::string const& content
-    ) -> void;
+    auto broadcast_system_message(i64 conversation_id,database::StoredMessage const& stored,std::string const& content) -> void;
 
     /// \brief 在指定会话中广播一条消息（群聊 / 单聊通用）。
     /// \param stored 已持久化的消息信息。
     /// \param sender_id 发送者用户 ID。
     /// \param content 消息文本内容。
-    auto broadcast_world_message(
-        database::StoredMessage const& stored,
-        i64 sender_id,
-        std::string const& content
-    ) -> void;
+    auto broadcast_world_message(database::StoredMessage const& stored,i64 sender_id,std::string const& content) -> void;
 
     asio::ip::tcp::acceptor acceptor_;
-    std::vector<std::shared_ptr<Session>> sessions_{};
-    /// \brief 按 user_id 建立的在线会话索引，一位多连时存多条 weak_ptr。
+    
+    /// \brief strand 保证 sessions_ 和 sessions_by_user_ 的线程安全访问。
+    asio::strand<asio::any_io_executor> strand_;
+    
+    /// \brief 按 Session* 存储会话,支持 O(1) 删除。
+    std::unordered_map<Session*, std::shared_ptr<Session>> sessions_{};
+    
+    /// \brief 按 user_id 建立的在线会话索引,一位多连时存多条 weak_ptr。
     std::unordered_multimap<i64, std::weak_ptr<Session>> sessions_by_user_{};
 };
 

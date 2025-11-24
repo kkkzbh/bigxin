@@ -15,7 +15,3 @@ CREATE TABLE IF NOT EXISTS conversation_members (
     last_read_seq   BIGINT NOT NULL DEFAULT 0,
     PRIMARY KEY (conversation_id, user_id)
 );
-
--- 兼容已有部署的无损迁移。
-ALTER TABLE conversation_members
-    ADD COLUMN IF NOT EXISTS muted_until_ms BIGINT NOT NULL DEFAULT 0;

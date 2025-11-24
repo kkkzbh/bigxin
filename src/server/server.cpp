@@ -2,6 +2,7 @@
 #include <print>
 #include <charconv>
 #include <cstring>
+#include <thread>
 
 #include <stdexec/execution.hpp>
 #include <execpools/asio/asio_thread_pool.hpp>
@@ -21,7 +22,7 @@ auto main(int argc, char** argv) -> int
     if(argc > 1) {
         auto _ = std::from_chars(argv[1], argv[1] + std::strlen(argv[1]), port,10);
     };
-    auto pool = execpools::asio_thread_pool{ 8u };
+    auto pool = execpools::asio_thread_pool{ std::thread::hardware_concurrency() };
     std::println("chat server listening on port {}", port);
 
     stdexec::sync_wait(async_start_server(pool.get_executor(),port));

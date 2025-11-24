@@ -22,7 +22,7 @@ namespace protocol
     auto inline parse_line(std::string_view line) -> Frame
     {
         // 去掉结尾的 '\r' '\n'
-        while(!line.empty() && (line.back() == '\n' || line.back() == '\r')) {
+        while(not line.empty() and (line.back() == '\n' or line.back() == '\r')) {
             line.remove_suffix(1);
         }
         if(line.empty()) {

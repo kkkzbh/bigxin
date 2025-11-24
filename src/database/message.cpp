@@ -18,27 +18,21 @@ namespace database
         auto conn = make_connection();
         pqxx::work tx{ conn };
 
-        auto const seq_query =
-            "SELECT COALESCE(MAX(seq), 0) + 1 FROM messages "
-            "WHERE conversation_id = " + tx.quote(conversation_id);
-
-        auto seq_rows = tx.exec(seq_query);
-        auto const seq = seq_rows[0][0].as<i64>();
-
         auto const now_ms = std::chrono::duration_cast<std::chrono::milliseconds>(
                                 std::chrono::system_clock::now().time_since_epoch()
                             )
                                 .count();
 
+        // 使用数据库函数 get_next_seq() 生成序列号，消除竞态条件
         auto const insert =
             "INSERT INTO messages (conversation_id, sender_id, seq, msg_type, content, server_time_ms) "
             "VALUES (" + tx.quote(conversation_id) + ", "
             + tx.quote(sender_id) + ", "
-            + tx.quote(seq) + ", "
+            + "get_next_seq(" + tx.quote(conversation_id) + "), "
             + tx.quote(msg_type) + ", "
             + tx.quote(content) + ", "
             + tx.quote(now_ms) + ") "
-            "RETURNING id";
+            "RETURNING id, seq";
 
         auto result = tx.exec(insert);
         if(result.empty()) {
@@ -46,6 +40,7 @@ namespace database
         }
 
         auto const id = result[0][0].as<i64>();
+        auto const seq = result[0][1].as<i64>();
         tx.commit();
 
         StoredMessage stored{};

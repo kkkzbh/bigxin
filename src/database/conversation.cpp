@@ -190,10 +190,28 @@ namespace database
         auto conn = make_connection();
         pqxx::work tx{ conn };
 
+        // 优化：使用 LEFT JOIN 和子查询一次获取所有数据，消除 N+1 查询
         auto const query =
-            "SELECT c.id, c.type, c.name "
+            "SELECT "
+            "  c.id, "
+            "  c.type, "
+            "  c.name, "
+            "  peer.display_name AS peer_name, "
+            "  COALESCE(msg_stats.max_seq, 0) AS last_seq, "
+            "  COALESCE(msg_stats.max_time, 0) AS last_time "
             "FROM conversations c "
             "JOIN conversation_members cm ON cm.conversation_id = c.id "
+            "LEFT JOIN ( "
+            "  SELECT cm2.conversation_id, u.display_name "
+            "  FROM conversation_members cm2 "
+            "  JOIN users u ON u.id = cm2.user_id "
+            "  WHERE cm2.user_id <> " + tx.quote(user_id) + " "
+            ") peer ON peer.conversation_id = c.id AND c.type = 'SINGLE' "
+            "LEFT JOIN ( "
+            "  SELECT conversation_id, MAX(seq) AS max_seq, MAX(server_time_ms) AS max_time "
+            "  FROM messages "
+            "  GROUP BY conversation_id "
+            ") msg_stats ON msg_stats.conversation_id = c.id "
             "WHERE cm.user_id = " + tx.quote(user_id) + " "
             "ORDER BY c.id ASC";
 
@@ -211,19 +229,9 @@ namespace database
             if(info.type == "GROUP") {
                 info.title = stored_name;
             } else if(info.type == "SINGLE") {
-                auto const conv_id = info.id;
-
-                auto const peer_query =
-                    "SELECT u.display_name "
-                    "FROM conversation_members cm "
-                    "JOIN users u ON u.id = cm.user_id "
-                    "WHERE cm.conversation_id = " + tx.quote(conv_id) + " "
-                    "AND cm.user_id <> " + tx.quote(user_id) + " "
-                    "LIMIT 1";
-
-                auto peer_rows = tx.exec(peer_query);
-                if(!peer_rows.empty()) {
-                    info.title = peer_rows[0][0].as<std::string>();
+                // 从 JOIN 结果中获取对方昵称，无需额外查询
+                if(!row[3].is_null()) {
+                    info.title = row[3].as<std::string>();
                 } else {
                     info.title = stored_name;
                 }
@@ -231,17 +239,10 @@ namespace database
                 info.title = stored_name;
             }
 
-            // 加载该会话当前最新消息的 seq 和时间戳。
+            // 从 JOIN 结果中获取最新消息统计，无需额外查询
             {
-                auto const msg_query =
-                    "SELECT COALESCE(MAX(seq), 0), COALESCE(MAX(server_time_ms), 0) "
-                    "FROM messages WHERE conversation_id = " + tx.quote(info.id);
-
-                auto msg_rows = tx.exec(msg_query);
-                if(!msg_rows.empty()) {
-                    info.last_seq = msg_rows[0][0].as<i64>();
-                    info.last_server_time_ms = msg_rows[0][1].as<i64>();
-                }
+                info.last_seq = row[4].as<i64>();
+                info.last_server_time_ms = row[5].as<i64>();
             }
 
             result.push_back(std::move(info));
