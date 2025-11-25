@@ -25,3 +25,15 @@ CREATE INDEX IF NOT EXISTS friend_requests_to_status_idx
 CREATE INDEX IF NOT EXISTS friend_requests_from_status_idx
     ON friend_requests (from_user_id, status);
 
+-- 部分索引：快速检测双方是否已有待处理申请，避免全表扫描
+CREATE INDEX IF NOT EXISTS friend_requests_pending_from_to_idx
+    ON friend_requests (from_user_id, to_user_id)
+    WHERE status = 'PENDING';
+
+CREATE INDEX IF NOT EXISTS friend_requests_pending_to_from_idx
+    ON friend_requests (to_user_id, from_user_id)
+    WHERE status = 'PENDING';
+
+-- 覆盖“新的朋友”列表：按 to_user + status 过滤并按时间倒序返回
+CREATE INDEX IF NOT EXISTS friend_requests_incoming_list_idx
+    ON friend_requests (to_user_id, status, created_at DESC);

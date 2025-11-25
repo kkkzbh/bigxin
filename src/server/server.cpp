@@ -22,8 +22,9 @@ auto main(int argc, char** argv) -> int
     if(argc > 1) {
         auto _ = std::from_chars(argv[1], argv[1] + std::strlen(argv[1]), port,10);
     };
-    auto pool = execpools::asio_thread_pool{ std::thread::hardware_concurrency() };
-    std::println("chat server listening on port {}", port);
+    auto thread_count = std::thread::hardware_concurrency();
+    auto pool = execpools::asio_thread_pool{ thread_count };
+    std::println("chat server listening on port {}, thread_count is {}", port,thread_count);
 
     stdexec::sync_wait(async_start_server(pool.get_executor(),port));
 }

@@ -15,3 +15,7 @@ CREATE TABLE IF NOT EXISTS conversation_members (
     last_read_seq   BIGINT NOT NULL DEFAULT 0,
     PRIMARY KEY (conversation_id, user_id)
 );
+
+-- 索引：按用户维度查询会话列表与成员校验时使用
+CREATE INDEX IF NOT EXISTS conversation_members_user_idx
+    ON conversation_members (user_id, conversation_id);

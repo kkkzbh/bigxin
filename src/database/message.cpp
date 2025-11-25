@@ -100,10 +100,6 @@ namespace database
             msg.msg_type = row[5].as<std::string>();
             msg.content = row[6].as<std::string>();
             msg.server_time_ms = row[7].as<i64>();
-            if(msg.msg_type == "SYSTEM") {
-                msg.sender_id = 0;
-                msg.sender_display_name.clear();
-            }
             messages.push_back(std::move(msg));
         }
 
@@ -148,10 +144,6 @@ namespace database
             msg.msg_type = row[5].as<std::string>();
             msg.content = row[6].as<std::string>();
             msg.server_time_ms = row[7].as<i64>();
-            if(msg.msg_type == "SYSTEM") {
-                msg.sender_id = 0;
-                msg.sender_display_name.clear();
-            }
             messages.push_back(std::move(msg));
         }
 

@@ -164,9 +164,9 @@ auto Session::handle_create_group_req(std::string const& payload) -> std::string
             tx.commit();
         }
 
-        // 写首条系统消息
+        // 写首条系统消息（使用创建者作为 sender，避免 sender_id=0 外键问题）
         auto const sys_content = std::string{ "你们创建了群聊：" } + conv_name;
-        auto const stored = database::append_text_message(conv_id, 0, sys_content);
+        auto const stored = database::append_text_message(conv_id, user_id_, sys_content);
 
         json resp;
         resp["ok"] = true;
