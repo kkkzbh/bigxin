@@ -15,7 +15,8 @@
  */
 
 #include "benchmark_config.h"
-#include <asio.hpp>
+#include <boost/asio.hpp>
+namespace asio = boost::asio;
 #include <print>
 #include <string>
 #include <chrono>

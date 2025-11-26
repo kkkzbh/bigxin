@@ -1,102 +1,105 @@
 #include <database/friend.h>
 #include <database/connection.h>
 #include <database/conversation.h>
-#include <pqxx/pqxx>
 #include <utility.h>
+
+#include <boost/mysql.hpp>
+#include <boost/asio/use_awaitable.hpp>
+
+#include <stdexcept>
+#include <tuple>
+
+namespace asio = boost::asio;
+namespace mysql = boost::mysql;
 
 namespace database
 {
-    auto is_friend(i64 user_id, i64 peer_id) -> bool
+    auto is_friend(i64 user_id, i64 peer_id) -> asio::awaitable<bool>
     {
         if(user_id <= 0 || peer_id <= 0 || user_id == peer_id) {
-            return false;
+            co_return false;
         }
-
-        auto conn = make_connection();
-        pqxx::work tx{ conn };
-
-        auto const query =
-            "SELECT 1 FROM friends "
-            "WHERE user_id = " + tx.quote(user_id)
-            + " AND friend_user_id = " + tx.quote(peer_id)
-            + " LIMIT 1";
-
-        auto rows = tx.exec(query);
-        tx.commit();
-        return !rows.empty();
+        auto conn_h = co_await acquire_connection();
+        auto& conn = *conn_h;
+        mysql::results r;
+        co_await conn.async_execute(
+            mysql::with_params(
+                "SELECT 1 FROM friends WHERE user_id=? AND friend_user_id=? LIMIT 1",
+                user_id,
+                peer_id),
+            r,
+            asio::use_awaitable
+        );
+        co_return !r.rows().empty();
     }
 
-    auto load_user_friends(i64 user_id) -> std::vector<FriendInfo>
+    auto load_user_friends(i64 user_id) -> asio::awaitable<std::vector<FriendInfo>>
     {
-        auto conn = make_connection();
-        pqxx::work tx{ conn };
+        auto conn_h = co_await acquire_connection();
+        auto& conn = *conn_h;
+        mysql::results r;
+        co_await conn.async_execute(
+            mysql::with_params(
+                "SELECT u.id, u.account, u.display_name FROM friends f"
+                " JOIN users u ON u.id = f.friend_user_id"
+                " WHERE f.user_id = ? ORDER BY u.id ASC",
+                user_id),
+            r,
+            asio::use_awaitable
+        );
 
-        auto const query =
-            "SELECT u.id, u.account, u.display_name "
-            "FROM friends f "
-            "JOIN users u ON u.id = f.friend_user_id "
-            "WHERE f.user_id = " + tx.quote(user_id) + " "
-            "ORDER BY u.id ASC";
-
-        auto rows = tx.exec(query);
-
-        std::vector<FriendInfo> result{};
-        result.reserve(rows.size());
-
-        for(auto const& row : rows) {
+        std::vector<FriendInfo> result;
+        result.reserve(r.rows().size());
+        for(auto const& row : r.rows()) {
             FriendInfo info{};
-            info.id = row[0].as<i64>();
-            info.account = row[1].as<std::string>();
-            info.display_name = row[2].as<std::string>();
+            info.id = row.at(0).as_int64();
+            info.account = row.at(1).as_string();
+            info.display_name = row.at(2).as_string();
             result.push_back(std::move(info));
         }
-
-        tx.commit();
-        return result;
+        co_return result;
     }
 
     auto search_friend_by_account(i64 current_user_id, std::string const& account)
-        -> SearchFriendResult
+        -> asio::awaitable<SearchFriendResult>
     {
         SearchFriendResult res{};
-
         if(account.empty()) {
             res.ok = false;
             res.error_code = "INVALID_PARAM";
             res.error_msg = "账号不能为空";
-            return res;
+            co_return res;
         }
 
-        auto conn = make_connection();
-        pqxx::work tx{ conn };
+        auto conn_h = co_await acquire_connection();
+        auto& conn = *conn_h;
+        mysql::results r;
+        co_await conn.async_execute(
+            mysql::with_params(
+                "SELECT id, account, display_name FROM users WHERE account=? LIMIT 1",
+                account),
+            r,
+            asio::use_awaitable
+        );
 
-        auto const query =
-            "SELECT id, account, display_name "
-            "FROM users WHERE account = " + tx.quote(account) + " "
-            "LIMIT 1";
-
-        auto rows = tx.exec(query);
-        if(rows.empty()) {
+        if(r.rows().empty()) {
             res.ok = false;
             res.error_code = "NOT_FOUND";
             res.error_msg = "账号不存在";
-            return res;
+            co_return res;
         }
 
-        auto const& row = rows[0];
-        auto const target_id = row[0].as<i64>();
+        auto row = r.rows().front();
+        auto target_id = row.at(0).as_int64();
 
         res.ok = true;
         res.found = true;
         res.user.id = target_id;
-        res.user.account = row[1].as<std::string>();
-        res.user.display_name = row[2].as<std::string>();
-
+        res.user.account = row.at(1).as_string();
+        res.user.display_name = row.at(2).as_string();
         res.is_self = (current_user_id == target_id);
-        res.is_friend = !res.is_self && is_friend(current_user_id, target_id);
-
-        tx.commit();
-        return res;
+        res.is_friend = !res.is_self && co_await is_friend(current_user_id, target_id);
+        co_return res;
     }
 
     auto create_friend_request(
@@ -104,7 +107,7 @@ namespace database
         i64 to_user_id,
         std::string const& source,
         std::string const& hello_msg
-    ) -> FriendRequestResult
+    ) -> asio::awaitable<FriendRequestResult>
     {
         FriendRequestResult res{};
 
@@ -112,204 +115,233 @@ namespace database
             res.ok = false;
             res.error_code = "INVALID_PARAM";
             res.error_msg = "无效的好友申请参数";
-            return res;
+            co_return res;
         }
 
-        auto conn = make_connection();
-        pqxx::work tx{ conn };
+        auto conn_h = co_await acquire_connection();
+        auto& conn = *conn_h;
+        mysql::results r;
 
-        // 确认接收者存在。
-        auto const user_query =
-            "SELECT 1 FROM users WHERE id = " + tx.quote(to_user_id) + " LIMIT 1";
+        try {
+            co_await conn.async_execute("START TRANSACTION", r, asio::use_awaitable);
 
-        auto user_rows = tx.exec(user_query);
-        if(user_rows.empty()) {
-            res.ok = false;
-            res.error_code = "NOT_FOUND";
-            res.error_msg = "目标用户不存在";
-            return res;
-        }
+            // 用户存在性
+            co_await conn.async_execute(
+                mysql::with_params(
+                    "SELECT 1 FROM users WHERE id=? LIMIT 1",
+                    to_user_id),
+                r,
+                asio::use_awaitable
+            );
+            if(r.rows().empty()) {
+                res.ok = false;
+                res.error_code = "NOT_FOUND";
+                res.error_msg = "目标用户不存在";
+                co_await conn.async_execute("ROLLBACK", r, asio::use_awaitable);
+                co_return res;
+            }
 
-        // 已是好友则直接返回。
-        auto const friend_query =
-            "SELECT 1 FROM friends "
-            "WHERE user_id = " + tx.quote(from_user_id)
-            + " AND friend_user_id = " + tx.quote(to_user_id)
-            + " LIMIT 1";
+            // 已是好友
+            if(co_await is_friend(from_user_id, to_user_id)) {
+                res.ok = false;
+                res.error_code = "ALREADY_FRIEND";
+                res.error_msg = "已是好友";
+                co_await conn.async_execute("ROLLBACK", r, asio::use_awaitable);
+                co_return res;
+            }
 
-        auto friend_rows = tx.exec(friend_query);
-        if(!friend_rows.empty()) {
-            res.ok = false;
-            res.error_code = "ALREADY_FRIEND";
-            res.error_msg = "已是好友";
-            return res;
-        }
+            // 待处理申请
+            co_await conn.async_execute(
+                mysql::with_params(
+                    "SELECT 1 FROM friend_requests WHERE status='PENDING' AND"
+                    " ((from_user_id=? AND to_user_id=?) OR (from_user_id=? AND to_user_id=?))"
+                    " LIMIT 1",
+                    from_user_id,
+                    to_user_id,
+                    to_user_id,
+                    from_user_id),
+                r,
+                asio::use_awaitable
+            );
+            if(!r.rows().empty()) {
+                res.ok = false;
+                res.error_code = "ALREADY_PENDING";
+                res.error_msg = "已存在待处理的好友申请";
+                co_await conn.async_execute("ROLLBACK", r, asio::use_awaitable);
+                co_return res;
+            }
 
-        // 检查是否已经存在任意方向的未处理申请。
-        auto const pending_query =
-            "SELECT 1 FROM friend_requests "
-            "WHERE status = " + tx.quote(std::string{ "PENDING" }) + " "
-            "AND ("
-            "(from_user_id = " + tx.quote(from_user_id)
-            + " AND to_user_id = " + tx.quote(to_user_id) + ") OR "
-            "(from_user_id = " + tx.quote(to_user_id)
-            + " AND to_user_id = " + tx.quote(from_user_id) + ")"
-            ") "
-            "LIMIT 1";
+            // 插入申请
+            co_await conn.async_execute(
+                mysql::with_params(
+                    "INSERT INTO friend_requests (from_user_id, to_user_id, status, source, hello_msg)"
+                    " VALUES (?, ?, 'PENDING', ?, ?)",
+                    from_user_id,
+                    to_user_id,
+                    source,
+                    hello_msg),
+                r,
+                asio::use_awaitable
+            );
 
-        auto pending_rows = tx.exec(pending_query);
-        if(!pending_rows.empty()) {
-            res.ok = false;
-            res.error_code = "ALREADY_PENDING";
-            res.error_msg = "已存在待处理的好友申请";
-            return res;
-        }
+            res.ok = true;
+            res.request_id = static_cast<i64>(r.last_insert_id());
 
-        auto const insert =
-            "INSERT INTO friend_requests (from_user_id, to_user_id, status, source, hello_msg) "
-            "VALUES (" + tx.quote(from_user_id) + ", "
-            + tx.quote(to_user_id) + ", "
-            + tx.quote(std::string{ "PENDING" }) + ", "
-            + tx.quote(source) + ", "
-            + tx.quote(hello_msg) + ") "
-            "RETURNING id";
-
-        auto insert_rows = tx.exec(insert);
-        if(insert_rows.empty()) {
+            co_await conn.async_execute("COMMIT", r, asio::use_awaitable);
+            co_return res;
+        } catch(std::exception const& ex) {
             res.ok = false;
             res.error_code = "SERVER_ERROR";
-            res.error_msg = "创建好友申请失败";
-            return res;
+            res.error_msg = ex.what();
+            co_return res;
         }
-
-        res.ok = true;
-        res.request_id = insert_rows[0][0].as<i64>();
-        tx.commit();
-        return res;
     }
 
-    auto load_incoming_friend_requests(i64 user_id) -> std::vector<FriendRequestInfo>
+    auto load_incoming_friend_requests(i64 user_id) -> asio::awaitable<std::vector<FriendRequestInfo>>
     {
-        auto conn = make_connection();
-        pqxx::work tx{ conn };
+        auto conn_h = co_await acquire_connection();
+        auto& conn = *conn_h;
+        mysql::results r;
 
-        auto const query =
-            "SELECT fr.id, fr.from_user_id, u.account, u.display_name, fr.status, "
-            "COALESCE(fr.hello_msg, '') "
-            "FROM friend_requests fr "
-            "JOIN users u ON u.id = fr.from_user_id "
-            "WHERE fr.to_user_id = " + tx.quote(user_id) + " "
-            "AND fr.status IN ("
-            + tx.quote(std::string{ "PENDING" }) + ", "
-            + tx.quote(std::string{ "ACCEPTED" }) + ") "
-            "ORDER BY fr.created_at DESC";
+        co_await conn.async_execute(
+            mysql::with_params(
+                "SELECT fr.id, fr.from_user_id, u.account, u.display_name, fr.status,"
+                " COALESCE(fr.hello_msg, '')"
+                " FROM friend_requests fr JOIN users u ON u.id = fr.from_user_id"
+                " WHERE fr.to_user_id = ? AND fr.status IN ('PENDING','ACCEPTED')"
+                " ORDER BY fr.created_at DESC",
+                user_id),
+            r,
+            asio::use_awaitable
+        );
 
-        auto rows = tx.exec(query);
-
-        std::vector<FriendRequestInfo> result{};
-        result.reserve(rows.size());
-
-        for(auto const& row : rows) {
+        std::vector<FriendRequestInfo> result;
+        result.reserve(r.rows().size());
+        for(auto const& row : r.rows()) {
             FriendRequestInfo info{};
-            info.id = row[0].as<i64>();
-            info.from_user_id = row[1].as<i64>();
-            info.account = row[2].as<std::string>();
-            info.display_name = row[3].as<std::string>();
-            info.status = row[4].as<std::string>();
-            info.hello_msg = row[5].as<std::string>();
+            info.id = row.at(0).as_int64();
+            info.from_user_id = row.at(1).as_int64();
+            info.account = row.at(2).as_string();
+            info.display_name = row.at(3).as_string();
+            info.status = row.at(4).as_string();
+            info.hello_msg = row.at(5).as_string();
             result.push_back(std::move(info));
         }
-
-        tx.commit();
-        return result;
+        co_return result;
     }
 
     auto accept_friend_request(i64 request_id, i64 current_user_id)
-        -> AcceptFriendRequestResult
+        -> asio::awaitable<AcceptFriendRequestResult>
     {
         AcceptFriendRequestResult res{};
-
         if(request_id <= 0 || current_user_id <= 0) {
             res.ok = false;
             res.error_code = "INVALID_PARAM";
             res.error_msg = "无效的好友申请参数";
-            return res;
+            co_return res;
         }
 
-        auto conn = make_connection();
-        pqxx::work tx{ conn };
+        auto conn_h = co_await acquire_connection();
+        auto& conn = *conn_h;
+        mysql::results r;
 
-        auto const query =
-            "SELECT from_user_id, to_user_id, status "
-            "FROM friend_requests "
-            "WHERE id = " + tx.quote(request_id) + " "
-            "FOR UPDATE";
+        i64 from_user_id{};
+        i64 to_user_id{};
+        std::string status;
 
-        auto rows = tx.exec(query);
-        if(rows.empty()) {
-            res.ok = false;
-            res.error_code = "NOT_FOUND";
-            res.error_msg = "好友申请不存在";
-            return res;
-        }
+        try {
+            co_await conn.async_execute("START TRANSACTION", r, asio::use_awaitable);
 
-        auto const from_user_id = rows[0][0].as<i64>();
-        auto const to_user_id = rows[0][1].as<i64>();
-        auto const status = rows[0][2].as<std::string>();
+            // 锁定申请
+            co_await conn.async_execute(
+                mysql::with_params(
+                    "SELECT from_user_id, to_user_id, status FROM friend_requests"
+                    " WHERE id=? FOR UPDATE",
+                    request_id),
+                r,
+                asio::use_awaitable
+            );
 
-        if(to_user_id != current_user_id) {
-            res.ok = false;
-            res.error_code = "FORBIDDEN";
-            res.error_msg = "无权处理该好友申请";
-            return res;
-        }
-        if(status != "PENDING") {
-            res.ok = false;
-            res.error_code = "INVALID_STATE";
-            res.error_msg = "好友申请状态已变更";
-            return res;
-        }
+            if(r.rows().empty()) {
+                res.ok = false;
+                res.error_code = "NOT_FOUND";
+                res.error_msg = "好友申请不存在";
+                co_await conn.async_execute("ROLLBACK", r, asio::use_awaitable);
+                co_return res;
+            }
 
-        // 建立双向好友关系（幂等）。
-        auto const insert_friends =
-            "INSERT INTO friends (user_id, friend_user_id) "
-            "VALUES (" + tx.quote(from_user_id) + ", " + tx.quote(to_user_id) + "), ("
-            + tx.quote(to_user_id) + ", " + tx.quote(from_user_id) + ") "
-            "ON CONFLICT DO NOTHING";
+            auto row = r.rows().front();
+            from_user_id = row.at(0).as_int64();
+            to_user_id = row.at(1).as_int64();
+            status = row.at(2).as_string();
 
-        tx.exec(insert_friends);
+            if(to_user_id != current_user_id) {
+                res.ok = false;
+                res.error_code = "FORBIDDEN";
+                res.error_msg = "无权处理该好友申请";
+                co_await conn.async_execute("ROLLBACK", r, asio::use_awaitable);
+                co_return res;
+            }
+            if(status != "PENDING") {
+                res.ok = false;
+                res.error_code = "INVALID_STATE";
+                res.error_msg = "好友申请状态已变更";
+                co_await conn.async_execute("ROLLBACK", r, asio::use_awaitable);
+                co_return res;
+            }
 
-        auto const update_req =
-            "UPDATE friend_requests "
-            "SET status = " + tx.quote(std::string{ "ACCEPTED" })
-            + ", handled_at = now() "
-            + "WHERE id = " + tx.quote(request_id);
+            // 建立好友关系
+            co_await conn.async_execute(
+                mysql::with_params(
+                    "INSERT IGNORE INTO friends (user_id, friend_user_id)"
+                    " VALUES (?, ?), (?, ?)",
+                    from_user_id,
+                    to_user_id,
+                    to_user_id,
+                    from_user_id),
+                r,
+                asio::use_awaitable
+            );
 
-        tx.exec(update_req);
+            // 更新申请状态
+            co_await conn.async_execute(
+                mysql::with_params(
+                    "UPDATE friend_requests SET status='ACCEPTED', handled_at=CURRENT_TIMESTAMP"
+                    " WHERE id=?",
+                    request_id),
+                r,
+                asio::use_awaitable
+            );
 
-        // 加载好友用户基础信息。
-        auto const user_query =
-            "SELECT id, account, display_name FROM users "
-            "WHERE id = " + tx.quote(from_user_id) + " LIMIT 1";
-
-        auto user_rows = tx.exec(user_query);
-        if(user_rows.empty()) {
+            co_await conn.async_execute("COMMIT", r, asio::use_awaitable);
+        } catch(std::exception const& ex) {
             res.ok = false;
             res.error_code = "SERVER_ERROR";
-            res.error_msg = "好友用户数据不存在";
-            return res;
+            res.error_msg = ex.what();
+            co_return res;
         }
 
-        auto const& user_row = user_rows[0];
-        res.friend_user.id = user_row[0].as<i64>();
-        res.friend_user.account = user_row[1].as<std::string>();
-        res.friend_user.display_name = user_row[2].as<std::string>();
+        // 直接查 by id
+        {
+            mysql::results r2;
+            co_await conn.async_execute(
+                mysql::with_params(
+                    "SELECT id, account, display_name FROM users WHERE id=? LIMIT 1",
+                    from_user_id),
+                r2,
+                asio::use_awaitable
+            );
+            if(!r2.rows().empty()) {
+                auto row = r2.rows().front();
+                res.friend_user.id = row.at(0).as_int64();
+                res.friend_user.account = row.at(1).as_string();
+                res.friend_user.display_name = row.at(2).as_string();
+            }
+        }
 
-        // 确保存在单聊会话。
-        res.conversation_id = get_or_create_single_conversation(from_user_id, to_user_id);
-
+        // 确保单聊会话
+        res.conversation_id = co_await get_or_create_single_conversation(from_user_id, to_user_id);
         res.ok = true;
-        tx.commit();
-        return res;
+        co_return res;
     }
 } // namespace database

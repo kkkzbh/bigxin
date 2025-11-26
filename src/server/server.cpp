@@ -11,6 +11,7 @@
 #include <utility.h>
 #include <session.h>
 #include <server.h>
+#include <database/connection.h>
 
 /// \brief 程序入口：启动 IoRunner 和 TCP 服务器，便于用 nc 调试协议。
 /// \param argc 命令行参数个数。
@@ -20,11 +21,19 @@ auto main(int argc, char** argv) -> int
 {
     auto port = u16(5555);
     if(argc > 1) {
-        auto _ = std::from_chars(argv[1], argv[1] + std::strlen(argv[1]), port,10);
-    };
+        auto _ = std::from_chars(argv[1], argv[1] + std::strlen(argv[1]), port, 10);
+    }
+
     auto thread_count = std::thread::hardware_concurrency();
     auto pool = execpools::asio_thread_pool{ thread_count };
-    std::println("chat server listening on port {}, thread_count is {}", port,thread_count);
+    auto exec = pool.get_executor();
 
-    stdexec::sync_wait(async_start_server(pool.get_executor(),port));
+    database::init_pool(exec);
+    std::println("chat server listening on port {}, thread_count is {}", port, thread_count);
+
+    // 使用 stdexec sender 模型启动并同步等待服务器协程结束
+    auto server_sender = async_start_server(exec, port);
+    stdexec::sync_wait(server_sender);
+
+    return 0;
 }

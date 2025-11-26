@@ -2,7 +2,7 @@
 #include <server.h>
 
 #include <database.h>
-#include <pqxx/pqxx>
+#include <boost/mysql.hpp>
 
 #include <algorithm>
 #include <chrono>
@@ -10,11 +10,12 @@
 #include <cstdio>
 
 using nlohmann::json;
+namespace mysql = boost::mysql;
 
-auto Session::handle_conv_list_req(std::string const& payload) -> std::string
+auto Session::handle_conv_list_req(std::string const& payload) -> asio::awaitable<std::string>
 {
     if(!authenticated_) {
-        return make_error_payload("NOT_AUTHENTICATED", "请先登录");
+        co_return make_error_payload("NOT_AUTHENTICATED", "请先登录");
     }
 
     try {
@@ -24,7 +25,7 @@ auto Session::handle_conv_list_req(std::string const& payload) -> std::string
             (void)_;
         }
 
-        auto const conversations = database::load_user_conversations(user_id_);
+        auto const conversations = co_await database::load_user_conversations(user_id_);
 
         json resp;
         resp["ok"] = true;
@@ -41,25 +42,25 @@ auto Session::handle_conv_list_req(std::string const& payload) -> std::string
         }
 
         resp["conversations"] = std::move(items);
-        return resp.dump();
+        co_return resp.dump();
     } catch(json::parse_error const&) {
-        return make_error_payload("INVALID_JSON", "请求 JSON 解析失败");
+        co_return make_error_payload("INVALID_JSON", "请求 JSON 解析失败");
     } catch(std::exception const& ex) {
-        return make_error_payload("SERVER_ERROR", ex.what());
+        co_return make_error_payload("SERVER_ERROR", ex.what());
     }
 }
 
-auto Session::handle_profile_update(std::string const& payload) -> std::string
+auto Session::handle_profile_update(std::string const& payload) -> asio::awaitable<std::string>
 {
     if(!authenticated_) {
-        return make_error_payload("NOT_AUTHENTICATED", "请先登录");
+        co_return make_error_payload("NOT_AUTHENTICATED", "请先登录");
     }
 
     try {
         auto j = json::parse(payload);
 
         if(!j.contains("displayName")) {
-            return make_error_payload("INVALID_PARAM", "缺少 displayName 字段");
+            co_return make_error_payload("INVALID_PARAM", "缺少 displayName 字段");
         }
 
         auto new_name = j.at("displayName").get<std::string>();
@@ -73,15 +74,15 @@ auto Session::handle_profile_update(std::string const& payload) -> std::string
         trim(new_name);
 
         if(new_name.empty()) {
-            return make_error_payload("INVALID_PARAM", "昵称不能为空");
+            co_return make_error_payload("INVALID_PARAM", "昵称不能为空");
         }
         if(new_name.size() > 64) {
-            return make_error_payload("INVALID_PARAM", "昵称长度过长");
+            co_return make_error_payload("INVALID_PARAM", "昵称长度过长");
         }
 
-        auto const result = database::update_display_name(user_id_, new_name);
+        auto const result = co_await database::update_display_name(user_id_, new_name);
         if(!result.ok) {
-            return make_error_payload(result.error_code, result.error_msg);
+            co_return make_error_payload(result.error_code, result.error_msg);
         }
 
         // 更新当前会话缓存的昵称。
@@ -90,25 +91,25 @@ auto Session::handle_profile_update(std::string const& payload) -> std::string
         json resp;
         resp["ok"] = true;
         resp["displayName"] = display_name_;
-        return resp.dump();
+        co_return resp.dump();
     } catch(json::parse_error const&) {
-        return make_error_payload("INVALID_JSON", "请求 JSON 解析失败");
+        co_return make_error_payload("INVALID_JSON", "请求 JSON 解析失败");
     } catch(std::exception const& ex) {
-        return make_error_payload("SERVER_ERROR", ex.what());
+        co_return make_error_payload("SERVER_ERROR", ex.what());
     }
 }
 
-auto Session::handle_create_group_req(std::string const& payload) -> std::string
+auto Session::handle_create_group_req(std::string const& payload) -> asio::awaitable<std::string>
 {
     if(!authenticated_) {
-        return make_error_payload("NOT_AUTHENTICATED", "请先登录");
+        co_return make_error_payload("NOT_AUTHENTICATED", "请先登录");
     }
 
     try {
         auto j = payload.empty() ? json::object() : json::parse(payload);
 
         if(!j.contains("memberUserIds") || !j.at("memberUserIds").is_array()) {
-            return make_error_payload("INVALID_PARAM", "缺少 memberUserIds 数组");
+            co_return make_error_payload("INVALID_PARAM", "缺少 memberUserIds 数组");
         }
 
         auto const arr = j.at("memberUserIds");
@@ -120,7 +121,7 @@ auto Session::handle_create_group_req(std::string const& payload) -> std::string
             try {
                 id = std::stoll(str);
             } catch(std::exception const&) {
-                return make_error_payload("INVALID_PARAM", "memberUserIds 中存在非法 ID");
+                co_return make_error_payload("INVALID_PARAM", "memberUserIds 中存在非法 ID");
             }
             if(id > 0) {
                 members.push_back(id);
@@ -129,7 +130,7 @@ auto Session::handle_create_group_req(std::string const& payload) -> std::string
 
         // 至少要两位好友，加上创建者总计>=3
         if(members.size() < 2) {
-            return make_error_payload("INVALID_PARAM", "群成员不足");
+            co_return make_error_payload("INVALID_PARAM", "群成员不足");
         }
 
         auto name = std::string{};
@@ -143,30 +144,38 @@ auto Session::handle_create_group_req(std::string const& payload) -> std::string
             trim(name);
         }
 
-        auto const conv_id = database::create_group_conversation(user_id_, members, name);
+        auto const conv_id = co_await database::create_group_conversation(user_id_, members, name);
 
         // 清除新会话的缓存(虽然是新创建,但确保一致性)
         if(server_ != nullptr) {
             server_->invalidate_conversation_cache(conv_id);
+            server_->invalidate_member_list_cache(conv_id);
         }
 
         // 取实际群名
-        std::string conv_name{ "群聊" };
-        {
-            auto conn = database::make_connection();
-            pqxx::work tx{ conn };
-            auto const q =
-                "SELECT name FROM conversations WHERE id = " + tx.quote(conv_id) + " LIMIT 1";
-            auto rows = tx.exec(q);
-            if(!rows.empty()) {
-                conv_name = rows[0][0].as<std::string>();
-            }
-            tx.commit();
+        std::string conv_name = name;
+        if(conv_name.empty()) {
+            try {
+                auto conn_h = co_await database::acquire_connection();
+                auto& conn = *conn_h;
+                boost::mysql::results r;
+                co_await conn.async_execute(
+                    mysql::with_params(
+                        "SELECT name FROM conversations WHERE id = {} LIMIT 1",
+                        conv_id),
+                    r,
+                    asio::use_awaitable
+                );
+                if(!r.rows().empty()) {
+                    conv_name = r.rows().front().at(0).as_string();
+                }
+            } catch(...) {}
+            if(conv_name.empty()) conv_name = "群聊";
         }
 
         // 写首条系统消息（使用创建者作为 sender，避免 sender_id=0 外键问题）
         auto const sys_content = std::string{ "你们创建了群聊：" } + conv_name;
-        auto const stored = database::append_text_message(conv_id, user_id_, sys_content);
+        auto const stored = co_await database::append_text_message(conv_id, user_id_, sys_content);
 
         json resp;
         resp["ok"] = true;
@@ -185,25 +194,25 @@ auto Session::handle_create_group_req(std::string const& payload) -> std::string
             server_->broadcast_system_message(conv_id, stored, sys_content);
         }
 
-        return resp.dump();
+        co_return resp.dump();
     } catch(json::parse_error const&) {
-        return make_error_payload("INVALID_JSON", "请求 JSON 解析失败");
+        co_return make_error_payload("INVALID_JSON", "请求 JSON 解析失败");
     } catch(std::exception const& ex) {
-        return make_error_payload("SERVER_ERROR", ex.what());
+        co_return make_error_payload("SERVER_ERROR", ex.what());
     }
 }
 
-auto Session::handle_open_single_conv_req(std::string const& payload) -> std::string
+auto Session::handle_open_single_conv_req(std::string const& payload) -> asio::awaitable<std::string>
 {
     if(!authenticated_) {
-        return make_error_payload("NOT_AUTHENTICATED", "请先登录");
+        co_return make_error_payload("NOT_AUTHENTICATED", "请先登录");
     }
 
     try {
         auto j = payload.empty() ? json::object() : json::parse(payload);
 
         if(!j.contains("peerUserId")) {
-            return make_error_payload("INVALID_PARAM", "缺少 peerUserId 字段");
+            co_return make_error_payload("INVALID_PARAM", "缺少 peerUserId 字段");
         }
 
         auto const peer_str = j.at("peerUserId").get<std::string>();
@@ -211,48 +220,49 @@ auto Session::handle_open_single_conv_req(std::string const& payload) -> std::st
         try {
             peer_id = std::stoll(peer_str);
         } catch(std::exception const&) {
-            return make_error_payload("INVALID_PARAM", "peerUserId 非法");
+            co_return make_error_payload("INVALID_PARAM", "peerUserId 非法");
         }
         if(peer_id <= 0) {
-            return make_error_payload("INVALID_PARAM", "peerUserId 非法");
+            co_return make_error_payload("INVALID_PARAM", "peerUserId 非法");
         }
         if(peer_id == user_id_) {
-            return make_error_payload("INVALID_PARAM", "不能与自己建立单聊");
+            co_return make_error_payload("INVALID_PARAM", "不能与自己建立单聊");
         }
 
-        if(!database::is_friend(user_id_, peer_id)) {
-            return make_error_payload("NOT_FRIEND", "对方还不是你的好友");
+        if(!co_await database::is_friend(user_id_, peer_id)) {
+            co_return make_error_payload("NOT_FRIEND", "对方还不是你的好友");
         }
 
-        auto const conv_id = database::get_or_create_single_conversation(user_id_, peer_id);
+        auto const conv_id = co_await database::get_or_create_single_conversation(user_id_, peer_id);
 
         // 清除单聊会话缓存(可能是新创建的)
         if(server_ != nullptr) {
             server_->invalidate_conversation_cache(conv_id);
+            server_->invalidate_member_list_cache(conv_id);
         }
 
         json resp;
         resp["ok"] = true;
         resp["conversationId"] = std::to_string(conv_id);
         resp["conversationType"] = "SINGLE";
-        return resp.dump();
+        co_return resp.dump();
     } catch(json::parse_error const&) {
-        return make_error_payload("INVALID_JSON", "请求 JSON 解析失败");
+        co_return make_error_payload("INVALID_JSON", "请求 JSON 解析失败");
     } catch(std::exception const& ex) {
-        return make_error_payload("SERVER_ERROR", ex.what());
+        co_return make_error_payload("SERVER_ERROR", ex.what());
     }
 }
 
-auto Session::handle_conv_members_req(std::string const& payload) -> std::string
+auto Session::handle_conv_members_req(std::string const& payload) -> asio::awaitable<std::string>
 {
     if(!authenticated_) {
-        return make_error_payload("NOT_AUTHENTICATED", "请先登录");
+        co_return make_error_payload("NOT_AUTHENTICATED", "请先登录");
     }
 
     try {
         auto j = payload.empty() ? json::object() : json::parse(payload);
         if(!j.contains("conversationId")) {
-            return make_error_payload("INVALID_PARAM", "缺少 conversationId 字段");
+            co_return make_error_payload("INVALID_PARAM", "缺少 conversationId 字段");
         }
 
         auto const conv_str = j.at("conversationId").get<std::string>();
@@ -260,24 +270,53 @@ auto Session::handle_conv_members_req(std::string const& payload) -> std::string
         try {
             conv_id = std::stoll(conv_str);
         } catch(std::exception const&) {
-            return make_error_payload("INVALID_PARAM", "conversationId 非法");
+            co_return make_error_payload("INVALID_PARAM", "conversationId 非法");
         }
         if(conv_id <= 0) {
-            return make_error_payload("INVALID_PARAM", "conversationId 非法");
+            co_return make_error_payload("INVALID_PARAM", "conversationId 非法");
         }
 
-        auto const member = database::get_conversation_member(conv_id, user_id_);
+        auto const member = co_await database::get_conversation_member(conv_id, user_id_);
         if(!member.has_value()) {
-            return make_error_payload("FORBIDDEN", "你不是该会话成员");
+            co_return make_error_payload("FORBIDDEN", "你不是该会话成员");
         }
 
-        auto members = database::load_conversation_members(conv_id);
+        // 分页参数：offset / limit，默认 0 / 50，最大 200
+        auto offset = i64{ 0 };
+        auto limit = i64{ 50 };
+        if(j.contains("offset")) {
+            offset = std::max<i64>(0, j.at("offset").get<i64>());
+        }
+        if(j.contains("limit")) {
+            limit = std::clamp<i64>(j.at("limit").get<i64>(), 1, 200);
+        }
+
+        std::vector<database::MemberInfo> members;
+        if(server_ != nullptr) {
+            if(auto cached = server_->get_member_list_cache(conv_id)) {
+                members = cached->members;
+            } else {
+                members = co_await database::load_conversation_members(conv_id);
+                server_->set_member_list_cache(conv_id, members);
+            }
+        } else {
+            members = co_await database::load_conversation_members(conv_id);
+        }
+
+        auto const total = static_cast<i64>(members.size());
+        auto const begin = static_cast<size_t>(std::min(offset, total));
+        auto const end = static_cast<size_t>(std::min<i64>(offset + limit, total));
 
         json resp;
         resp["ok"] = true;
         resp["conversationId"] = std::to_string(conv_id);
+        resp["total"] = total;
+        resp["hasMore"] = (end < static_cast<size_t>(total));
+        resp["nextOffset"] = static_cast<i64>(end);
+
         json arr = json::array();
-        for(auto const& m : members) {
+        for(size_t idx = begin; idx < end; ++idx) {
+            auto const& m = members[idx];
             json obj;
             obj["userId"] = std::to_string(m.user_id);
             obj["displayName"] = m.display_name;
@@ -286,24 +325,24 @@ auto Session::handle_conv_members_req(std::string const& payload) -> std::string
             arr.push_back(std::move(obj));
         }
         resp["members"] = std::move(arr);
-        return resp.dump();
+        co_return resp.dump();
     } catch(json::parse_error const&) {
-        return make_error_payload("INVALID_JSON", "请求 JSON 解析失败");
+        co_return make_error_payload("INVALID_JSON", "请求 JSON 解析失败");
     } catch(std::exception const& ex) {
-        return make_error_payload("SERVER_ERROR", ex.what());
+        co_return make_error_payload("SERVER_ERROR", ex.what());
     }
 }
 
-auto Session::handle_mute_member_req(std::string const& payload) -> std::string
+auto Session::handle_mute_member_req(std::string const& payload) -> asio::awaitable<std::string>
 {
     if(!authenticated_) {
-        return make_error_payload("NOT_AUTHENTICATED", "请先登录");
+        co_return make_error_payload("NOT_AUTHENTICATED", "请先登录");
     }
 
     try {
         auto j = payload.empty() ? json::object() : json::parse(payload);
         if(!j.contains("conversationId") || !j.contains("targetUserId") || !j.contains("durationSeconds")) {
-            return make_error_payload("INVALID_PARAM", "缺少必要字段");
+            co_return make_error_payload("INVALID_PARAM", "缺少必要字段");
         }
 
         auto conv_id = i64{};
@@ -313,31 +352,31 @@ auto Session::handle_mute_member_req(std::string const& payload) -> std::string
             conv_id = std::stoll(j.at("conversationId").get<std::string>());
             target_id = std::stoll(j.at("targetUserId").get<std::string>());
         } catch(std::exception const&) {
-            return make_error_payload("INVALID_PARAM", "conversationId 或 targetUserId 非法");
+            co_return make_error_payload("INVALID_PARAM", "conversationId 或 targetUserId 非法");
         }
         duration = j.at("durationSeconds").get<i64>();
 
         if(conv_id <= 0 || target_id <= 0) {
-            return make_error_payload("INVALID_PARAM", "参数非法");
+            co_return make_error_payload("INVALID_PARAM", "参数非法");
         }
         if(duration <= 0) {
-            return make_error_payload("INVALID_PARAM", "禁言时长必须大于 0");
+            co_return make_error_payload("INVALID_PARAM", "禁言时长必须大于 0");
         }
 
-        auto const self_member = database::get_conversation_member(conv_id, user_id_);
+        auto const self_member = co_await database::get_conversation_member(conv_id, user_id_);
         if(!self_member.has_value()) {
-            return make_error_payload("FORBIDDEN", "你不是该会话成员");
+            co_return make_error_payload("FORBIDDEN", "你不是该会话成员");
         }
         if(self_member->role != "OWNER") {
-            return make_error_payload("FORBIDDEN", "仅群主可禁言成员");
+            co_return make_error_payload("FORBIDDEN", "仅群主可禁言成员");
         }
 
-        auto const target_member = database::get_conversation_member(conv_id, target_id);
+        auto const target_member = co_await database::get_conversation_member(conv_id, target_id);
         if(!target_member.has_value()) {
-            return make_error_payload("NOT_FOUND", "目标成员不存在");
+            co_return make_error_payload("NOT_FOUND", "目标成员不存在");
         }
         if(target_member->role == "OWNER") {
-            return make_error_payload("FORBIDDEN", "不能禁言群主");
+            co_return make_error_payload("FORBIDDEN", "不能禁言群主");
         }
 
         auto const now_ms = std::chrono::duration_cast<std::chrono::milliseconds>(
@@ -346,7 +385,11 @@ auto Session::handle_mute_member_req(std::string const& payload) -> std::string
                                 .count();
         auto const muted_until_ms = now_ms + duration * 1000;
 
-        database::set_member_mute_until(conv_id, target_id, muted_until_ms);
+        co_await database::set_member_mute_until(conv_id, target_id, muted_until_ms);
+
+        if(server_ != nullptr) {
+            server_->invalidate_member_list_cache(conv_id);
+        }
 
         // 系统消息
         auto const tp =
@@ -363,7 +406,7 @@ auto Session::handle_mute_member_req(std::string const& payload) -> std::string
             "已将 " + target_name + " 禁言至 " + std::string{ buf };
 
         auto const stored =
-            database::append_text_message(conv_id, user_id_, sys_content, "SYSTEM");
+            co_await database::append_text_message(conv_id, user_id_, sys_content, "SYSTEM");
 
         if(server_ != nullptr) {
             server_->broadcast_system_message(conv_id, stored, sys_content);
@@ -375,25 +418,25 @@ auto Session::handle_mute_member_req(std::string const& payload) -> std::string
         resp["conversationId"] = std::to_string(conv_id);
         resp["targetUserId"] = std::to_string(target_id);
         resp["mutedUntilMs"] = muted_until_ms;
-        return resp.dump();
+        co_return resp.dump();
     } catch(json::parse_error const&) {
-        return make_error_payload("INVALID_JSON", "请求 JSON 解析失败");
+        co_return make_error_payload("INVALID_JSON", "请求 JSON 解析失败");
     } catch(std::exception const& ex) {
-        return make_error_payload("SERVER_ERROR", ex.what());
+        co_return make_error_payload("SERVER_ERROR", ex.what());
     }
 }
 
-auto Session::handle_unmute_member_req(std::string const& payload) -> std::string
+auto Session::handle_unmute_member_req(std::string const& payload) -> asio::awaitable<std::string>
 {
     if(!authenticated_) {
-        return make_error_payload("NOT_AUTHENTICATED", "请先登录");
+        co_return make_error_payload("NOT_AUTHENTICATED", "请先登录");
     }
 
     try {
         auto j = payload.empty() ? json::object() : json::parse(payload);
 
         if(!j.contains("conversationId") || !j.contains("targetUserId")) {
-            return make_error_payload("INVALID_PARAM", "缺少必要字段");
+            co_return make_error_payload("INVALID_PARAM", "缺少必要字段");
         }
 
         auto conv_id = i64{};
@@ -402,32 +445,36 @@ auto Session::handle_unmute_member_req(std::string const& payload) -> std::strin
             conv_id = std::stoll(j.at("conversationId").get<std::string>());
             target_id = std::stoll(j.at("targetUserId").get<std::string>());
         } catch(std::exception const&) {
-            return make_error_payload("INVALID_PARAM", "conversationId 或 targetUserId 非法");
+            co_return make_error_payload("INVALID_PARAM", "conversationId 或 targetUserId 非法");
         }
         if(conv_id <= 0 || target_id <= 0) {
-            return make_error_payload("INVALID_PARAM", "参数非法");
+            co_return make_error_payload("INVALID_PARAM", "参数非法");
         }
 
-        auto const self_member = database::get_conversation_member(conv_id, user_id_);
+        auto const self_member = co_await database::get_conversation_member(conv_id, user_id_);
         if(!self_member.has_value()) {
-            return make_error_payload("FORBIDDEN", "你不是该会话成员");
+            co_return make_error_payload("FORBIDDEN", "你不是该会话成员");
         }
         if(self_member->role != "OWNER") {
-            return make_error_payload("FORBIDDEN", "仅群主可解除禁言");
+            co_return make_error_payload("FORBIDDEN", "仅群主可解除禁言");
         }
 
-        auto const target_member = database::get_conversation_member(conv_id, target_id);
+        auto const target_member = co_await database::get_conversation_member(conv_id, target_id);
         if(!target_member.has_value()) {
-            return make_error_payload("NOT_FOUND", "目标成员不存在");
+            co_return make_error_payload("NOT_FOUND", "目标成员不存在");
         }
 
-        database::set_member_mute_until(conv_id, target_id, 0);
+        co_await database::set_member_mute_until(conv_id, target_id, 0);
+
+        if(server_ != nullptr) {
+            server_->invalidate_member_list_cache(conv_id);
+        }
 
         auto const target_name = target_member->display_name;
         auto const sys_content =
             "已解除 " + target_name + " 的禁言";
         auto const stored =
-            database::append_text_message(conv_id, user_id_, sys_content, "SYSTEM");
+            co_await database::append_text_message(conv_id, user_id_, sys_content, "SYSTEM");
 
         if(server_ != nullptr) {
             server_->broadcast_system_message(conv_id, stored, sys_content);
@@ -438,25 +485,25 @@ auto Session::handle_unmute_member_req(std::string const& payload) -> std::strin
         resp["ok"] = true;
         resp["conversationId"] = std::to_string(conv_id);
         resp["targetUserId"] = std::to_string(target_id);
-        return resp.dump();
+        co_return resp.dump();
     } catch(json::parse_error const&) {
-        return make_error_payload("INVALID_JSON", "请求 JSON 解析失败");
+        co_return make_error_payload("INVALID_JSON", "请求 JSON 解析失败");
     } catch(std::exception const& ex) {
-        return make_error_payload("SERVER_ERROR", ex.what());
+        co_return make_error_payload("SERVER_ERROR", ex.what());
     }
 }
 
-auto Session::handle_leave_conv_req(std::string const& payload) -> std::string
+auto Session::handle_leave_conv_req(std::string const& payload) -> asio::awaitable<std::string>
 {
     if(!authenticated_) {
-        return make_error_payload("NOT_AUTHENTICATED", "请先登录");
+        co_return make_error_payload("NOT_AUTHENTICATED", "请先登录");
     }
 
     try {
         auto j = payload.empty() ? json::object() : json::parse(payload);
 
         if(!j.contains("conversationId")) {
-            return make_error_payload("INVALID_PARAM", "缺少 conversationId 字段");
+            co_return make_error_payload("INVALID_PARAM", "缺少 conversationId 字段");
         }
 
         auto const conv_str = j.at("conversationId").get<std::string>();
@@ -464,17 +511,17 @@ auto Session::handle_leave_conv_req(std::string const& payload) -> std::string
         try {
             conv_id = std::stoll(conv_str);
         } catch(std::exception const&) {
-            return make_error_payload("INVALID_PARAM", "conversationId 非法");
+            co_return make_error_payload("INVALID_PARAM", "conversationId 非法");
         }
         if(conv_id <= 0) {
-            return make_error_payload("INVALID_PARAM", "conversationId 非法");
+            co_return make_error_payload("INVALID_PARAM", "conversationId 非法");
         }
 
         // 默认“世界”会话不允许退出 / 解散。
         try {
-            auto const world_id = database::get_world_conversation_id();
+            auto const world_id = co_await database::get_world_conversation_id();
             if(conv_id == world_id) {
-                return make_error_payload("FORBIDDEN", "无法退出默认会话");
+                co_return make_error_payload("FORBIDDEN", "无法退出默认会话");
             }
         } catch(std::exception const&) {
             // 若世界会话缺失，忽略该保护。
@@ -483,31 +530,32 @@ auto Session::handle_leave_conv_req(std::string const& payload) -> std::string
         // 校验会话存在且为群聊。
         std::string conv_type;
         {
-            auto conn = database::make_connection();
-            pqxx::work tx{ conn };
-
-            auto const query =
-                "SELECT type FROM conversations WHERE id = " + tx.quote(conv_id) + " LIMIT 1";
-
-            auto rows = tx.exec(query);
-            if(rows.empty()) {
-                return make_error_payload("NOT_FOUND", "会话不存在");
+            auto conn_h = co_await database::acquire_connection();
+            auto& conn = *conn_h;
+            boost::mysql::results r;
+            co_await conn.async_execute(
+                mysql::with_params(
+                    "SELECT type FROM conversations WHERE id = {} LIMIT 1",
+                    conv_id),
+                r,
+                asio::use_awaitable
+            );
+            if(r.rows().empty()) {
+                co_return make_error_payload("NOT_FOUND", "会话不存在");
             }
-
-            conv_type = rows[0][0].as<std::string>();
-            tx.commit();
+            conv_type = r.rows().front().at(0).as_string();
         }
 
         if(conv_type != "GROUP") {
-            return make_error_payload("INVALID_PARAM", "仅支持群聊会话");
+            co_return make_error_payload("INVALID_PARAM", "仅支持群聊会话");
         }
 
-        auto const self_member = database::get_conversation_member(conv_id, user_id_);
+        auto const self_member = co_await database::get_conversation_member(conv_id, user_id_);
         if(!self_member.has_value()) {
-            return make_error_payload("FORBIDDEN", "你不是该会话成员");
+            co_return make_error_payload("FORBIDDEN", "你不是该会话成员");
         }
 
-        auto members = database::load_conversation_members(conv_id);
+        auto members = co_await database::load_conversation_members(conv_id);
         auto const member_count = static_cast<i64>(members.size());
 
         auto const is_owner = (self_member->role == "OWNER");
@@ -520,13 +568,13 @@ auto Session::handle_leave_conv_req(std::string const& payload) -> std::string
             // 普通成员退出群聊，群继续存在。
             auto const sys_content = leaver_name + " 退出了群聊";
             auto const stored =
-                database::append_text_message(conv_id, user_id_, sys_content, "SYSTEM");
+                co_await database::append_text_message(conv_id, user_id_, sys_content, "SYSTEM");
 
             if(server_ != nullptr) {
                 server_->broadcast_system_message(conv_id, stored, sys_content);
             }
 
-            database::remove_conversation_member(conv_id, user_id_);
+            co_await database::remove_conversation_member(conv_id, user_id_);
 
             if(server_ != nullptr) {
                 // 退出者的会话列表需要刷新；群内其他成员刷新成员列表。
@@ -539,7 +587,7 @@ auto Session::handle_leave_conv_req(std::string const& payload) -> std::string
             resp["conversationId"] = std::to_string(conv_id);
             resp["isDissolved"] = false;
             resp["memberCountBefore"] = member_count;
-            return resp.dump();
+            co_return resp.dump();
         }
 
         // 解散群聊：群主主动操作，或成员数不超过 2 时的任意成员操作。
@@ -557,20 +605,22 @@ auto Session::handle_leave_conv_req(std::string const& payload) -> std::string
         }
 
         auto const stored =
-            database::append_text_message(conv_id, user_id_, sys_content, "SYSTEM");
+            co_await database::append_text_message(conv_id, user_id_, sys_content, "SYSTEM");
 
         if(server_ != nullptr) {
             server_->broadcast_system_message(conv_id, stored, sys_content);
         }
 
-        database::dissolve_conversation(conv_id);
+        co_await database::dissolve_conversation(conv_id);
 
         // 清除会话缓存
         if(server_ != nullptr) {
             server_->invalidate_conversation_cache(conv_id);
+            server_->invalidate_member_list_cache(conv_id);
         }
 
         if(server_ != nullptr) {
+            server_->invalidate_member_list_cache(conv_id);
             for(auto const uid : member_ids) {
                 server_->send_conv_list_to(uid);
             }
@@ -581,10 +631,10 @@ auto Session::handle_leave_conv_req(std::string const& payload) -> std::string
         resp["conversationId"] = std::to_string(conv_id);
         resp["isDissolved"] = true;
         resp["memberCountBefore"] = member_count;
-        return resp.dump();
+        co_return resp.dump();
     } catch(json::parse_error const&) {
-        return make_error_payload("INVALID_JSON", "请求 JSON 解析失败");
+        co_return make_error_payload("INVALID_JSON", "请求 JSON 解析失败");
     } catch(std::exception const& ex) {
-        return make_error_payload("SERVER_ERROR", ex.what());
+        co_return make_error_payload("SERVER_ERROR", ex.what());
     }
 }

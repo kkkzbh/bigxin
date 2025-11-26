@@ -5,20 +5,19 @@
 
 using nlohmann::json;
 
-auto Session::handle_friend_list_req(std::string const& payload) -> std::string
+auto Session::handle_friend_list_req(std::string const& payload) -> asio::awaitable<std::string>
 {
     if(!authenticated_) {
-        return make_error_payload("NOT_AUTHENTICATED", "请先登录");
+        co_return make_error_payload("NOT_AUTHENTICATED", "请先登录");
     }
 
     try {
         if(!payload.empty() && payload != "{}") {
-            // 目前好友列表不支持过滤参数，仅校验 JSON 格式。
             auto _ = json::parse(payload);
             (void)_;
         }
 
-        auto const friends = database::load_user_friends(user_id_);
+        auto const friends = co_await database::load_user_friends(user_id_);
 
         json resp;
         resp["ok"] = true;
@@ -29,39 +28,38 @@ auto Session::handle_friend_list_req(std::string const& payload) -> std::string
             u["userId"] = std::to_string(f.id);
             u["account"] = f.account;
             u["displayName"] = f.display_name;
-            // 当前没有地区 / 个性签名字段，预留为空串。
             u["region"] = "";
             u["signature"] = "";
             items.push_back(std::move(u));
         }
 
         resp["friends"] = std::move(items);
-        return resp.dump();
+        co_return resp.dump();
     } catch(json::parse_error const&) {
-        return make_error_payload("INVALID_JSON", "请求 JSON 解析失败");
+        co_return make_error_payload("INVALID_JSON", "请求 JSON 解析失败");
     } catch(std::exception const& ex) {
-        return make_error_payload("SERVER_ERROR", ex.what());
+        co_return make_error_payload("SERVER_ERROR", ex.what());
     }
 }
 
-auto Session::handle_friend_search_req(std::string const& payload) -> std::string
+auto Session::handle_friend_search_req(std::string const& payload) -> asio::awaitable<std::string>
 {
     if(!authenticated_) {
-        return make_error_payload("NOT_AUTHENTICATED", "请先登录");
+        co_return make_error_payload("NOT_AUTHENTICATED", "请先登录");
     }
 
     try {
         auto j = payload.empty() ? json::object() : json::parse(payload);
 
         if(!j.contains("account")) {
-            return make_error_payload("INVALID_PARAM", "缺少 account 字段");
+            co_return make_error_payload("INVALID_PARAM", "缺少 account 字段");
         }
 
         auto const account = j.at("account").get<std::string>();
 
-        auto const result = database::search_friend_by_account(user_id_, account);
+        auto const result = co_await database::search_friend_by_account(user_id_, account);
         if(!result.ok) {
-            return make_error_payload(result.error_code, result.error_msg);
+            co_return make_error_payload(result.error_code, result.error_msg);
         }
 
         json resp;
@@ -77,25 +75,25 @@ auto Session::handle_friend_search_req(std::string const& payload) -> std::strin
         resp["user"] = std::move(user);
         resp["isFriend"] = result.is_friend;
         resp["isSelf"] = result.is_self;
-        return resp.dump();
+        co_return resp.dump();
     } catch(json::parse_error const&) {
-        return make_error_payload("INVALID_JSON", "请求 JSON 解析失败");
+        co_return make_error_payload("INVALID_JSON", "请求 JSON 解析失败");
     } catch(std::exception const& ex) {
-        return make_error_payload("SERVER_ERROR", ex.what());
+        co_return make_error_payload("SERVER_ERROR", ex.what());
     }
 }
 
-auto Session::handle_friend_add_req(std::string const& payload) -> std::string
+auto Session::handle_friend_add_req(std::string const& payload) -> asio::awaitable<std::string>
 {
     if(!authenticated_) {
-        return make_error_payload("NOT_AUTHENTICATED", "请先登录");
+        co_return make_error_payload("NOT_AUTHENTICATED", "请先登录");
     }
 
     try {
         auto j = payload.empty() ? json::object() : json::parse(payload);
 
         if(!j.contains("peerUserId")) {
-            return make_error_payload("INVALID_PARAM", "缺少 peerUserId 字段");
+            co_return make_error_payload("INVALID_PARAM", "缺少 peerUserId 字段");
         }
 
         auto const peer_str = j.at("peerUserId").get<std::string>();
@@ -103,10 +101,10 @@ auto Session::handle_friend_add_req(std::string const& payload) -> std::string
         try {
             peer_id = std::stoll(peer_str);
         } catch(std::exception const&) {
-            return make_error_payload("INVALID_PARAM", "peerUserId 非法");
+            co_return make_error_payload("INVALID_PARAM", "peerUserId 非法");
         }
         if(peer_id <= 0) {
-            return make_error_payload("INVALID_PARAM", "peerUserId 非法");
+            co_return make_error_payload("INVALID_PARAM", "peerUserId 非法");
         }
 
         auto const source =
@@ -115,32 +113,31 @@ auto Session::handle_friend_add_req(std::string const& payload) -> std::string
             j.contains("helloMsg") ? j.at("helloMsg").get<std::string>() : std::string{};
 
         auto const result =
-            database::create_friend_request(user_id_, peer_id, source, hello_msg);
+            co_await database::create_friend_request(user_id_, peer_id, source, hello_msg);
         if(!result.ok) {
-            return make_error_payload(result.error_code, result.error_msg);
+            co_return make_error_payload(result.error_code, result.error_msg);
         }
 
         json resp;
         resp["ok"] = true;
         resp["requestId"] = std::to_string(result.request_id);
 
-        // 通知对端用户刷新“新的朋友”列表。
         if(server_ != nullptr) {
             server_->send_friend_request_list_to(peer_id);
         }
 
-        return resp.dump();
+        co_return resp.dump();
     } catch(json::parse_error const&) {
-        return make_error_payload("INVALID_JSON", "请求 JSON 解析失败");
+        co_return make_error_payload("INVALID_JSON", "请求 JSON 解析失败");
     } catch(std::exception const& ex) {
-        return make_error_payload("SERVER_ERROR", ex.what());
+        co_return make_error_payload("SERVER_ERROR", ex.what());
     }
 }
 
-auto Session::handle_friend_req_list_req(std::string const& payload) -> std::string
+auto Session::handle_friend_req_list_req(std::string const& payload) -> asio::awaitable<std::string>
 {
     if(!authenticated_) {
-        return make_error_payload("NOT_AUTHENTICATED", "请先登录");
+        co_return make_error_payload("NOT_AUTHENTICATED", "请先登录");
     }
 
     try {
@@ -149,7 +146,7 @@ auto Session::handle_friend_req_list_req(std::string const& payload) -> std::str
             (void)_;
         }
 
-        auto const requests = database::load_incoming_friend_requests(user_id_);
+        auto const requests = co_await database::load_incoming_friend_requests(user_id_);
 
         json resp;
         resp["ok"] = true;
@@ -167,25 +164,25 @@ auto Session::handle_friend_req_list_req(std::string const& payload) -> std::str
         }
 
         resp["requests"] = std::move(items);
-        return resp.dump();
+        co_return resp.dump();
     } catch(json::parse_error const&) {
-        return make_error_payload("INVALID_JSON", "请求 JSON 解析失败");
+        co_return make_error_payload("INVALID_JSON", "请求 JSON 解析失败");
     } catch(std::exception const& ex) {
-        return make_error_payload("SERVER_ERROR", ex.what());
+        co_return make_error_payload("SERVER_ERROR", ex.what());
     }
 }
 
-auto Session::handle_friend_accept_req(std::string const& payload) -> std::string
+auto Session::handle_friend_accept_req(std::string const& payload) -> asio::awaitable<std::string>
 {
     if(!authenticated_) {
-        return make_error_payload("NOT_AUTHENTICATED", "请先登录");
+        co_return make_error_payload("NOT_AUTHENTICATED", "请先登录");
     }
 
     try {
         auto j = payload.empty() ? json::object() : json::parse(payload);
 
         if(!j.contains("requestId")) {
-            return make_error_payload("INVALID_PARAM", "缺少 requestId 字段");
+            co_return make_error_payload("INVALID_PARAM", "缺少 requestId 字段");
         }
 
         auto const id_str = j.at("requestId").get<std::string>();
@@ -193,15 +190,15 @@ auto Session::handle_friend_accept_req(std::string const& payload) -> std::strin
         try {
             request_id = std::stoll(id_str);
         } catch(std::exception const&) {
-            return make_error_payload("INVALID_PARAM", "requestId 非法");
+            co_return make_error_payload("INVALID_PARAM", "requestId 非法");
         }
         if(request_id <= 0) {
-            return make_error_payload("INVALID_PARAM", "requestId 非法");
+            co_return make_error_payload("INVALID_PARAM", "requestId 非法");
         }
 
-        auto const result = database::accept_friend_request(request_id, user_id_);
+        auto const result = co_await database::accept_friend_request(request_id, user_id_);
         if(!result.ok) {
-            return make_error_payload(result.error_code, result.error_msg);
+            co_return make_error_payload(result.error_code, result.error_msg);
         }
 
         json resp;
@@ -220,7 +217,6 @@ auto Session::handle_friend_accept_req(std::string const& payload) -> std::strin
             resp["conversationId"] = "";
         }
 
-        // 同步双方的好友列表 / “新的朋友”列表 / 会话列表，确保前端及时刷新。
         if(server_ != nullptr) {
             server_->send_friend_list_to(user_id_);
             server_->send_friend_list_to(result.friend_user.id);
@@ -232,10 +228,10 @@ auto Session::handle_friend_accept_req(std::string const& payload) -> std::strin
             }
         }
 
-        return resp.dump();
+        co_return resp.dump();
     } catch(json::parse_error const&) {
-        return make_error_payload("INVALID_JSON", "请求 JSON 解析失败");
+        co_return make_error_payload("INVALID_JSON", "请求 JSON 解析失败");
     } catch(std::exception const& ex) {
-        return make_error_payload("SERVER_ERROR", ex.what());
+        co_return make_error_payload("SERVER_ERROR", ex.what());
     }
 }

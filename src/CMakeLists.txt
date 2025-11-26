@@ -8,8 +8,8 @@ target_include_directories(libchat INTERFACE
 
 target_link_libraries(libchat
         INTERFACE
-        asio
-        libpqxx::pqxx
+        Boost::asio
+        Boost::mysql
 )
 
 add_executable(server
@@ -31,7 +31,7 @@ add_executable(server
 target_link_libraries(server
         PRIVATE
         libchat
-        STDEXEC::asioexec_asio
+        STDEXEC::asioexec_boost
         tbb
 )
 
@@ -105,6 +105,6 @@ add_executable(MAN
 
 target_link_libraries(MAN
         PRIVATE
-        STDEXEC::asioexec_asio
+        STDEXEC::asioexec_boost
         tbb
 )

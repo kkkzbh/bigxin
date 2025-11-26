@@ -1,159 +1,207 @@
 #include <database/message.h>
 #include <database/connection.h>
 #include <database/conversation.h>
-#include <pqxx/pqxx>
 #include <utility.h>
+
+#include <boost/mysql.hpp>
+#include <boost/asio/use_awaitable.hpp>
+
 #include <chrono>
 #include <stdexcept>
+#include <algorithm>
+namespace asio = boost::asio;
+namespace mysql = boost::mysql;
 
 namespace database
 {
+    namespace
+    {
+        auto next_seq(mysql::tcp_connection& conn, i64 conversation_id) -> asio::awaitable<i64>
+        {
+            mysql::results r;
+            co_await conn.async_execute(
+                mysql::with_params(
+                    "INSERT INTO conversation_sequences (conversation_id, next_seq) VALUES (?, 1)"
+                    " ON DUPLICATE KEY UPDATE next_seq = LAST_INSERT_ID(next_seq + 1)",
+                    conversation_id),
+                r,
+                asio::use_awaitable
+            );
+
+            co_await conn.async_execute("SELECT LAST_INSERT_ID()", r, asio::use_awaitable);
+            if(r.rows().empty()) {
+                throw std::runtime_error{"生成消息序列号失败"};
+            }
+            co_return r.rows().front().at(0).as_int64();
+        }
+    }
+
     auto append_text_message(
         i64 conversation_id,
         i64 sender_id,
         std::string const& content,
         std::string const& msg_type
-    ) -> StoredMessage
+    ) -> asio::awaitable<StoredMessage>
     {
-        auto conn = make_connection();
-        pqxx::work tx{ conn };
+        auto conn_h = co_await acquire_connection();
+        auto& conn = *conn_h;
 
-        auto const now_ms = std::chrono::duration_cast<std::chrono::milliseconds>(
-                                std::chrono::system_clock::now().time_since_epoch()
-                            )
-                                .count();
+        auto now_ms = std::chrono::duration_cast<std::chrono::milliseconds>(
+                          std::chrono::system_clock::now().time_since_epoch())
+                          .count();
 
-        // 使用数据库函数 get_next_seq() 生成序列号，消除竞态条件
-        auto const insert =
-            "INSERT INTO messages (conversation_id, sender_id, seq, msg_type, content, server_time_ms) "
-            "VALUES (" + tx.quote(conversation_id) + ", "
-            + tx.quote(sender_id) + ", "
-            + "get_next_seq(" + tx.quote(conversation_id) + "), "
-            + tx.quote(msg_type) + ", "
-            + tx.quote(content) + ", "
-            + tx.quote(now_ms) + ") "
-            "RETURNING id, seq";
+        auto seq = co_await next_seq(conn, conversation_id);
 
-        auto result = tx.exec(insert);
-        if(result.empty()) {
-            throw std::runtime_error{ "插入消息失败" };
-        }
-
-        auto const id = result[0][0].as<i64>();
-        auto const seq = result[0][1].as<i64>();
-        tx.commit();
+        mysql::results r;
+        co_await conn.async_execute(
+            mysql::with_params(
+                "INSERT INTO messages (conversation_id, sender_id, seq, msg_type, content, server_time_ms)"
+                " VALUES (?, ?, ?, ?, ?, ?)",
+                conversation_id,
+                sender_id,
+                seq,
+                msg_type,
+                content,
+                now_ms),
+            r,
+            asio::use_awaitable
+        );
 
         StoredMessage stored{};
         stored.conversation_id = conversation_id;
-        stored.id = id;
+        stored.id = static_cast<i64>(r.last_insert_id());
         stored.seq = seq;
         stored.server_time_ms = now_ms;
         stored.msg_type = msg_type;
-        return stored;
+        co_return stored;
     }
 
     auto append_world_text_message(
         i64 sender_id,
         std::string const& content,
         std::string const& msg_type
-    ) -> StoredMessage
+    ) -> asio::awaitable<StoredMessage>
     {
-        auto const conversation_id = get_world_conversation_id();
-        return append_text_message(conversation_id, sender_id, content, msg_type);
+        auto conversation_id = co_await get_world_conversation_id();
+        co_return co_await append_text_message(conversation_id, sender_id, content, msg_type);
     }
 
     auto load_user_conversation_history(i64 conversation_id, i64 before_seq, i64 limit)
-        -> std::vector<LoadedMessage>
+        -> asio::awaitable<std::vector<LoadedMessage>>
     {
-        if(limit <= 0) {
-            limit = 50;
-        }
+        if(limit <= 0) limit = 50;
 
-        auto conn = make_connection();
-        pqxx::work tx{ conn };
-
-        std::string query =
-            "SELECT m.id, m.conversation_id, m.sender_id, u.display_name, m.seq, m.msg_type, m.content, m.server_time_ms "
-            "FROM messages m "
-            "JOIN users u ON u.id = m.sender_id "
-            "WHERE m.conversation_id = " + tx.quote(conversation_id);
-
+        auto conn_h = co_await acquire_connection();
+        auto& conn = *conn_h;
+        mysql::results r;
         if(before_seq > 0) {
-            query += " AND seq < " + tx.quote(before_seq);
+            co_await conn.async_execute(
+                mysql::with_params(
+                    "SELECT m.id, m.conversation_id, m.sender_id, u.display_name, m.seq, m.msg_type,"
+                    " m.content, m.server_time_ms "
+                    "FROM messages m JOIN users u ON u.id = m.sender_id "
+                    "WHERE m.conversation_id = ? AND m.seq < ? "
+                    "ORDER BY m.seq DESC LIMIT ?",
+                    conversation_id,
+                    before_seq,
+                    limit),
+                r,
+                asio::use_awaitable
+            );
+        } else {
+            co_await conn.async_execute(
+                mysql::with_params(
+                    "SELECT m.id, m.conversation_id, m.sender_id, u.display_name, m.seq, m.msg_type,"
+                    " m.content, m.server_time_ms "
+                    "FROM messages m JOIN users u ON u.id = m.sender_id "
+                    "WHERE m.conversation_id = ? "
+                    "ORDER BY m.seq DESC LIMIT ?",
+                    conversation_id,
+                    limit),
+                r,
+                asio::use_awaitable
+            );
         }
 
-        query += " ORDER BY m.seq DESC LIMIT " + tx.quote(limit);
+        std::vector<LoadedMessage> messages;
+        messages.reserve(r.rows().size());
 
-        auto rows = tx.exec(query);
-
-        std::vector<LoadedMessage> messages{};
-        messages.reserve(rows.size());
-
-        for(auto it = rows.rbegin(); it != rows.rend(); ++it) {
-            auto const& row = *it;
+        for(auto const& row : r.rows()) {
             LoadedMessage msg{};
-            msg.id = row[0].as<i64>();
-            msg.conversation_id = row[1].as<i64>();
-            msg.sender_id = row[2].as<i64>();
-            msg.sender_display_name = row[3].as<std::string>();
-            msg.seq = row[4].as<i64>();
-            msg.msg_type = row[5].as<std::string>();
-            msg.content = row[6].as<std::string>();
-            msg.server_time_ms = row[7].as<i64>();
+            msg.id = row.at(0).as_int64();
+            msg.conversation_id = row.at(1).as_int64();
+            msg.sender_id = row.at(2).as_int64();
+            msg.sender_display_name = row.at(3).as_string();
+            msg.seq = row.at(4).as_int64();
+            msg.msg_type = row.at(5).as_string();
+            msg.content = row.at(6).as_string();
+            msg.server_time_ms = row.at(7).as_int64();
             messages.push_back(std::move(msg));
         }
 
-        tx.commit();
-        return messages;
+        // We queried in DESC order; return results sorted by seq ascending.
+        std::reverse(messages.begin(), messages.end());
+
+        co_return messages;
     }
 
     auto load_user_conversation_since(i64 conversation_id, i64 after_seq, i64 limit)
-        -> std::vector<LoadedMessage>
+        -> asio::awaitable<std::vector<LoadedMessage>>
     {
-        if(limit <= 0) {
-            limit = 100;
-        }
+        if(limit <= 0) limit = 100;
 
-        auto conn = make_connection();
-        pqxx::work tx{ conn };
-
-        std::string query =
-            "SELECT m.id, m.conversation_id, m.sender_id, u.display_name, m.seq, m.msg_type, m.content, m.server_time_ms "
-            "FROM messages m "
-            "JOIN users u ON u.id = m.sender_id "
-            "WHERE m.conversation_id = " + tx.quote(conversation_id);
-
+        auto conn_h = co_await acquire_connection();
+        auto& conn = *conn_h;
+        mysql::results r;
         if(after_seq > 0) {
-            query += " AND seq > " + tx.quote(after_seq);
+            co_await conn.async_execute(
+                mysql::with_params(
+                    "SELECT m.id, m.conversation_id, m.sender_id, u.display_name, m.seq, m.msg_type,"
+                    " m.content, m.server_time_ms "
+                    "FROM messages m JOIN users u ON u.id = m.sender_id "
+                    "WHERE m.conversation_id = ? AND m.seq > ? "
+                    "ORDER BY m.seq ASC LIMIT ?",
+                    conversation_id,
+                    after_seq,
+                    limit),
+                r,
+                asio::use_awaitable
+            );
+        } else {
+            co_await conn.async_execute(
+                mysql::with_params(
+                    "SELECT m.id, m.conversation_id, m.sender_id, u.display_name, m.seq, m.msg_type,"
+                    " m.content, m.server_time_ms "
+                    "FROM messages m JOIN users u ON u.id = m.sender_id "
+                    "WHERE m.conversation_id = ? "
+                    "ORDER BY m.seq ASC LIMIT ?",
+                    conversation_id,
+                    limit),
+                r,
+                asio::use_awaitable
+            );
         }
 
-        query += " ORDER BY m.seq ASC LIMIT " + tx.quote(limit);
-
-        auto rows = tx.exec(query);
-
-        std::vector<LoadedMessage> messages{};
-        messages.reserve(rows.size());
-
-        for(auto const& row : rows) {
+        std::vector<LoadedMessage> messages;
+        messages.reserve(r.rows().size());
+        for(auto const& row : r.rows()) {
             LoadedMessage msg{};
-            msg.id = row[0].as<i64>();
-            msg.conversation_id = row[1].as<i64>();
-            msg.sender_id = row[2].as<i64>();
-            msg.sender_display_name = row[3].as<std::string>();
-            msg.seq = row[4].as<i64>();
-            msg.msg_type = row[5].as<std::string>();
-            msg.content = row[6].as<std::string>();
-            msg.server_time_ms = row[7].as<i64>();
+            msg.id = row.at(0).as_int64();
+            msg.conversation_id = row.at(1).as_int64();
+            msg.sender_id = row.at(2).as_int64();
+            msg.sender_display_name = row.at(3).as_string();
+            msg.seq = row.at(4).as_int64();
+            msg.msg_type = row.at(5).as_string();
+            msg.content = row.at(6).as_string();
+            msg.server_time_ms = row.at(7).as_int64();
             messages.push_back(std::move(msg));
         }
-
-        tx.commit();
-        return messages;
+        co_return messages;
     }
 
-    auto load_world_history(i64 before_seq, i64 limit) -> std::vector<LoadedMessage>
+    auto load_world_history(i64 before_seq, i64 limit) -> asio::awaitable<std::vector<LoadedMessage>>
     {
-        auto const conversation_id = get_world_conversation_id();
-        return load_user_conversation_history(conversation_id, before_seq, limit);
+        auto conversation_id = co_await get_world_conversation_id();
+        co_return co_await load_user_conversation_history(conversation_id, before_seq, limit);
     }
 } // namespace database

@@ -9,11 +9,11 @@
 
 using nlohmann::json;
 
-auto Session::handle_send_msg(std::string const& payload) -> void
+auto Session::handle_send_msg(std::string payload) -> asio::awaitable<void>
 {
     if(!authenticated_) {
         std::println("SEND_MSG from unauthenticated session ignored");
-        return;
+        co_return;
     }
 
     // 使用非抛出版本的JSON解析,减少异常开销
@@ -22,7 +22,7 @@ auto Session::handle_send_msg(std::string const& payload) -> void
         auto const err = make_error_payload("INVALID_JSON", "请求 JSON 解析失败");
         auto msg = protocol::make_line("ERROR", err);
         send_text(std::move(msg));
-        return;
+        co_return;
     }
 
     try {
@@ -30,9 +30,10 @@ auto Session::handle_send_msg(std::string const& payload) -> void
             auto const err = make_error_payload("INVALID_PARAM", "缺少 content 字段");
             auto msg = protocol::make_line("ERROR", err);
             send_text(std::move(msg));
-            return;
+            co_return;
         }
 
+        auto const world_id = co_await database::get_world_conversation_id();
         auto conversation_id = i64{};
         if(j.contains("conversationId")) {
             auto const conv_str = j.at("conversationId").get<std::string>();
@@ -41,32 +42,34 @@ auto Session::handle_send_msg(std::string const& payload) -> void
             }
         }
         if(conversation_id <= 0) {
-            conversation_id = database::get_world_conversation_id();
+            conversation_id = world_id;
         }
 
-        // 禁言校验（仅对群成员存在禁言记录的会话生效）。
-        if(auto const member = database::get_conversation_member(conversation_id, user_id_)) {
-            auto const now_ms = std::chrono::duration_cast<std::chrono::milliseconds>(
-                                    std::chrono::system_clock::now().time_since_epoch()
-                                )
-                                    .count();
-            if(member->muted_until_ms > now_ms) {
-                std::time_t tt = std::chrono::system_clock::to_time_t(
-                    std::chrono::system_clock::time_point{
-                        std::chrono::milliseconds{ member->muted_until_ms }
-                    }
-                );
-                std::tm tm = *std::localtime(&tt);
-                char buf[32]{};
-                std::snprintf(buf, sizeof(buf), "%04d-%02d-%02d %02d:%02d:%02d",
-                    tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday,
-                    tm.tm_hour, tm.tm_min, tm.tm_sec);
+        // 世界频道无需禁言校验，减少一次数据库访问
+        if(conversation_id != world_id) {
+            auto member = co_await database::get_conversation_member(conversation_id, user_id_);
 
-                auto const err =
-                    make_error_payload("MUTED", std::string{ "你已被禁言至 " } + buf);
-                auto msg = protocol::make_line("ERROR", err);
-                send_text(std::move(msg));
-                return;
+            if(member) {
+                auto const now_ms = std::chrono::duration_cast<std::chrono::milliseconds>(
+                                        std::chrono::system_clock::now().time_since_epoch()
+                                    )
+                                        .count();
+                if(member->muted_until_ms > now_ms) {
+                    std::time_t tt = std::chrono::system_clock::to_time_t(
+                        std::chrono::system_clock::time_point(
+                            std::chrono::milliseconds(member->muted_until_ms)));
+                    std::tm tm = *std::localtime(&tt);
+                    char buf[32]{};
+                    std::snprintf(buf, sizeof(buf), "%04d-%02d-%02d %02d:%02d:%02d",
+                        tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday,
+                        tm.tm_hour, tm.tm_min, tm.tm_sec);
+
+                    auto const err =
+                        make_error_payload("MUTED", std::string{ "你已被禁言至 " } + buf);
+                    auto msg = protocol::make_line("ERROR", err);
+                    send_text(std::move(msg));
+                    co_return;
+                }
             }
         }
 
@@ -74,7 +77,7 @@ auto Session::handle_send_msg(std::string const& payload) -> void
         auto const client_msg_id =
             j.contains("clientMsgId") ? j.at("clientMsgId").get<std::string>() : "";
 
-        auto const stored = database::append_text_message(conversation_id, user_id_, content);
+        auto stored = co_await database::append_text_message(conversation_id, user_id_, content);
 
         json ack;
         ack["clientMsgId"] = client_msg_id;
@@ -86,25 +89,27 @@ auto Session::handle_send_msg(std::string const& payload) -> void
         send_text(std::move(ack_msg));
 
         if(server_ != nullptr) {
-            server_->broadcast_world_message(stored, user_id_, content);
+            server_->broadcast_world_message(stored, user_id_, content, display_name_);
         }
     } catch(std::exception const& ex) {
         auto const err = make_error_payload("SERVER_ERROR", ex.what());
         auto msg = protocol::make_line("ERROR", err);
         send_text(std::move(msg));
     }
+
+    co_return;
 }
 
-auto Session::handle_history_req(std::string const& payload) -> std::string
+auto Session::handle_history_req(std::string const& payload) -> asio::awaitable<std::string>
 {
     if(!authenticated_) {
-        return make_error_payload("NOT_AUTHENTICATED", "请先登录");
+        co_return make_error_payload("NOT_AUTHENTICATED", "请先登录");
     }
 
     // 使用非抛出版本的JSON解析
     auto j = json::parse(payload, nullptr, false);
     if(j.is_discarded()) {
-        return make_error_payload("INVALID_JSON", "请求 JSON 解析失败");
+        co_return make_error_payload("INVALID_JSON", "请求 JSON 解析失败");
     }
 
     try {
@@ -130,15 +135,15 @@ auto Session::handle_history_req(std::string const& payload) -> std::string
             }
         }
         if(conversation_id <= 0) {
-            conversation_id = database::get_world_conversation_id();
+            conversation_id = co_await database::get_world_conversation_id();
         }
 
         std::vector<database::LoadedMessage> messages;
         if(after_seq > 0) {
-            messages = database::load_user_conversation_since(conversation_id, after_seq, limit);
+            messages = co_await database::load_user_conversation_since(conversation_id, after_seq, limit);
         } else {
             messages =
-                database::load_user_conversation_history(conversation_id, before_seq, limit);
+                co_await database::load_user_conversation_history(conversation_id, before_seq, limit);
         }
 
         json resp;
@@ -161,10 +166,10 @@ auto Session::handle_history_req(std::string const& payload) -> std::string
         resp["hasMore"] = static_cast<i64>(messages.size()) >= limit;
         resp["nextBeforeSeq"] = messages.empty() ? 0 : messages.front().seq;
 
-        return resp.dump();
+        co_return resp.dump();
     } catch(json::parse_error const&) {
-        return make_error_payload("INVALID_JSON", "请求 JSON 解析失败");
+        co_return make_error_payload("INVALID_JSON", "请求 JSON 解析失败");
     } catch(std::exception const& ex) {
-        return make_error_payload("SERVER_ERROR", ex.what());
+        co_return make_error_payload("SERVER_ERROR", ex.what());
     }
 }

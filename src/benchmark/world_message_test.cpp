@@ -13,8 +13,8 @@
  */
 
 #include "benchmark_config.h"
-#include <asio.hpp>
-#include <asio/experimental/awaitable_operators.hpp>
+#include <boost/asio.hpp>
+#include <boost/asio/experimental/awaitable_operators.hpp>
 #include <print>
 #include <string>
 #include <chrono>
@@ -27,7 +27,9 @@
 #include <fstream>
 #include <random>
 #include <optional>
+#include <thread>
 
+namespace asio = boost::asio;
 using namespace asio::experimental::awaitable_operators;
 using namespace std::chrono_literals;
 using namespace benchmark;
@@ -228,7 +230,6 @@ public:
         : socket_(exec)
         , client_id_(client_id)
         , group_cfg_(cfg)
-        , rng_(static_cast<unsigned>(std::chrono::steady_clock::now().time_since_epoch().count()) + client_id)
     {}
     
     /// 执行完整的测试流程
@@ -387,7 +388,6 @@ private:
     
     /// 发送消息到世界频道 (全速无间隔)
     asio::awaitable<void> send_messages() {
-        std::uniform_int_distribution<int> dist_seconds(3, 8);
         for (size_t i = 0; i < MESSAGES_PER_CLIENT; ++i) {
             try {
                 auto send_time = std::chrono::steady_clock::now();
@@ -408,13 +408,6 @@ private:
                     asio::use_awaitable);
                 
                 g_stats.messages_sent++;
-
-                // 压力模式：无间隔，全速发送
-                auto wait_s = dist_seconds(rng_);
-                co_await asio::steady_timer(
-                    socket_.get_executor(),
-                    std::chrono::seconds(wait_s)
-                ).async_wait(asio::use_awaitable);
             } catch (...) {
                 break;
             }
@@ -431,7 +424,7 @@ private:
     std::unordered_map<std::string, std::chrono::steady_clock::time_point> pending_sends_;
 
     const GroupConfig* group_cfg_{nullptr};
-    std::mt19937 rng_;
+    std::mt19937 rng_{}; // no-op RNG, kept to minimize constructor changes
 };
 
 // ==================== 进度报告 ====================
@@ -467,7 +460,7 @@ asio::awaitable<void> run_world_test() {
     std::println("每客户端消息数: {} 条", MESSAGES_PER_CLIENT);
     std::println("总消息数: {} 条", NUM_CLIENTS * MESSAGES_PER_CLIENT);
     std::println("最大并发: {}", MESSAGE_MAX_CONCURRENT);
-    std::println("消息间隔: 3-8 秒随机");
+    std::println("消息间隔: 0 秒 (全速压测)");
     if (group_cfg && !group_cfg->conv_by_group.empty()) {
         std::println("群配置: 已加载 {} 个群，会话按分组发送", group_cfg->conv_by_group.size());
     } else {
@@ -507,10 +500,10 @@ asio::awaitable<void> run_world_test() {
 
 int main() {
     try {
-        constexpr int NUM_THREADS = 4;
-        asio::thread_pool pool(NUM_THREADS);
+        auto threads = std::max(4u, std::thread::hardware_concurrency());
+        asio::thread_pool pool(threads);
         
-        std::println("使用 {} 个工作线程\n", NUM_THREADS);
+        std::println("使用 {} 个工作线程\n", threads);
         
         asio::co_spawn(pool, run_world_test(), asio::detached);
         

@@ -1,6 +1,8 @@
 #pragma once
 
-#include <asio.hpp>
+#include <boost/asio.hpp>
+#include <boost/asio/awaitable.hpp>
+namespace asio = boost::asio;
 
 #include <nlohmann/json.hpp>
 
@@ -80,69 +82,76 @@ struct Session : std::enable_shared_from_this<Session>
                     auto msg = protocol::make_line("PONG", "{}");
                     send_text(std::move(msg));
                 } else if(frame.command == "REGISTER") {
-                    auto payload = handle_register(frame.payload);
+                    auto payload = co_await handle_register(frame.payload);
                     auto msg = protocol::make_line("REGISTER_RESP", payload);
                     send_text(std::move(msg));
                 } else if(frame.command == "LOGIN") {
-                    auto payload = handle_login(frame.payload);
+                    auto payload = co_await handle_login(frame.payload);
                     auto msg = protocol::make_line("LOGIN_RESP", payload);
                     send_text(std::move(msg));
                 } else if(frame.command == "SEND_MSG") {
-                    handle_send_msg(frame.payload);
+                    auto self = shared_from_this();
+                    asio::co_spawn(
+                        socket_.get_executor(),
+                        [self, payload = frame.payload]() mutable -> asio::awaitable<void> {
+                            co_await self->handle_send_msg(std::move(payload));
+                        },
+                        asio::detached
+                    );
                 } else if(frame.command == "HISTORY_REQ") {
-                    auto payload = handle_history_req(frame.payload);
+                    auto payload = co_await handle_history_req(frame.payload);
                     auto msg = protocol::make_line("HISTORY_RESP", payload);
                     send_text(std::move(msg));
                 } else if(frame.command == "CONV_LIST_REQ") {
-                    auto payload = handle_conv_list_req(frame.payload);
+                    auto payload = co_await handle_conv_list_req(frame.payload);
                     auto msg = protocol::make_line("CONV_LIST_RESP", payload);
                     send_text(std::move(msg));
                 } else if(frame.command == "PROFILE_UPDATE") {
-                    auto payload = handle_profile_update(frame.payload);
+                    auto payload = co_await handle_profile_update(frame.payload);
                     auto msg = protocol::make_line("PROFILE_UPDATE_RESP", payload);
                     send_text(std::move(msg));
                 } else if(frame.command == "FRIEND_LIST_REQ") {
-                    auto payload = handle_friend_list_req(frame.payload);
+                    auto payload = co_await handle_friend_list_req(frame.payload);
                     auto msg = protocol::make_line("FRIEND_LIST_RESP", payload);
                     send_text(std::move(msg));
                 } else if(frame.command == "FRIEND_SEARCH_REQ") {
-                    auto payload = handle_friend_search_req(frame.payload);
+                    auto payload = co_await handle_friend_search_req(frame.payload);
                     auto msg = protocol::make_line("FRIEND_SEARCH_RESP", payload);
                     send_text(std::move(msg));
                 } else if(frame.command == "FRIEND_ADD_REQ") {
-                    auto payload = handle_friend_add_req(frame.payload);
+                    auto payload = co_await handle_friend_add_req(frame.payload);
                     auto msg = protocol::make_line("FRIEND_ADD_RESP", payload);
                     send_text(std::move(msg));
                 } else if(frame.command == "FRIEND_REQ_LIST_REQ") {
-                    auto payload = handle_friend_req_list_req(frame.payload);
+                    auto payload = co_await handle_friend_req_list_req(frame.payload);
                     auto msg = protocol::make_line("FRIEND_REQ_LIST_RESP", payload);
                     send_text(std::move(msg));
                 } else if(frame.command == "FRIEND_ACCEPT_REQ") {
-                    auto payload = handle_friend_accept_req(frame.payload);
+                    auto payload = co_await handle_friend_accept_req(frame.payload);
                     auto msg = protocol::make_line("FRIEND_ACCEPT_RESP", payload);
                     send_text(std::move(msg));
                 } else if(frame.command == "CREATE_GROUP_REQ") {
-                    auto payload = handle_create_group_req(frame.payload);
+                    auto payload = co_await handle_create_group_req(frame.payload);
                     auto msg = protocol::make_line("CREATE_GROUP_RESP", payload);
                     send_text(std::move(msg));
                 } else if(frame.command == "OPEN_SINGLE_CONV_REQ") {
-                    auto payload = handle_open_single_conv_req(frame.payload);
+                    auto payload = co_await handle_open_single_conv_req(frame.payload);
                     auto msg = protocol::make_line("OPEN_SINGLE_CONV_RESP", payload);
                     send_text(std::move(msg));
                 } else if(frame.command == "MUTE_MEMBER_REQ") {
-                    auto payload = handle_mute_member_req(frame.payload);
+                    auto payload = co_await handle_mute_member_req(frame.payload);
                     auto msg = protocol::make_line("MUTE_MEMBER_RESP", payload);
                     send_text(std::move(msg));
                 } else if(frame.command == "UNMUTE_MEMBER_REQ") {
-                    auto payload = handle_unmute_member_req(frame.payload);
+                    auto payload = co_await handle_unmute_member_req(frame.payload);
                     auto msg = protocol::make_line("UNMUTE_MEMBER_RESP", payload);
                     send_text(std::move(msg));
                 } else if(frame.command == "CONV_MEMBERS_REQ") {
-                    auto payload = handle_conv_members_req(frame.payload);
+                    auto payload = co_await handle_conv_members_req(frame.payload);
                     auto msg = protocol::make_line("CONV_MEMBERS_RESP", payload);
                     send_text(std::move(msg));
                 } else if(frame.command == "LEAVE_CONV_REQ") {
-                    auto payload = handle_leave_conv_req(frame.payload);
+                    auto payload = co_await handle_leave_conv_req(frame.payload);
                     auto msg = protocol::make_line("LEAVE_CONV_RESP", payload);
                     send_text(std::move(msg));
                 } else {
@@ -159,67 +168,68 @@ struct Session : std::enable_shared_from_this<Session>
 
 private:
     /// \brief 处理注册命令，返回 REGISTER_RESP 的 JSON 串。
-    auto handle_register(std::string const& payload) -> std::string;
+    auto handle_register(std::string const& payload) -> asio::awaitable<std::string>;
 
     /// \brief 处理登录命令，返回 LOGIN_RESP 的 JSON 串。
-    auto handle_login(std::string const& payload) -> std::string;
+    auto handle_login(std::string const& payload) -> asio::awaitable<std::string>;
 
     /// \brief 处理发送消息命令，在“世界”会话中写入并广播。
     /// \param payload SEND_MSG 的 JSON 文本。
-    auto handle_send_msg(std::string const& payload) -> void;
+    /// \note 异步协程，在数据库线程池上执行阻塞操作。
+    auto handle_send_msg(std::string payload) -> asio::awaitable<void>;
 
     /// \brief 处理历史消息请求，返回 HISTORY_RESP 的 JSON 串。
     /// \param payload HISTORY_REQ 的 JSON 文本。
-    auto handle_history_req(std::string const& payload) -> std::string;
+    auto handle_history_req(std::string const& payload) -> asio::awaitable<std::string>;
 
     /// \brief 处理会话列表请求，返回 CONV_LIST_RESP 的 JSON 串。
     /// \param payload CONV_LIST_REQ 的 JSON 文本。
-    auto handle_conv_list_req(std::string const& payload) -> std::string;
+    auto handle_conv_list_req(std::string const& payload) -> asio::awaitable<std::string>;
 
     /// \brief 处理资料更新请求，返回 PROFILE_UPDATE_RESP 的 JSON 串。
     /// \param payload PROFILE_UPDATE 的 JSON 文本。
-    auto handle_profile_update(std::string const& payload) -> std::string;
+    auto handle_profile_update(std::string const& payload) -> asio::awaitable<std::string>;
 
     /// \brief 处理好友列表请求，返回 FRIEND_LIST_RESP 的 JSON 串。
     /// \param payload FRIEND_LIST_REQ 的 JSON 文本。
-    auto handle_friend_list_req(std::string const& payload) -> std::string;
+    auto handle_friend_list_req(std::string const& payload) -> asio::awaitable<std::string>;
 
     /// \brief 处理按账号搜索好友的请求，返回 FRIEND_SEARCH_RESP 的 JSON 串。
     /// \param payload FRIEND_SEARCH_REQ 的 JSON 文本。
-    auto handle_friend_search_req(std::string const& payload) -> std::string;
+    auto handle_friend_search_req(std::string const& payload) -> asio::awaitable<std::string>;
 
     /// \brief 处理创建好友申请的请求，返回 FRIEND_ADD_RESP 的 JSON 串。
     /// \param payload FRIEND_ADD_REQ 的 JSON 文本。
-    auto handle_friend_add_req(std::string const& payload) -> std::string;
+    auto handle_friend_add_req(std::string const& payload) -> asio::awaitable<std::string>;
 
     /// \brief 处理“新的朋友”列表请求，返回 FRIEND_REQ_LIST_RESP 的 JSON 串。
     /// \param payload FRIEND_REQ_LIST_REQ 的 JSON 文本。
-    auto handle_friend_req_list_req(std::string const& payload) -> std::string;
+    auto handle_friend_req_list_req(std::string const& payload) -> asio::awaitable<std::string>;
 
     /// \brief 处理同意好友申请的请求，返回 FRIEND_ACCEPT_RESP 的 JSON 串。
     /// \param payload FRIEND_ACCEPT_REQ 的 JSON 文本。
-    auto handle_friend_accept_req(std::string const& payload) -> std::string;
+    auto handle_friend_accept_req(std::string const& payload) -> asio::awaitable<std::string>;
 
     /// \brief 处理创建群聊的请求，返回 CREATE_GROUP_RESP 的 JSON 串。
     /// \param payload CREATE_GROUP_REQ 的 JSON 文本。
-    auto handle_create_group_req(std::string const& payload) -> std::string;
+    auto handle_create_group_req(std::string const& payload) -> asio::awaitable<std::string>;
 
     /// \brief 处理打开单聊会话的请求，返回 OPEN_SINGLE_CONV_RESP 的 JSON 串。
     /// \param payload OPEN_SINGLE_CONV_REQ 的 JSON 文本。
-    auto handle_open_single_conv_req(std::string const& payload) -> std::string;
+    auto handle_open_single_conv_req(std::string const& payload) -> asio::awaitable<std::string>;
 
     /// \brief 处理群成员禁言请求。
-    auto handle_mute_member_req(std::string const& payload) -> std::string;
+    auto handle_mute_member_req(std::string const& payload) -> asio::awaitable<std::string>;
 
     /// \brief 处理群成员解禁请求。
-    auto handle_unmute_member_req(std::string const& payload) -> std::string;
+    auto handle_unmute_member_req(std::string const& payload) -> asio::awaitable<std::string>;
 
     /// \brief 处理会话成员列表请求。
-    auto handle_conv_members_req(std::string const& payload) -> std::string;
+    auto handle_conv_members_req(std::string const& payload) -> asio::awaitable<std::string>;
 
     /// \brief 处理退群 / 解散群聊请求。
     /// \param payload LEAVE_CONV_REQ 的 JSON 文本。
-    auto handle_leave_conv_req(std::string const& payload) -> std::string;
+    auto handle_leave_conv_req(std::string const& payload) -> asio::awaitable<std::string>;
 
     /// \brief 构造带错误码的通用错误响应 JSON 串。
     auto make_error_payload(std::string const& code, std::string const& msg) const -> std::string

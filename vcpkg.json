@@ -2,8 +2,9 @@
   "version": "1.0",
   "name": "chat",
   "dependencies" : [
-    "asio",
-    "libpqxx",
+    "boost-mysql",
+    "boost-redis",
+    "boost-asio",
     "nlohmann-json"
   ]
 }

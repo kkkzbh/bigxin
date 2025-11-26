@@ -1,6 +1,11 @@
 #pragma once
 
-#include <asio.hpp>
+#include <boost/asio.hpp>
+#include <boost/asio/awaitable.hpp>
+#include <boost/asio/strand.hpp>
+#include <boost/asio/ip/tcp.hpp>
+#include <boost/asio/co_spawn.hpp>
+namespace asio = boost::asio;
 #include <stdexec/execution.hpp>
 #include <asioexec/use_sender.hpp>
 #include <exec/task.hpp>
@@ -14,6 +19,7 @@
 #include <chrono>
 
 #include <utility.h>
+#include <database/conversation.h>
 
 namespace database
 {
@@ -40,6 +46,16 @@ struct Server
     auto run() -> asio::awaitable<void>;
 
 private:
+    template<typename Fn>
+    void dispatch_on_strand(Fn&& fn)
+    {
+        if(strand_.running_in_this_thread()) {
+            fn();
+        } else {
+            asio::dispatch(strand_, std::forward<Fn>(fn));
+        }
+    }
+
     friend struct Session;
 
     /// \brief 从会话列表中移除一个已经结束的 Session。
@@ -105,7 +121,7 @@ private:
     /// \param stored 已持久化的消息信息。
     /// \param sender_id 发送者用户 ID。
     /// \param content 消息文本内容。
-    auto broadcast_world_message(database::StoredMessage const& stored,i64 sender_id,std::string const& content) -> void;
+    auto broadcast_world_message(database::StoredMessage const& stored,i64 sender_id,std::string const& content,std::string const& sender_display_name = {}) -> void;
 
     asio::ip::tcp::acceptor acceptor_;
     
@@ -126,6 +142,12 @@ public:
         std::chrono::steady_clock::time_point last_access; ///< 最后访问时间
     };
 
+    /// \brief 成员列表缓存，包含完整 MemberInfo，供成员列表分页查询使用。
+    struct MemberListCache {
+        std::vector<database::MemberInfo> members;
+        std::chrono::steady_clock::time_point last_access;
+    };
+
     /// \brief 获取会话缓存(带自动加载和更新)。
     /// \param conversation_id 会话ID。
     /// \return 可选的缓存条目,失败时返回空。
@@ -138,9 +160,20 @@ public:
     /// \brief 清理过期缓存(超过5分钟未访问)。
     auto cleanup_expired_cache() -> void;
 
+    /// \brief 获取成员列表缓存(分页查询复用)。
+    auto get_member_list_cache(i64 conversation_id) -> std::optional<MemberListCache>;
+
+    /// \brief 写入/更新成员列表缓存。
+    auto set_member_list_cache(i64 conversation_id, std::vector<database::MemberInfo> members) -> void;
+
+    /// \brief 使成员列表缓存失效。
+    auto invalidate_member_list_cache(i64 conversation_id) -> void;
+
 private:
     /// \brief 会话成员列表缓存。
     std::unordered_map<i64, ConversationCache> conv_cache_{};
+    /// \brief 成员详情缓存。
+    std::unordered_map<i64, MemberListCache> member_cache_{};
     /// \brief 保护缓存的互斥锁。
     std::mutex cache_mutex_{};
     /// \brief 缓存过期时间(5分钟)。

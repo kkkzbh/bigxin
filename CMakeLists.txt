@@ -15,9 +15,9 @@ set(VCPKG_TARGET_TRIPLET "x64-linux" CACHE STRING "" FORCE)
 include(cmake/CPM.cmake)
 
 find_package(Threads REQUIRED)
-find_package(Asio CONFIG REQUIRED)
 find_package(Qt6 6.5 REQUIRED COMPONENTS Quick QuickControls2 Network)
-find_package(libpqxx CONFIG REQUIRED)
+find_package(boost_asio CONFIG REQUIRED)
+find_package(boost_mysql CONFIG REQUIRED)
 
 CPMAddPackage(
     NAME stdexec
@@ -25,7 +25,7 @@ CPMAddPackage(
     GIT_TAG main
     OPTIONS
         "STDEXEC_ENABLE_ASIO ON"
-        "STDEXEC_ASIO_IMPLEMENTATION standalone"
+        "STDEXEC_ASIO_IMPLEMENTATION boost"
 )
 
 CPMAddPackage(
