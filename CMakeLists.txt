@@ -28,12 +28,6 @@ CPMAddPackage(
         "STDEXEC_ASIO_IMPLEMENTATION boost"
 )
 
-CPMAddPackage(
-    NAME sqlpp23
-    GITHUB_REPOSITORY rbock/sqlpp23
-    GIT_TAG main
-)
-
 qt_standard_project_setup(REQUIRES 6.5)
 
 add_subdirectory(src)
