@@ -122,8 +122,8 @@ auto Session::handle_friend_add_req(std::string const& payload) -> asio::awaitab
         resp["ok"] = true;
         resp["requestId"] = std::to_string(result.request_id);
 
-        if(server_ != nullptr) {
-            server_->send_friend_request_list_to(peer_id);
+        if(auto server = server_.lock()) {
+            server->send_friend_request_list_to(peer_id);
         }
 
         co_return resp.dump();
@@ -217,14 +217,14 @@ auto Session::handle_friend_accept_req(std::string const& payload) -> asio::awai
             resp["conversationId"] = "";
         }
 
-        if(server_ != nullptr) {
-            server_->send_friend_list_to(user_id_);
-            server_->send_friend_list_to(result.friend_user.id);
-            server_->send_friend_request_list_to(user_id_);
-            server_->send_friend_request_list_to(result.friend_user.id);
+        if(auto server = server_.lock()) {
+            server->send_friend_list_to(user_id_);
+            server->send_friend_list_to(result.friend_user.id);
+            server->send_friend_request_list_to(user_id_);
+            server->send_friend_request_list_to(result.friend_user.id);
             if(result.conversation_id > 0) {
-                server_->send_conv_list_to(user_id_);
-                server_->send_conv_list_to(result.friend_user.id);
+                server->send_conv_list_to(user_id_);
+                server->send_conv_list_to(result.friend_user.id);
             }
         }
 

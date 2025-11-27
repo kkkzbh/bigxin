@@ -8,12 +8,15 @@
 #include <asioexec/use_sender.hpp>
 #include <exec/task.hpp>
 #include <boost/asio/use_awaitable.hpp>
+#include <boost/asio/redirect_error.hpp>
+#include <boost/asio/steady_timer.hpp>
 namespace asio = boost::asio;
 
 #include <optional>
 #include <print>
 #include <unordered_set>
 #include <vector>
+#include <chrono>
 
 using nlohmann::json;
 using asio::use_awaitable;
@@ -42,29 +45,50 @@ using asio::use_awaitable;
 auto Server::run() -> asio::awaitable<void>
 {
     std::println("Server::run enter");
-    try {
-        while(true) {
-            auto socket = co_await acceptor_.async_accept(use_awaitable);
+    auto self = shared_from_this();
 
-            auto const endpoint = socket.remote_endpoint();
-            auto const addr = endpoint.address().to_string();
-            auto const port = endpoint.port();
-            std::println("new connection from: {}:{}", addr, port);
+    while(true) {
+        boost::system::error_code ec;
+        auto socket = co_await acceptor_.async_accept(asio::redirect_error(use_awaitable, ec));
 
-            auto session = std::make_shared<Session>(std::move(socket), *this);
-            
-            asio::co_spawn(
-                strand_,
-                [this, session]() -> asio::awaitable<void> {
-                    sessions_[session.get()] = session;
-                    co_await session->run();
-                    remove_session(session.get());
-                },
-                asio::detached
-            );
+        if(ec) {
+            if(ec == asio::error::operation_aborted) {
+                std::println("accept loop stopped: {}", ec.message());
+                break;
+            }
+            std::println("accept error: {} ({})", ec.message(), ec.value());
+            asio::steady_timer timer{ acceptor_.get_executor() };
+            timer.expires_after(std::chrono::milliseconds{ 50 });
+            co_await timer.async_wait(use_awaitable);
+            continue;
         }
-    } catch(std::exception const& ex) {
-        std::println("server accept loop error: {}", ex.what());
+
+        auto const endpoint = socket.remote_endpoint(ec);
+        if(!ec) {
+            std::println("new connection from: {}:{}", endpoint.address().to_string(), endpoint.port());
+        }
+
+        auto session = std::make_shared<Session>(std::move(socket), self);
+        
+        // 在 Server 的 strand 上注册 session
+        asio::dispatch(strand_, [self, session]() {
+            self->sessions_[session.get()] = session;
+        });
+        
+        // Session 的 run() 在自己的 strand 上执行，避免阻塞 Server strand
+        asio::co_spawn(
+            session->strand_,
+            [weak = std::weak_ptr<Server>(self), session]() -> asio::awaitable<void> {
+                co_await session->run();
+                // 清理时需要回到 Server 的 strand
+                if(auto srv = weak.lock()) {
+                    asio::dispatch(srv->strand_, [srv, raw_ptr = session.get()]() {
+                        srv->remove_session(raw_ptr);
+                    });
+                }
+            },
+            asio::detached
+        );
     }
     std::println("Server::run exit");
 }

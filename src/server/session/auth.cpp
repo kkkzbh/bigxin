@@ -67,8 +67,8 @@ auto Session::handle_login(std::string const& payload) -> asio::awaitable<std::s
         account_ = result.user.account;
         display_name_ = result.user.display_name;
 
-        if(server_ != nullptr) {
-            server_->index_authenticated_session(shared_from_this());
+        if(auto server = server_.lock()) {
+            server->index_authenticated_session(shared_from_this());
         }
 
         auto const world_id = co_await database::get_world_conversation_id();

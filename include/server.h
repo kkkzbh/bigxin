@@ -31,7 +31,7 @@ namespace database
 struct Session;
 
 /// \brief 简单 TCP 服务器：监听端口并为每个连接创建一个 Session。
-struct Server
+struct Server : std::enable_shared_from_this<Server>
 {
     /// rief 使用给定执行器和端口构造服务器。
     /// \param exec 关联的 Asio 执行器。
@@ -188,8 +188,8 @@ auto inline async_start_server(asio::any_io_executor exec, u16 port) -> stdexec:
     return asio::co_spawn (
         exec,
         [exec, port] -> asio::awaitable<void> {
-            auto server = Server{ exec,port };
-            co_await server.run();
+            auto server = std::make_shared<Server>(exec, port);
+            co_await server->run();
         },
         asioexec::use_sender
     );

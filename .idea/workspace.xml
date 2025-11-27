@@ -4,7 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="BackendCodeEditorMiscSettings">
-    <option name="/Default/Environment/Hierarchy/GeneratedFilesCacheKey/Timestamp/@EntryValue" value="21" type="long" />
+    <option name="/Default/Environment/Hierarchy/GeneratedFilesCacheKey/Timestamp/@EntryValue" value="3" type="long" />
     <option name="/Default/Housekeeping/FeatureSuggestion/FeatureSuggestionManager/DisabledSuggesters/=SwitchToGoToActionSuggester/@EntryIndexedValue" value="true" type="bool" />
     <option name="/Default/Housekeeping/GlobalSettingsUpgraded/IsUpgraded/@EntryValue" value="true" type="bool" />
     <option name="/Default/Housekeeping/OptionsDialog/SelectedPageId/@EntryValue" value="CppFormatterOtherPage" type="string" />
@@ -31,6 +31,7 @@
       <config projectName="JuXin" targetName="all_aotstats" />
       <config projectName="JuXin" targetName="example.benchmark.static_thread_pool_nested_old" />
       <config projectName="JuXin" targetName="client_other_files" />
+      <config projectName="JuXin" targetName="benchmark" />
       <config projectName="JuXin" targetName="ExperimentalStart" folderName="CTestDashboardTargets" />
       <config projectName="JuXin" targetName="ContinuousConfigure" folderName="CTestDashboardTargets" />
       <config projectName="JuXin" targetName="NightlyMemCheck" folderName="CTestDashboardTargets" />
@@ -41,7 +42,6 @@
       <config projectName="JuXin" targetName="client_copy_res" folderName="QtInternalTargets" />
       <config projectName="JuXin" targetName="ExperimentalSubmit" folderName="CTestDashboardTargets" />
       <config projectName="JuXin" targetName="example.benchmark.static_thread_pool_bulk_enqueue_nested" />
-      <config projectName="JuXin" targetName="world_message_test" />
       <config projectName="JuXin" targetName="ContinuousStart" folderName="CTestDashboardTargets" />
       <config projectName="JuXin" targetName="example.server_theme.on_transfer" />
       <config projectName="JuXin" targetName="NightlyTest" folderName="CTestDashboardTargets" />
@@ -49,7 +49,6 @@
       <config projectName="JuXin" targetName="example.benchmark.static_thread_pool_bulk_enqueue" />
       <config projectName="JuXin" targetName="Nightly" folderName="CTestDashboardTargets" />
       <config projectName="JuXin" targetName="example.hello_world" />
-      <config projectName="JuXin" targetName="register_accounts" />
       <config projectName="JuXin" targetName="all_qmltyperegistrations" folderName="QtInternalTargets" />
       <config projectName="JuXin" targetName="NightlySubmit" folderName="CTestDashboardTargets" />
       <config projectName="JuXin" targetName="ContinuousSubmit" folderName="CTestDashboardTargets" />
@@ -98,28 +97,21 @@
     </configurations>
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="2dc32154-be48-467c-9695-c2dd10df8b29" name="更改" comment="Bad-v0.32 PostgreSQL迁移到MySQL">
-      <change beforePath="$PROJECT_DIR$/.idea/dataSources/793d13c3-aa91-4de9-b493-12c737a1ebbb.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/dataSources/793d13c3-aa91-4de9-b493-12c737a1ebbb/storage_v2/_src_/schema/information_schema.FNRwLQ.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/dataSources/793d13c3-aa91-4de9-b493-12c737a1ebbb/storage_v2/_src_/schema/mysql.osA4Bg.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/dataSources/793d13c3-aa91-4de9-b493-12c737a1ebbb/storage_v2/_src_/schema/performance_schema.kIw0nw.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/dataSources/793d13c3-aa91-4de9-b493-12c737a1ebbb/storage_v2/_src_/schema/sys.zb4BAA.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/db-forest-config.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/db-forest-config.xml" afterDir="false" />
+    <list default="true" id="2dc32154-be48-467c-9695-c2dd10df8b29" name="更改" comment="v0.34 PostgreSQL -&gt; MySQL，asio -&gt; boost::asio，并引入boost::Mysql">
+      <change beforePath="$PROJECT_DIR$/.idea/dataSources.local.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/dataSources.local.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/CMakeLists.txt" beforeDir="false" afterPath="$PROJECT_DIR$/CMakeLists.txt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/cmake-build-debug/_deps/stdexec-src/cmake/import_standalone_asio.cmake" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-debug/_deps/stdexec-src/cmake/import_standalone_asio.cmake" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/cmake-build-release/_deps/stdexec-src/cmake/import_standalone_asio.cmake" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-release/_deps/stdexec-src/cmake/import_standalone_asio.cmake" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/include/login.backend.h" beforeDir="false" afterPath="$PROJECT_DIR$/include/login.backend.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/include/server.h" beforeDir="false" afterPath="$PROJECT_DIR$/include/server.h" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/include/session.h" beforeDir="false" afterPath="$PROJECT_DIR$/include/session.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/benchmark/CMakeLists.txt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/benchmark/benchmark_config.h" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/benchmark/register_accounts.cpp" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/benchmark/world_message_test.cpp" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/client/backend/login_backend.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/client/backend/login_backend.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/client/qml/Main/ChatList/ContactListView.qml" beforeDir="false" afterPath="$PROJECT_DIR$/src/client/qml/Main/ChatList/ContactListView.qml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/client/qml/Main/Dialogs/StartGroupDialog.qml" beforeDir="false" afterPath="$PROJECT_DIR$/src/client/qml/Main/Dialogs/StartGroupDialog.qml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/database/conversation.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/database/conversation.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/database/friend.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/database/friend.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/database/message.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/database/message.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/CMakeLists.txt" beforeDir="false" afterPath="$PROJECT_DIR$/src/CMakeLists.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/server/server.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/server/server.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/server/server/broadcast.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/server/server/broadcast.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/server/server/cache.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/server/server/cache.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/server/session/auth.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/server/session/auth.cpp" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/server/session/conversation.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/server/session/conversation.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/server/session/friend.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/server/session/friend.cpp" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/server/session/message.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/server/session/message.cpp" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -281,6 +273,7 @@
     &quot;ASKED_SHARE_PROJECT_CONFIGURATION_FILES&quot;: &quot;true&quot;,
     &quot;CMake 应用程序.MAN.executor&quot;: &quot;Run&quot;,
     &quot;CMake 应用程序.asioexec_example.executor&quot;: &quot;Run&quot;,
+    &quot;CMake 应用程序.benchmark.executor&quot;: &quot;Run&quot;,
     &quot;CMake 应用程序.client.executor&quot;: &quot;Run&quot;,
     &quot;CMake 应用程序.client_gui.executor&quot;: &quot;Run&quot;,
     &quot;CMake 应用程序.import_std_asio_repro.executor&quot;: &quot;Run&quot;,
@@ -332,7 +325,7 @@
       <window_info id="Commit_Guest" show_stripe_button="false" />
       <window_info id="Pull Requests" />
       <window_info id="Learn" show_stripe_button="false" />
-      <window_info active="true" content_ui="combo" id="Project" order="0" visible="true" weight="0.19845013" />
+      <window_info active="true" content_ui="combo" id="Project" order="0" visible="true" weight="0.19831648" />
       <window_info id="Commit" order="1" weight="0.19845013" />
       <window_info id="Structure" order="2" side_tool="true" weight="0.25" />
       <window_info anchor="bottom" id="TypeScript" />
@@ -341,16 +334,16 @@
       <window_info anchor="bottom" id="Serial Monitor" />
       <window_info anchor="bottom" id="PythonProcessOutput" />
       <window_info anchor="bottom" id="clangd" />
-      <window_info anchor="bottom" id="Version Control" order="0" weight="0.2807727" />
+      <window_info anchor="bottom" id="Version Control" order="0" weight="0.34573412" />
       <window_info anchor="bottom" id="Problems" order="1" />
       <window_info anchor="bottom" id="Problems View" order="2" weight="0.029640429" />
-      <window_info active="true" anchor="bottom" id="Terminal" order="3" visible="true" weight="0.029411765" />
+      <window_info anchor="bottom" id="Terminal" order="3" weight="0.3572806" />
       <window_info anchor="bottom" id="Services" order="4" weight="0.027879342" />
-      <window_info anchor="bottom" x="647" y="605" width="1401" height="499" id="CMake" order="5" weight="0.2807727" />
-      <window_info anchor="bottom" id="Run" order="6" weight="0.37849566" />
-      <window_info anchor="bottom" id="Messages" order="7" weight="0.49132112" />
+      <window_info anchor="bottom" x="647" y="605" width="1401" height="499" id="CMake" order="5" weight="0.37945998" />
+      <window_info active="true" anchor="bottom" id="Run" order="6" visible="true" weight="0.34573412" />
+      <window_info anchor="bottom" id="Messages" order="7" weight="0.43501985" />
       <window_info anchor="bottom" id="Vcpkg" order="8" weight="0.3369159" />
-      <window_info anchor="bottom" id="TODO" order="9" weight="0.35714287" />
+      <window_info anchor="bottom" id="TODO" order="9" weight="0.43501985" />
       <window_info anchor="bottom" id="Python Packages" order="10" weight="0.42535883" />
       <window_info anchor="bottom" id="Database Changes" order="11" weight="0.4128866" />
       <window_info anchor="bottom" id="Debug" order="12" weight="0.027626812" />
@@ -365,7 +358,7 @@
       <window_info anchor="right" id="AIAssistant" order="1" weight="0.25" />
       <window_info anchor="right" id="Gradle" order="2" weight="0.25" />
       <window_info anchor="right" id="Maven" order="3" weight="0.25" />
-      <window_info active="true" anchor="right" id="Database" order="4" visible="true" weight="0.22540432" />
+      <window_info active="true" anchor="right" id="Database" order="4" visible="true" weight="0.22525254" />
       <window_info anchor="right" id="github.copilotToolWindow" order="5" weight="0.34985352" />
       <window_info anchor="right" id="GitHub Copilot Chat" order="6" show_stripe_button="false" weight="0.34985352" />
     </layout>
@@ -385,12 +378,7 @@
       <recent name="$PROJECT_DIR$/doc" />
     </key>
   </component>
-  <component name="RunManager" selected="CMake 应用程序.server">
-    <configuration default="true" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true">
-      <method v="2">
-        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
-      </method>
-    </configuration>
+  <component name="RunManager" selected="CMake 应用程序.client">
     <configuration name="MAN" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="JuXin" TARGET_NAME="MAN" CONFIG_NAME="Release" RUN_TARGET_PROJECT_NAME="JuXin" RUN_TARGET_NAME="MAN">
       <method v="2">
         <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
@@ -402,6 +390,11 @@
       </method>
     </configuration>
     <configuration name="asioexec_boost" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="JuXin" TARGET_NAME="asioexec_boost" CONFIG_NAME="Release">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="benchmark" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="JuXin" TARGET_NAME="benchmark" CONFIG_NAME="Debug" RUN_TARGET_PROJECT_NAME="JuXin" RUN_TARGET_NAME="benchmark">
       <method v="2">
         <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
       </method>
@@ -504,11 +497,6 @@
         <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
       </method>
     </configuration>
-    <configuration name="register_accounts" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="JuXin" TARGET_NAME="register_accounts" CONFIG_NAME="Release" RUN_TARGET_PROJECT_NAME="JuXin" RUN_TARGET_NAME="register_accounts">
-      <method v="2">
-        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
-      </method>
-    </configuration>
     <configuration name="server" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="JuXin" TARGET_NAME="server" CONFIG_NAME="Release" RUN_TARGET_PROJECT_NAME="JuXin" RUN_TARGET_NAME="server">
       <method v="2">
         <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
@@ -529,14 +517,10 @@
         <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
       </method>
     </configuration>
-    <configuration name="world_message_test" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="JuXin" TARGET_NAME="world_message_test" CONFIG_NAME="Release" RUN_TARGET_PROJECT_NAME="JuXin" RUN_TARGET_NAME="world_message_test">
-      <method v="2">
-        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
-      </method>
-    </configuration>
     <list>
       <item itemvalue="CMake 应用程序.all_aotstats" />
       <item itemvalue="CMake 应用程序.asioexec_boost" />
+      <item itemvalue="CMake 应用程序.benchmark" />
       <item itemvalue="CMake 应用程序.stdexec" />
       <item itemvalue="CMake 应用程序.stdexec_boost_pool" />
       <item itemvalue="CMake 应用程序.system_context" />
@@ -560,8 +544,6 @@
       <item itemvalue="CMake 应用程序.client" />
       <item itemvalue="CMake 应用程序.MAN" />
       <item itemvalue="CMake 应用程序.server" />
-      <item itemvalue="CMake 应用程序.register_accounts" />
-      <item itemvalue="CMake 应用程序.world_message_test" />
       <item itemvalue="CMake 应用程序.client_other_files" />
     </list>
   </component>
@@ -612,6 +594,7 @@
       <workItem from="1763973588341" duration="4817000" />
       <workItem from="1764006623827" duration="15536000" />
       <workItem from="1764153879763" duration="6522000" />
+      <workItem from="1764231375437" duration="10186000" />
     </task>
     <task id="LOCAL-00001" summary="基础CMAKE，示例程序">
       <option name="closed" value="true" />
@@ -733,7 +716,15 @@
       <option name="project" value="LOCAL" />
       <updated>1764163381032</updated>
     </task>
-    <option name="localTasksCounter" value="16" />
+    <task id="LOCAL-00016" summary="v0.34 PostgreSQL -&gt; MySQL，asio -&gt; boost::asio，并引入boost::Mysql">
+      <option name="closed" value="true" />
+      <created>1764227999942</created>
+      <option name="number" value="00016" />
+      <option name="presentableId" value="LOCAL-00016" />
+      <option name="project" value="LOCAL" />
+      <updated>1764227999942</updated>
+    </task>
+    <option name="localTasksCounter" value="17" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -783,7 +774,8 @@
     <MESSAGE value="v0.27 Release" />
     <MESSAGE value="v0.29 优化服务器性能，添加缓存和安全限制&#10;&#10;- 添加Session写缓冲区10MB限制,防止慢客户端OOM攻击&#10;- 实现会话成员列表缓存,减少80%+重复数据库查询&#10;- 在会话成员变动时自动失效缓存,保证数据一致性&#10;- 优化JSON解析,使用非抛出版本减少异常处理开销&#10;&#10;性能提升:&#10;- 群聊消息广播延迟降低83%&#10;- 高并发场景吞吐量提升5-6倍&#10;- 完全防御慢客户端内存攻击" />
     <MESSAGE value="Bad-v0.32 PostgreSQL迁移到MySQL" />
-    <option name="LAST_COMMIT_MESSAGE" value="Bad-v0.32 PostgreSQL迁移到MySQL" />
+    <MESSAGE value="v0.34 PostgreSQL -&gt; MySQL，asio -&gt; boost::asio，并引入boost::Mysql" />
+    <option name="LAST_COMMIT_MESSAGE" value="v0.34 PostgreSQL -&gt; MySQL，asio -&gt; boost::asio，并引入boost::Mysql" />
   </component>
   <component name="XSLT-Support.FileAssociations.UIState">
     <expand />

@@ -2,6 +2,8 @@
 
 #include <boost/asio.hpp>
 #include <boost/asio/awaitable.hpp>
+#include <boost/asio/redirect_error.hpp>
+#include <boost/asio/steady_timer.hpp>
 namespace asio = boost::asio;
 
 #include <nlohmann/json.hpp>
@@ -12,6 +14,7 @@ namespace asio = boost::asio;
 #include <memory>
 #include <string>
 #include <cctype>
+#include <atomic>
 
 #include <protocol.h>
 #include <utility.h>
@@ -28,9 +31,10 @@ struct Session : std::enable_shared_from_this<Session>
     /// \brief 使用一个已建立连接的 socket 构造会话。
     /// \param socket 已经 accept 完成的 TCP socket。
     /// \param server 当前所属的 Server，用于后续广播。
-    explicit Session(asio::ip::tcp::socket socket, Server& server)
+    explicit Session(asio::ip::tcp::socket socket, std::shared_ptr<Server> server)
         : socket_(std::move(socket))
-        , server_(&server)
+        , strand_(socket_.get_executor())
+        , server_(std::move(server))
     {}
 
     /// \brief 压缩连续空白并去掉首尾空格，避免昵称中有填充空格。
@@ -91,10 +95,25 @@ struct Session : std::enable_shared_from_this<Session>
                     send_text(std::move(msg));
                 } else if(frame.command == "SEND_MSG") {
                     auto self = shared_from_this();
+                    ++self->pending_ops_;  // 增加未完成操作计数
                     asio::co_spawn(
-                        socket_.get_executor(),
+                        strand_,  // 使用 strand_ 而非 socket_.get_executor()，避免 socket 关闭后 executor 失效
                         [self, payload = frame.payload]() mutable -> asio::awaitable<void> {
-                            co_await self->handle_send_msg(std::move(payload));
+                            // RAII 守卫：确保无论如何都会减少计数
+                            struct PendingGuard {
+                                std::shared_ptr<Session> s;
+                                ~PendingGuard() { --s->pending_ops_; }
+                            } guard{ self };
+                            
+                            try {
+                                // 检查 session 是否正在关闭
+                                if(self->closing_.load() || !self->socket_.is_open()) {
+                                    co_return;
+                                }
+                                co_await self->handle_send_msg(std::move(payload));
+                            } catch (std::exception const& e) {
+                                std::println("SEND_MSG unhandled exception: {}", e.what());
+                            }
                         },
                         asio::detached
                     );
@@ -164,11 +183,36 @@ struct Session : std::enable_shared_from_this<Session>
         } catch(boost::system::system_error const& ex) {
             if(ex.code() == asio::error::eof) {
                 std::println("session closed by peer");
+            } else if(ex.code() == asio::error::connection_reset) {
+                std::println("session connection reset by peer");
+            } else if(ex.code() == asio::error::operation_aborted) {
+                std::println("session operation aborted");
             } else {
-                std::println("session error: {}", ex.what());
+                std::println("session error: {} ({})", ex.what(), ex.code().value());
             }
         } catch(std::exception const& ex) {
             std::println("session error: {}", ex.what());
+        }
+        
+        // 标记会话正在关闭，阻止新的异步操作启动
+        closing_.store(true);
+        
+        // 等待所有未完成的异步操作（如 handle_send_msg）完成
+        // 使用 strand_ 而不是 socket_.get_executor()，因为 socket 可能已关闭/失效
+        // strand_ 是从 io_context 派生的，即使 socket 关闭也仍然有效
+        for(int i = 0; i < 200 && pending_ops_.load() > 0; ++i) {
+            asio::steady_timer wait_timer{ strand_ };
+            wait_timer.expires_after(std::chrono::milliseconds{ 10 });
+            boost::system::error_code ec;
+            co_await wait_timer.async_wait(asio::redirect_error(asio::use_awaitable, ec));
+            if(ec == asio::error::operation_aborted) {
+                // io_context 正在关闭，不再等待
+                break;
+            }
+        }
+        
+        if(pending_ops_.load() > 0) {
+            std::println("session closing with {} pending ops (timeout)", pending_ops_.load());
         }
     }
 
@@ -251,6 +295,21 @@ private:
     /// \param line 已经包含换行符的完整协议行。
     auto send_text(std::string line) -> void
     {
+        // 将所有对 outgoing_ 的访问都放在 strand 上执行，保证线程安全
+        asio::dispatch(strand_, [this, self = shared_from_this(), line = std::move(line)]() mutable {
+            send_text_impl(std::move(line));
+        });
+    }
+
+private:
+    /// \brief send_text 的实际实现，必须在 strand_ 上调用。
+    auto send_text_impl(std::string line) -> void
+    {
+        // 如果 socket 已关闭，直接返回
+        if(!socket_.is_open()) {
+            return;
+        }
+        
         // 检查缓冲区是否超限,防止慢客户端导致内存无限增长
         if(outgoing_bytes_ + line.size() > MAX_OUTGOING_BYTES) {
             std::println("session write buffer overflow ({}MB), closing connection",
@@ -269,10 +328,10 @@ private:
         auto self = shared_from_this();
 
         asio::co_spawn(
-            socket_.get_executor(),
+            strand_,
             [self]() -> asio::awaitable<void> {
                 try {
-                    while(!self->outgoing_.empty()) {
+                    while(!self->outgoing_.empty() && self->socket_.is_open()) {
                         auto current = std::move(self->outgoing_.front());
                         self->outgoing_.pop_front();
                         self->outgoing_bytes_ -= current.size();
@@ -289,6 +348,8 @@ private:
         );
     }
 
+public:
+
     /// \brief 是否已通过 LOGIN 鉴权。
     auto is_authenticated() const noexcept -> bool
     {
@@ -302,12 +363,19 @@ private:
     }
 
     asio::ip::tcp::socket socket_;
+    /// \brief strand 保证 outgoing_ 队列的线程安全访问。
+    asio::strand<asio::any_io_executor> strand_;
     asio::streambuf buffer_;
-    Server* server_{ nullptr };
+    std::weak_ptr<Server> server_; ///< 所属服务器的弱引用，避免服务器销毁后悬垂指针。
     std::deque<std::string> outgoing_{};
     size_t outgoing_bytes_{ 0 }; ///< 当前缓冲区总字节数
     static constexpr size_t MAX_OUTGOING_BYTES = 10 * 1024 * 1024; ///< 最大缓冲区 10MB
     bool writing_{ false };
+    
+    /// \brief 追踪未完成的异步操作数量（如 handle_send_msg）。
+    std::atomic<int> pending_ops_{ 0 };
+    /// \brief 会话是否正在关闭中。
+    std::atomic<bool> closing_{ false };
 
     /// \brief 是否已通过 LOGIN 鉴权。
     bool authenticated_{ false };

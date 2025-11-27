@@ -147,9 +147,9 @@ auto Session::handle_create_group_req(std::string const& payload) -> asio::await
         auto const conv_id = co_await database::create_group_conversation(user_id_, members, name);
 
         // 清除新会话的缓存(虽然是新创建,但确保一致性)
-        if(server_ != nullptr) {
-            server_->invalidate_conversation_cache(conv_id);
-            server_->invalidate_member_list_cache(conv_id);
+        if(auto server = server_.lock()) {
+            server->invalidate_conversation_cache(conv_id);
+            server->invalidate_member_list_cache(conv_id);
         }
 
         // 取实际群名
@@ -186,13 +186,13 @@ auto Session::handle_create_group_req(std::string const& payload) -> asio::await
         resp["memberCount"] = static_cast<i64>(members.size() + 1);
 
         // 推送会话列表 & 系统消息给全体成员
-        if(server_ != nullptr) {
+        if(auto server = server_.lock()) {
             // 推送 creator + members
-            server_->send_conv_list_to(user_id_);
+            server->send_conv_list_to(user_id_);
             for(auto const uid : members) {
-                server_->send_conv_list_to(uid);
+                server->send_conv_list_to(uid);
             }
-            server_->broadcast_system_message(conv_id, stored, sys_content);
+            server->broadcast_system_message(conv_id, stored, sys_content);
         }
 
         co_return resp.dump();
@@ -237,9 +237,9 @@ auto Session::handle_open_single_conv_req(std::string const& payload) -> asio::a
         auto const conv_id = co_await database::get_or_create_single_conversation(user_id_, peer_id);
 
         // 清除单聊会话缓存(可能是新创建的)
-        if(server_ != nullptr) {
-            server_->invalidate_conversation_cache(conv_id);
-            server_->invalidate_member_list_cache(conv_id);
+        if(auto server = server_.lock()) {
+            server->invalidate_conversation_cache(conv_id);
+            server->invalidate_member_list_cache(conv_id);
         }
 
         json resp;
@@ -293,12 +293,12 @@ auto Session::handle_conv_members_req(std::string const& payload) -> asio::await
         }
 
         std::vector<database::MemberInfo> members;
-        if(server_ != nullptr) {
-            if(auto cached = server_->get_member_list_cache(conv_id)) {
+        if(auto server = server_.lock()) {
+            if(auto cached = server->get_member_list_cache(conv_id)) {
                 members = cached->members;
             } else {
                 members = co_await database::load_conversation_members(conv_id);
-                server_->set_member_list_cache(conv_id, members);
+                server->set_member_list_cache(conv_id, members);
             }
         } else {
             members = co_await database::load_conversation_members(conv_id);
@@ -388,8 +388,8 @@ auto Session::handle_mute_member_req(std::string const& payload) -> asio::awaita
 
         co_await database::set_member_mute_until(conv_id, target_id, muted_until_ms);
 
-        if(server_ != nullptr) {
-            server_->invalidate_member_list_cache(conv_id);
+        if(auto server = server_.lock()) {
+            server->invalidate_member_list_cache(conv_id);
         }
 
         // 系统消息
@@ -409,9 +409,9 @@ auto Session::handle_mute_member_req(std::string const& payload) -> asio::awaita
         auto const stored =
             co_await database::append_text_message(conv_id, user_id_, sys_content, "SYSTEM");
 
-        if(server_ != nullptr) {
-            server_->broadcast_system_message(conv_id, stored, sys_content);
-            server_->send_conv_members(conv_id);
+        if(auto server = server_.lock()) {
+            server->broadcast_system_message(conv_id, stored, sys_content);
+            server->send_conv_members(conv_id);
         }
 
         json resp;
@@ -467,8 +467,8 @@ auto Session::handle_unmute_member_req(std::string const& payload) -> asio::awai
 
         co_await database::set_member_mute_until(conv_id, target_id, 0);
 
-        if(server_ != nullptr) {
-            server_->invalidate_member_list_cache(conv_id);
+        if(auto server = server_.lock()) {
+            server->invalidate_member_list_cache(conv_id);
         }
 
         auto const target_name = target_member->display_name;
@@ -477,9 +477,9 @@ auto Session::handle_unmute_member_req(std::string const& payload) -> asio::awai
         auto const stored =
             co_await database::append_text_message(conv_id, user_id_, sys_content, "SYSTEM");
 
-        if(server_ != nullptr) {
-            server_->broadcast_system_message(conv_id, stored, sys_content);
-            server_->send_conv_members(conv_id);
+        if(auto server = server_.lock()) {
+            server->broadcast_system_message(conv_id, stored, sys_content);
+            server->send_conv_members(conv_id);
         }
 
         json resp;
@@ -571,16 +571,16 @@ auto Session::handle_leave_conv_req(std::string const& payload) -> asio::awaitab
             auto const stored =
                 co_await database::append_text_message(conv_id, user_id_, sys_content, "SYSTEM");
 
-            if(server_ != nullptr) {
-                server_->broadcast_system_message(conv_id, stored, sys_content);
+            if(auto server = server_.lock()) {
+                server->broadcast_system_message(conv_id, stored, sys_content);
             }
 
             co_await database::remove_conversation_member(conv_id, user_id_);
 
-            if(server_ != nullptr) {
+            if(auto server = server_.lock()) {
                 // 退出者的会话列表需要刷新；群内其他成员刷新成员列表。
-                server_->send_conv_list_to(user_id_);
-                server_->send_conv_members(conv_id);
+                server->send_conv_list_to(user_id_);
+                server->send_conv_members(conv_id);
             }
 
             json resp;
@@ -608,22 +608,18 @@ auto Session::handle_leave_conv_req(std::string const& payload) -> asio::awaitab
         auto const stored =
             co_await database::append_text_message(conv_id, user_id_, sys_content, "SYSTEM");
 
-        if(server_ != nullptr) {
-            server_->broadcast_system_message(conv_id, stored, sys_content);
+        if(auto server = server_.lock()) {
+            server->broadcast_system_message(conv_id, stored, sys_content);
         }
 
         co_await database::dissolve_conversation(conv_id);
 
         // 清除会话缓存
-        if(server_ != nullptr) {
-            server_->invalidate_conversation_cache(conv_id);
-            server_->invalidate_member_list_cache(conv_id);
-        }
-
-        if(server_ != nullptr) {
-            server_->invalidate_member_list_cache(conv_id);
+        if(auto server = server_.lock()) {
+            server->invalidate_conversation_cache(conv_id);
+            server->invalidate_member_list_cache(conv_id);
             for(auto const uid : member_ids) {
-                server_->send_conv_list_to(uid);
+                server->send_conv_list_to(uid);
             }
         }
 

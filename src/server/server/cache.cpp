@@ -6,6 +6,7 @@
  * 以减少对数据库的访问频率。所有对缓存的访问通过 `cache_mutex_`
  * 保护，保证在多线程环境下的正确性。
  */
+#include <session.h>
 #include <server.h>
 #include <database.h>
 #include <database/conversation.h>
