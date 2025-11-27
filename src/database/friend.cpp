@@ -24,7 +24,7 @@ namespace database
         mysql::results r;
         co_await conn.async_execute(
             mysql::with_params(
-                "SELECT 1 FROM friends WHERE user_id=? AND friend_user_id=? LIMIT 1",
+                "SELECT 1 FROM friends WHERE user_id={} AND friend_user_id={} LIMIT 1",
                 user_id,
                 peer_id),
             r,
@@ -42,7 +42,7 @@ namespace database
             mysql::with_params(
                 "SELECT u.id, u.account, u.display_name FROM friends f"
                 " JOIN users u ON u.id = f.friend_user_id"
-                " WHERE f.user_id = ? ORDER BY u.id ASC",
+                " WHERE f.user_id = {} ORDER BY u.id ASC",
                 user_id),
             r,
             asio::use_awaitable
@@ -76,7 +76,7 @@ namespace database
         mysql::results r;
         co_await conn.async_execute(
             mysql::with_params(
-                "SELECT id, account, display_name FROM users WHERE account=? LIMIT 1",
+                "SELECT id, account, display_name FROM users WHERE account={} LIMIT 1",
                 account),
             r,
             asio::use_awaitable
@@ -128,7 +128,7 @@ namespace database
             // 用户存在性
             co_await conn.async_execute(
                 mysql::with_params(
-                    "SELECT 1 FROM users WHERE id=? LIMIT 1",
+                    "SELECT 1 FROM users WHERE id={} LIMIT 1",
                     to_user_id),
                 r,
                 asio::use_awaitable
@@ -154,7 +154,7 @@ namespace database
             co_await conn.async_execute(
                 mysql::with_params(
                     "SELECT 1 FROM friend_requests WHERE status='PENDING' AND"
-                    " ((from_user_id=? AND to_user_id=?) OR (from_user_id=? AND to_user_id=?))"
+                    " ((from_user_id={} AND to_user_id={}) OR (from_user_id={} AND to_user_id={}))"
                     " LIMIT 1",
                     from_user_id,
                     to_user_id,
@@ -175,7 +175,7 @@ namespace database
             co_await conn.async_execute(
                 mysql::with_params(
                     "INSERT INTO friend_requests (from_user_id, to_user_id, status, source, hello_msg)"
-                    " VALUES (?, ?, 'PENDING', ?, ?)",
+                    " VALUES ({}, {}, 'PENDING', {}, {})",
                     from_user_id,
                     to_user_id,
                     source,
@@ -208,7 +208,7 @@ namespace database
                 "SELECT fr.id, fr.from_user_id, u.account, u.display_name, fr.status,"
                 " COALESCE(fr.hello_msg, '')"
                 " FROM friend_requests fr JOIN users u ON u.id = fr.from_user_id"
-                " WHERE fr.to_user_id = ? AND fr.status IN ('PENDING','ACCEPTED')"
+                " WHERE fr.to_user_id = {} AND fr.status IN ('PENDING','ACCEPTED')"
                 " ORDER BY fr.created_at DESC",
                 user_id),
             r,
@@ -256,7 +256,7 @@ namespace database
             co_await conn.async_execute(
                 mysql::with_params(
                     "SELECT from_user_id, to_user_id, status FROM friend_requests"
-                    " WHERE id=? FOR UPDATE",
+                    " WHERE id={} FOR UPDATE",
                     request_id),
                 r,
                 asio::use_awaitable
@@ -294,7 +294,7 @@ namespace database
             co_await conn.async_execute(
                 mysql::with_params(
                     "INSERT IGNORE INTO friends (user_id, friend_user_id)"
-                    " VALUES (?, ?), (?, ?)",
+                    " VALUES ({}, {}), ({}, {})",
                     from_user_id,
                     to_user_id,
                     to_user_id,
@@ -307,7 +307,7 @@ namespace database
             co_await conn.async_execute(
                 mysql::with_params(
                     "UPDATE friend_requests SET status='ACCEPTED', handled_at=CURRENT_TIMESTAMP"
-                    " WHERE id=?",
+                    " WHERE id={}",
                     request_id),
                 r,
                 asio::use_awaitable
@@ -326,7 +326,7 @@ namespace database
             mysql::results r2;
             co_await conn.async_execute(
                 mysql::with_params(
-                    "SELECT id, account, display_name FROM users WHERE id=? LIMIT 1",
+                    "SELECT id, account, display_name FROM users WHERE id={} LIMIT 1",
                     from_user_id),
                 r2,
                 asio::use_awaitable

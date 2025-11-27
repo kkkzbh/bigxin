@@ -53,7 +53,7 @@ namespace database
         co_await conn.async_execute(
             mysql::with_params(
                 "SELECT conversation_id FROM single_conversations"
-                " WHERE user1_id=? AND user2_id=? LIMIT 1",
+                " WHERE user1_id={} AND user2_id={} LIMIT 1",
                 a,
                 b),
             r,
@@ -68,7 +68,7 @@ namespace database
         co_await conn.async_execute(
             mysql::with_params(
                 "INSERT INTO conversations (type, name, owner_user_id)"
-                " VALUES ('SINGLE', '', ?)",
+                " VALUES ('SINGLE', '', {})",
                 user1),
             r,
             asio::use_awaitable
@@ -79,7 +79,7 @@ namespace database
         co_await conn.async_execute(
             mysql::with_params(
                 "INSERT INTO conversation_members (conversation_id, user_id, role)"
-                " VALUES (?, ?, 'MEMBER'), (?, ?, 'MEMBER')",
+                " VALUES ({}, {}, 'MEMBER'), ({}, {}, 'MEMBER')",
                 conv_id,
                 user1,
                 conv_id,
@@ -92,7 +92,7 @@ namespace database
         co_await conn.async_execute(
             mysql::with_params(
                 "INSERT INTO single_conversations (user1_id, user2_id, conversation_id)"
-                " VALUES (?, ?, ?)"
+                " VALUES ({}, {}, {})"
                 " ON DUPLICATE KEY UPDATE conversation_id=VALUES(conversation_id)",
                 a,
                 b,
@@ -130,7 +130,7 @@ namespace database
             mysql::results local;
             co_await conn.async_execute(
                 mysql::with_params(
-                    "SELECT display_name FROM users WHERE id=? LIMIT 1",
+                    "SELECT display_name FROM users WHERE id={} LIMIT 1",
                     uid),
                 local,
                 asio::use_awaitable
@@ -169,7 +169,7 @@ namespace database
         co_await conn.async_execute(
             mysql::with_params(
                 "INSERT INTO conversations (type, name, owner_user_id)"
-                " VALUES ('GROUP', ?, ?)",
+                " VALUES ('GROUP', {}, {})",
                 name,
                 creator_id),
             r,
@@ -181,7 +181,7 @@ namespace database
         co_await conn.async_execute(
             mysql::with_params(
                 "INSERT INTO conversation_members (conversation_id, user_id, role)"
-                " VALUES (?, ?, 'OWNER')",
+                " VALUES ({}, {}, 'OWNER')",
                 conv_id,
                 creator_id),
             r,
@@ -193,7 +193,7 @@ namespace database
             co_await conn.async_execute(
                 mysql::with_params(
                     "INSERT INTO conversation_members (conversation_id, user_id, role)"
-                    " VALUES (?, ?, 'MEMBER')",
+                    " VALUES ({}, {}, 'MEMBER')",
                     conv_id,
                     uid),
                 r,
@@ -221,13 +221,13 @@ namespace database
                 "  SELECT cm2.conversation_id, u.display_name "
                 "  FROM conversation_members cm2 "
                 "  JOIN users u ON u.id = cm2.user_id "
-                "  WHERE cm2.user_id <> ?"
+                "  WHERE cm2.user_id <> {}"
                 ") peer ON peer.conversation_id = c.id AND c.type = 'SINGLE' "
                 "LEFT JOIN ("
                 "  SELECT conversation_id, MAX(seq) AS max_seq, MAX(server_time_ms) AS max_time "
                 "  FROM messages GROUP BY conversation_id"
                 ") msg_stats ON msg_stats.conversation_id = c.id "
-                "WHERE cm.user_id = ? ORDER BY c.id ASC",
+                "WHERE cm.user_id = {} ORDER BY c.id ASC",
                 user_id,
                 user_id),
             r,
@@ -270,7 +270,7 @@ namespace database
             mysql::with_params(
                 "SELECT cm.role, cm.muted_until_ms, u.display_name "
                 "FROM conversation_members cm JOIN users u ON u.id = cm.user_id "
-                "WHERE cm.conversation_id = ? AND cm.user_id = ? LIMIT 1",
+                "WHERE cm.conversation_id = {} AND cm.user_id = {} LIMIT 1",
                 conversation_id,
                 user_id),
             r,
@@ -299,8 +299,8 @@ namespace database
 
         co_await conn.async_execute(
             mysql::with_params(
-                "UPDATE conversation_members SET muted_until_ms = ?"
-                " WHERE conversation_id = ? AND user_id = ?",
+                "UPDATE conversation_members SET muted_until_ms = {}"
+                " WHERE conversation_id = {} AND user_id = {}",
                 muted_until_ms,
                 conversation_id,
                 user_id),
@@ -320,7 +320,7 @@ namespace database
             mysql::with_params(
                 "SELECT cm.user_id, cm.role, cm.muted_until_ms, u.display_name "
                 "FROM conversation_members cm JOIN users u ON u.id = cm.user_id "
-                "WHERE cm.conversation_id = ? ORDER BY cm.user_id ASC",
+                "WHERE cm.conversation_id = {} ORDER BY cm.user_id ASC",
                 conversation_id),
             r,
             asio::use_awaitable
@@ -347,7 +347,7 @@ namespace database
 
         co_await conn.async_execute(
             mysql::with_params(
-                "DELETE FROM conversation_members WHERE conversation_id=? AND user_id=?",
+                "DELETE FROM conversation_members WHERE conversation_id={} AND user_id={}",
                 conversation_id,
                 user_id),
             r,
@@ -368,7 +368,7 @@ namespace database
 
         co_await conn.async_execute(
             mysql::with_params(
-                "DELETE FROM messages WHERE conversation_id=?",
+                "DELETE FROM messages WHERE conversation_id={}",
                 conversation_id),
             r,
             asio::use_awaitable
@@ -376,7 +376,7 @@ namespace database
 
         co_await conn.async_execute(
             mysql::with_params(
-                "DELETE FROM conversation_members WHERE conversation_id=?",
+                "DELETE FROM conversation_members WHERE conversation_id={}",
                 conversation_id),
             r,
             asio::use_awaitable
@@ -384,7 +384,7 @@ namespace database
 
         co_await conn.async_execute(
             mysql::with_params(
-                "DELETE FROM single_conversations WHERE conversation_id=?",
+                "DELETE FROM single_conversations WHERE conversation_id={}",
                 conversation_id),
             r,
             asio::use_awaitable
@@ -392,7 +392,7 @@ namespace database
 
         co_await conn.async_execute(
             mysql::with_params(
-                "DELETE FROM conversation_sequences WHERE conversation_id=?",
+                "DELETE FROM conversation_sequences WHERE conversation_id={}",
                 conversation_id),
             r,
             asio::use_awaitable
@@ -400,7 +400,7 @@ namespace database
 
         co_await conn.async_execute(
             mysql::with_params(
-                "DELETE FROM conversations WHERE id=?",
+                "DELETE FROM conversations WHERE id={}",
                 conversation_id),
             r,
             asio::use_awaitable

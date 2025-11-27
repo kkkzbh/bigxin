@@ -21,6 +21,9 @@ Window {
     // 选择状态
     property var selectedIds: []
 
+    // 是否正在向服务器发起建群请求（用于禁用“完成”按钮）。
+    property bool creatingGroup: false
+
     // 过滤文本
     property string filterText: ""
 
@@ -361,7 +364,7 @@ Window {
             Button {
                 id: okBtn
                 text: qsTr("完成")
-                enabled: selectedIds.length >= 2
+                enabled: selectedIds.length >= 2 && !root.creatingGroup
                 implicitWidth: 108
                 implicitHeight: 36
                 background: Rectangle {
@@ -377,7 +380,9 @@ Window {
                     font.bold: true
                 }
                 onClicked: {
-                    okBtn.enabled = false
+                    if (root.creatingGroup)
+                        return
+                    root.creatingGroup = true
                     loginBackend.createGroupConversation(selectedIds, "")
                 }
             }
@@ -476,7 +481,7 @@ Window {
     Connections {
         target: loginBackend
         function onGroupCreated(conversationId, title) {
-            okBtn.enabled = true
+            root.creatingGroup = false
             successDialog.open()
             successDialog.forceActiveFocus()
         }
@@ -486,7 +491,7 @@ Window {
     Connections {
         target: loginBackend
         function onErrorMessageChanged() {
-            okBtn.enabled = selectedIds.length >= 2
+            root.creatingGroup = false
         }
     }
 

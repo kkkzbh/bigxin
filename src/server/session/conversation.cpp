@@ -173,9 +173,10 @@ auto Session::handle_create_group_req(std::string const& payload) -> asio::await
             if(conv_name.empty()) conv_name = "群聊";
         }
 
-        // 写首条系统消息（使用创建者作为 sender，避免 sender_id=0 外键问题）
+        // 写首条系统消息（使用创建者作为 sender，消息类型标记为 SYSTEM）
         auto const sys_content = std::string{ "你们创建了群聊：" } + conv_name;
-        auto const stored = co_await database::append_text_message(conv_id, user_id_, sys_content);
+        auto const stored =
+            co_await database::append_text_message(conv_id, user_id_, sys_content, "SYSTEM");
 
         json resp;
         resp["ok"] = true;

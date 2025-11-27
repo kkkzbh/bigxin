@@ -88,6 +88,7 @@ private slots:
     void onProtocolError(QString errorMessage);
     void onLoginSucceeded(QString userId, QString displayName, QString worldConversationId);
     void onDisplayNameUpdated(QString displayName);
+    void onNetworkDisconnected();
 
 private:
     void setBusy(bool value);

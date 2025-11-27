@@ -14,28 +14,6 @@ namespace mysql = boost::mysql;
 
 namespace database
 {
-    namespace
-    {
-        auto next_seq(mysql::tcp_connection& conn, i64 conversation_id) -> asio::awaitable<i64>
-        {
-            mysql::results r;
-            co_await conn.async_execute(
-                mysql::with_params(
-                    "INSERT INTO conversation_sequences (conversation_id, next_seq) VALUES (?, 1)"
-                    " ON DUPLICATE KEY UPDATE next_seq = LAST_INSERT_ID(next_seq + 1)",
-                    conversation_id),
-                r,
-                asio::use_awaitable
-            );
-
-            co_await conn.async_execute("SELECT LAST_INSERT_ID()", r, asio::use_awaitable);
-            if(r.rows().empty()) {
-                throw std::runtime_error{"生成消息序列号失败"};
-            }
-            co_return r.rows().front().at(0).as_int64();
-        }
-    }
-
     auto append_text_message(
         i64 conversation_id,
         i64 sender_id,
@@ -50,13 +28,33 @@ namespace database
                           std::chrono::system_clock::now().time_since_epoch())
                           .count();
 
-        auto seq = co_await next_seq(conn, conversation_id);
-
+        // 直接从 messages 表中计算下一个 seq，避免额外的序列表依赖。
         mysql::results r;
         co_await conn.async_execute(
             mysql::with_params(
+                "SELECT COALESCE(MAX(seq), 0) + 1 AS next_seq"
+                " FROM messages WHERE conversation_id={}",
+                conversation_id),
+            r,
+            asio::use_awaitable
+        );
+
+        i64 seq = 1;
+        if(!r.rows().empty()) {
+            auto const& fv = r.rows().front().at(0);
+            if(fv.is_int64()) {
+                seq = fv.as_int64();
+            } else if(fv.is_uint64()) {
+                seq = static_cast<i64>(fv.as_uint64());
+            } else if(fv.is_string()) {
+                seq = std::stoll(std::string(fv.as_string()));
+            }
+        }
+
+        co_await conn.async_execute(
+            mysql::with_params(
                 "INSERT INTO messages (conversation_id, sender_id, seq, msg_type, content, server_time_ms)"
-                " VALUES (?, ?, ?, ?, ?, ?)",
+                " VALUES ({}, {}, {}, {}, {}, {})",
                 conversation_id,
                 sender_id,
                 seq,
@@ -100,8 +98,8 @@ namespace database
                     "SELECT m.id, m.conversation_id, m.sender_id, u.display_name, m.seq, m.msg_type,"
                     " m.content, m.server_time_ms "
                     "FROM messages m JOIN users u ON u.id = m.sender_id "
-                    "WHERE m.conversation_id = ? AND m.seq < ? "
-                    "ORDER BY m.seq DESC LIMIT ?",
+                    "WHERE m.conversation_id = {} AND m.seq < {} "
+                    "ORDER BY m.seq DESC LIMIT {}",
                     conversation_id,
                     before_seq,
                     limit),
@@ -114,8 +112,8 @@ namespace database
                     "SELECT m.id, m.conversation_id, m.sender_id, u.display_name, m.seq, m.msg_type,"
                     " m.content, m.server_time_ms "
                     "FROM messages m JOIN users u ON u.id = m.sender_id "
-                    "WHERE m.conversation_id = ? "
-                    "ORDER BY m.seq DESC LIMIT ?",
+                    "WHERE m.conversation_id = {} "
+                    "ORDER BY m.seq DESC LIMIT {}",
                     conversation_id,
                     limit),
                 r,
@@ -159,8 +157,8 @@ namespace database
                     "SELECT m.id, m.conversation_id, m.sender_id, u.display_name, m.seq, m.msg_type,"
                     " m.content, m.server_time_ms "
                     "FROM messages m JOIN users u ON u.id = m.sender_id "
-                    "WHERE m.conversation_id = ? AND m.seq > ? "
-                    "ORDER BY m.seq ASC LIMIT ?",
+                    "WHERE m.conversation_id = {} AND m.seq > {} "
+                    "ORDER BY m.seq ASC LIMIT {}",
                     conversation_id,
                     after_seq,
                     limit),
@@ -173,8 +171,8 @@ namespace database
                     "SELECT m.id, m.conversation_id, m.sender_id, u.display_name, m.seq, m.msg_type,"
                     " m.content, m.server_time_ms "
                     "FROM messages m JOIN users u ON u.id = m.sender_id "
-                    "WHERE m.conversation_id = ? "
-                    "ORDER BY m.seq ASC LIMIT ?",
+                    "WHERE m.conversation_id = {} "
+                    "ORDER BY m.seq ASC LIMIT {}",
                     conversation_id,
                     limit),
                 r,

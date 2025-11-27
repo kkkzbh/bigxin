@@ -161,6 +161,12 @@ struct Session : std::enable_shared_from_this<Session>
                     send_text(std::move(msg));
                 }
             }
+        } catch(boost::system::system_error const& ex) {
+            if(ex.code() == asio::error::eof) {
+                std::println("session closed by peer");
+            } else {
+                std::println("session error: {}", ex.what());
+            }
         } catch(std::exception const& ex) {
             std::println("session error: {}", ex.what());
         }

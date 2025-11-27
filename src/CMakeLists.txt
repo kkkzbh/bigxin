@@ -49,9 +49,6 @@ set_source_files_properties(client/qml/Theme.qml
         QT_QML_SINGLETON_TYPE TRUE
 )
 
-# 压测工具
-add_subdirectory(benchmark)
-
  qt_add_qml_module(client
          URI WeChatClient
          VERSION 1.0

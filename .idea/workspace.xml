@@ -99,9 +99,28 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="2dc32154-be48-467c-9695-c2dd10df8b29" name="更改" comment="Bad-v0.32 PostgreSQL迁移到MySQL">
-      <change beforePath="$PROJECT_DIR$/.idea/QtSettings.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/QtSettings.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/CMakeLists.txt" beforeDir="false" afterPath="$PROJECT_DIR$/CMakeLists.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/dataSources/793d13c3-aa91-4de9-b493-12c737a1ebbb.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/dataSources/793d13c3-aa91-4de9-b493-12c737a1ebbb/storage_v2/_src_/schema/information_schema.FNRwLQ.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/dataSources/793d13c3-aa91-4de9-b493-12c737a1ebbb/storage_v2/_src_/schema/mysql.osA4Bg.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/dataSources/793d13c3-aa91-4de9-b493-12c737a1ebbb/storage_v2/_src_/schema/performance_schema.kIw0nw.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/dataSources/793d13c3-aa91-4de9-b493-12c737a1ebbb/storage_v2/_src_/schema/sys.zb4BAA.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/db-forest-config.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/db-forest-config.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cmake-build-debug/_deps/stdexec-src/cmake/import_standalone_asio.cmake" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-debug/_deps/stdexec-src/cmake/import_standalone_asio.cmake" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cmake-build-release/_deps/stdexec-src/cmake/import_standalone_asio.cmake" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-release/_deps/stdexec-src/cmake/import_standalone_asio.cmake" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/include/login.backend.h" beforeDir="false" afterPath="$PROJECT_DIR$/include/login.backend.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/include/session.h" beforeDir="false" afterPath="$PROJECT_DIR$/include/session.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/benchmark/CMakeLists.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/benchmark/benchmark_config.h" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/benchmark/register_accounts.cpp" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/benchmark/world_message_test.cpp" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/client/backend/login_backend.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/client/backend/login_backend.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/client/qml/Main/ChatList/ContactListView.qml" beforeDir="false" afterPath="$PROJECT_DIR$/src/client/qml/Main/ChatList/ContactListView.qml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/client/qml/Main/Dialogs/StartGroupDialog.qml" beforeDir="false" afterPath="$PROJECT_DIR$/src/client/qml/Main/Dialogs/StartGroupDialog.qml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/database/conversation.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/database/conversation.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/database/friend.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/database/friend.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/database/message.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/database/message.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/server/session/conversation.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/server/session/conversation.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/server/session/message.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/server/session/message.cpp" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -128,7 +147,7 @@
     </option>
     <option name="RECENT_BRANCH_BY_REPOSITORY">
       <map>
-        <entry key="$PROJECT_DIR$" value="d3b43f7b241166c2bd1bc062214a5595033a4b0e" />
+        <entry key="$PROJECT_DIR$" value="923b2305115ff648f276d302d9f081c0f9182846" />
       </map>
     </option>
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
@@ -221,6 +240,7 @@
     <setting file="mock:///home/kkkzbh/code/chat/include/database/connection.h" root0="SKIP_HIGHLIGHTING" />
     <setting file="mock:///home/kkkzbh/code/chat/include/database/connection.h" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/include/server.h" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/include/session.h" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/src/client/client.cpp" root0="FORCE_HIGHLIGHTING" />
     <setting file="mock:///home/kkkzbh/code/chat/src/database/auth.cpp" root0="SKIP_HIGHLIGHTING" />
     <setting file="mock:///home/kkkzbh/code/chat/src/database/auth.cpp" root0="SKIP_HIGHLIGHTING" />
@@ -232,6 +252,8 @@
     <setting file="file://$PROJECT_DIR$/src/server/server.cpp" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/src/server/server/broadcast.cpp" root0="FORCE_HIGHLIGHTING" />
     <setting file="file:///usr/local/gcc16-1116/include/c++/16.0.0/bits/atomic_base.h" root0="SKIP_HIGHLIGHTING" />
+    <setting file="mock://diff.cpp" root0="SKIP_HIGHLIGHTING" />
+    <setting file="mock://diff.cpp" root0="SKIP_HIGHLIGHTING" />
   </component>
   <component name="MacroExpansionManager">
     <option name="directoryName" value="4aTo6yeX" />
@@ -254,54 +276,54 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "ASKED_SHARE_PROJECT_CONFIGURATION_FILES": "true",
-    "CMake 应用程序.MAN.executor": "Run",
-    "CMake 应用程序.asioexec_example.executor": "Run",
-    "CMake 应用程序.client.executor": "Run",
-    "CMake 应用程序.client_gui.executor": "Run",
-    "CMake 应用程序.import_std_asio_repro.executor": "Run",
-    "CMake 应用程序.main.executor": "Run",
-    "CMake 应用程序.quick_test.executor": "Run",
-    "CMake 应用程序.register_accounts.executor": "Run",
-    "CMake 应用程序.server.executor": "Run",
-    "CMake 应用程序.stress_test.executor": "Run",
-    "CMake 应用程序.stu.executor": "Run",
-    "CMake 应用程序.test.executor": "Run",
-    "CMake 应用程序.ttest.executor": "Run",
-    "CMake 应用程序.world_message_test.executor": "Run",
-    "CMake 调试.Project.executor": "Debug",
-    "ModuleVcsDetector.initialDetectionPerformed": "true",
-    "RunOnceActivity.RadMigrateCodeStyle": "true",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
-    "RunOnceActivity.cidr.known.project.marker": "true",
-    "RunOnceActivity.git.unshallow": "true",
-    "RunOnceActivity.readMode.enableVisualFormatting": "true",
-    "RunOnceActivity.typescript.service.memoryLimit.init": "true",
-    "RunOnceActivity.west.config.association.type.startup.service": "true",
-    "SHARE_PROJECT_CONFIGURATION_FILES": "true",
-    "cf.first.check.clang-format": "false",
-    "cidr.known.project.marker": "true",
-    "ctest.advertisement.all.test.configuration.is.created": "true",
-    "last_opened_file_path": "/home/kkkzbh/code/chat/src/client/qml/resource/ChatArea",
-    "node.js.detected.package.eslint": "true",
-    "node.js.detected.package.tslint": "true",
-    "node.js.selected.package.eslint": "(autodetect)",
-    "node.js.selected.package.tslint": "(autodetect)",
-    "nodejs_package_manager_path": "npm",
-    "org.rust.cargo.project.model.impl.CargoExternalSystemProjectAware.subscribe.first.balloon": "",
-    "settings.editor.selected.configurable": "CMakeSettings",
-    "vue.rearranger.settings.migration": "true"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;ASKED_SHARE_PROJECT_CONFIGURATION_FILES&quot;: &quot;true&quot;,
+    &quot;CMake 应用程序.MAN.executor&quot;: &quot;Run&quot;,
+    &quot;CMake 应用程序.asioexec_example.executor&quot;: &quot;Run&quot;,
+    &quot;CMake 应用程序.client.executor&quot;: &quot;Run&quot;,
+    &quot;CMake 应用程序.client_gui.executor&quot;: &quot;Run&quot;,
+    &quot;CMake 应用程序.import_std_asio_repro.executor&quot;: &quot;Run&quot;,
+    &quot;CMake 应用程序.main.executor&quot;: &quot;Run&quot;,
+    &quot;CMake 应用程序.quick_test.executor&quot;: &quot;Run&quot;,
+    &quot;CMake 应用程序.register_accounts.executor&quot;: &quot;Run&quot;,
+    &quot;CMake 应用程序.server.executor&quot;: &quot;Run&quot;,
+    &quot;CMake 应用程序.stress_test.executor&quot;: &quot;Run&quot;,
+    &quot;CMake 应用程序.stu.executor&quot;: &quot;Run&quot;,
+    &quot;CMake 应用程序.test.executor&quot;: &quot;Run&quot;,
+    &quot;CMake 应用程序.ttest.executor&quot;: &quot;Run&quot;,
+    &quot;CMake 应用程序.world_message_test.executor&quot;: &quot;Run&quot;,
+    &quot;CMake 调试.Project.executor&quot;: &quot;Debug&quot;,
+    &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.RadMigrateCodeStyle&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.cidr.known.project.marker&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.readMode.enableVisualFormatting&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.typescript.service.memoryLimit.init&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.west.config.association.type.startup.service&quot;: &quot;true&quot;,
+    &quot;SHARE_PROJECT_CONFIGURATION_FILES&quot;: &quot;true&quot;,
+    &quot;cf.first.check.clang-format&quot;: &quot;false&quot;,
+    &quot;cidr.known.project.marker&quot;: &quot;true&quot;,
+    &quot;ctest.advertisement.all.test.configuration.is.created&quot;: &quot;true&quot;,
+    &quot;last_opened_file_path&quot;: &quot;/home/kkkzbh/code/chat/src/client/qml/resource/ChatArea&quot;,
+    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
+    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
+    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
+    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
+    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
+    &quot;org.rust.cargo.project.model.impl.CargoExternalSystemProjectAware.subscribe.first.balloon&quot;: &quot;&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;CMakeSettings&quot;,
+    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
   },
-  "keyToStringList": {
-    "DatabaseDriversLRU": [
-      "mysql",
-      "postgresql"
+  &quot;keyToStringList&quot;: {
+    &quot;DatabaseDriversLRU&quot;: [
+      &quot;mysql&quot;,
+      &quot;postgresql&quot;
     ]
   }
-}]]></component>
+}</component>
   <component name="RdControllerToolWindowsLayoutState" isNewUi="true">
     <layout>
       <window_info id="Bookmarks" side_tool="true" />
@@ -319,19 +341,19 @@
       <window_info anchor="bottom" id="Serial Monitor" />
       <window_info anchor="bottom" id="PythonProcessOutput" />
       <window_info anchor="bottom" id="clangd" />
-      <window_info anchor="bottom" id="Version Control" order="0" weight="0.33127376" />
+      <window_info anchor="bottom" id="Version Control" order="0" weight="0.2807727" />
       <window_info anchor="bottom" id="Problems" order="1" />
       <window_info anchor="bottom" id="Problems View" order="2" weight="0.029640429" />
-      <window_info anchor="bottom" id="Terminal" order="3" weight="0.21324952" />
-      <window_info anchor="bottom" id="Services" order="4" weight="0.39183873" />
-      <window_info anchor="bottom" x="647" y="605" width="1401" height="499" id="CMake" order="5" weight="0.21698114" />
-      <window_info active="true" anchor="bottom" id="Run" order="6" visible="true" weight="0.287062" />
-      <window_info anchor="bottom" id="Messages" order="7" weight="0.287062" />
+      <window_info active="true" anchor="bottom" id="Terminal" order="3" visible="true" weight="0.029411765" />
+      <window_info anchor="bottom" id="Services" order="4" weight="0.027879342" />
+      <window_info anchor="bottom" x="647" y="605" width="1401" height="499" id="CMake" order="5" weight="0.2807727" />
+      <window_info anchor="bottom" id="Run" order="6" weight="0.37849566" />
+      <window_info anchor="bottom" id="Messages" order="7" weight="0.49132112" />
       <window_info anchor="bottom" id="Vcpkg" order="8" weight="0.3369159" />
-      <window_info anchor="bottom" id="TODO" order="9" weight="0.28181818" />
+      <window_info anchor="bottom" id="TODO" order="9" weight="0.35714287" />
       <window_info anchor="bottom" id="Python Packages" order="10" weight="0.42535883" />
       <window_info anchor="bottom" id="Database Changes" order="11" weight="0.4128866" />
-      <window_info anchor="bottom" id="Debug" order="12" weight="0.029497098" />
+      <window_info anchor="bottom" id="Debug" order="12" weight="0.027626812" />
       <window_info anchor="bottom" id="Find" order="13" weight="0.33006912" />
       <window_info anchor="right" id="make" side_tool="true" />
       <window_info anchor="right" id="Coverage" side_tool="true" />
@@ -733,7 +755,7 @@
                   <entry key="branch">
                     <value>
                       <list>
-                        <option value="HEAD" />
+                        <option value="master" />
                       </list>
                     </value>
                   </entry>

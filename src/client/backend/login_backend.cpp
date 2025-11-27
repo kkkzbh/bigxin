@@ -15,6 +15,7 @@ LoginBackend::LoginBackend(QObject* parent)
 {
     // 连接网络管理器信号
     connect(network_manager_, &NetworkManager::connected, this, &LoginBackend::onNetworkConnected);
+    connect(network_manager_, &NetworkManager::disconnected, this, &LoginBackend::onNetworkDisconnected);
     connect(network_manager_, &NetworkManager::errorOccurred, this, &LoginBackend::onNetworkError);
 
     // 连接协议处理器信号
@@ -92,7 +93,12 @@ void LoginBackend::login(QString const& account, QString const& password)
 
     setErrorMessage(QString{});
     setBusy(true);
-    network_manager_->connectToServer(host_, port_);
+    if(network_manager_->isConnected()) {
+        // 已经有连接，直接发送登录命令，避免 busy 卡死
+        sendCurrentCommand();
+    } else {
+        network_manager_->connectToServer(host_, port_);
+    }
 }
 
 void LoginBackend::registerAccount(QString const& account, QString const& password, QString const& confirmPassword)
@@ -116,7 +122,12 @@ void LoginBackend::registerAccount(QString const& account, QString const& passwo
 
     setErrorMessage(QString{});
     setBusy(true);
-    network_manager_->connectToServer(host_, port_);
+    if(network_manager_->isConnected()) {
+        // 重用现有连接直接发送注册命令
+        sendCurrentCommand();
+    } else {
+        network_manager_->connectToServer(host_, port_);
+    }
 }
 
 void LoginBackend::updateDisplayName(QString const& newName)
@@ -468,6 +479,17 @@ void LoginBackend::onDisplayNameUpdated(QString displayName)
         emit displayNameChanged();
     }
     setErrorMessage(QString{});
+}
+
+void LoginBackend::onNetworkDisconnected()
+{
+    if(!busy_) {
+        return;
+    }
+
+    setBusy(false);
+    setErrorMessage(QStringLiteral("与服务器的连接已断开"));
+    pending_command_ = PendingCommand::None;
 }
 
 void LoginBackend::setBusy(bool value)

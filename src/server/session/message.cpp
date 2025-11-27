@@ -25,76 +25,88 @@ auto Session::handle_send_msg(std::string payload) -> asio::awaitable<void>
         co_return;
     }
 
-    try {
-        if(!j.contains("content")) {
-            auto const err = make_error_payload("INVALID_PARAM", "缺少 content 字段");
-            auto msg = protocol::make_line("ERROR", err);
-            send_text(std::move(msg));
-            co_return;
-        }
-
-        auto const world_id = co_await database::get_world_conversation_id();
-        auto conversation_id = i64{};
-        if(j.contains("conversationId")) {
-            auto const conv_str = j.at("conversationId").get<std::string>();
-            if(!conv_str.empty()) {
-                conversation_id = std::stoll(conv_str);
-            }
-        }
-        if(conversation_id <= 0) {
-            conversation_id = world_id;
-        }
-
-        // 世界频道无需禁言校验，减少一次数据库访问
-        if(conversation_id != world_id) {
-            auto member = co_await database::get_conversation_member(conversation_id, user_id_);
-
-            if(member) {
-                auto const now_ms = std::chrono::duration_cast<std::chrono::milliseconds>(
-                                        std::chrono::system_clock::now().time_since_epoch()
-                                    )
-                                        .count();
-                if(member->muted_until_ms > now_ms) {
-                    std::time_t tt = std::chrono::system_clock::to_time_t(
-                        std::chrono::system_clock::time_point(
-                            std::chrono::milliseconds(member->muted_until_ms)));
-                    std::tm tm = *std::localtime(&tt);
-                    char buf[32]{};
-                    std::snprintf(buf, sizeof(buf), "%04d-%02d-%02d %02d:%02d:%02d",
-                        tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday,
-                        tm.tm_hour, tm.tm_min, tm.tm_sec);
-
-                    auto const err =
-                        make_error_payload("MUTED", std::string{ "你已被禁言至 " } + buf);
-                    auto msg = protocol::make_line("ERROR", err);
-                    send_text(std::move(msg));
-                    co_return;
-                }
-            }
-        }
-
-        auto const content = j.at("content").get<std::string>();
-        auto const client_msg_id =
-            j.contains("clientMsgId") ? j.at("clientMsgId").get<std::string>() : "";
-
-        auto stored = co_await database::append_text_message(conversation_id, user_id_, content);
-
-        json ack;
-        ack["clientMsgId"] = client_msg_id;
-        ack["serverMsgId"] = std::to_string(stored.id);
-        ack["serverTimeMs"] = stored.server_time_ms;
-        ack["seq"] = stored.seq;
-
-        auto ack_msg = protocol::make_line("SEND_ACK", ack.dump());
-        send_text(std::move(ack_msg));
-
-        if(server_ != nullptr) {
-            server_->broadcast_world_message(stored, user_id_, content, display_name_);
-        }
-    } catch(std::exception const& ex) {
-        auto const err = make_error_payload("SERVER_ERROR", ex.what());
+    if(!j.contains("content")) {
+        auto const err = make_error_payload("INVALID_PARAM", "缺少 content 字段");
         auto msg = protocol::make_line("ERROR", err);
         send_text(std::move(msg));
+        co_return;
+    }
+
+    auto const world_id = co_await database::get_world_conversation_id();
+    auto conversation_id = i64{};
+    if(j.contains("conversationId")) {
+        auto const conv_str = j.at("conversationId").get<std::string>();
+        if(!conv_str.empty()) {
+            conversation_id = std::stoll(conv_str);
+        }
+    }
+    if(conversation_id <= 0) {
+        conversation_id = world_id;
+    }
+
+    // 世界频道无需禁言校验，减少一次数据库访问
+    if(conversation_id != world_id) {
+        auto member = co_await database::get_conversation_member(conversation_id, user_id_);
+
+        if(member) {
+            auto const now_ms = std::chrono::duration_cast<std::chrono::milliseconds>(
+                                    std::chrono::system_clock::now().time_since_epoch()
+                                )
+                                    .count();
+            if(member->muted_until_ms > now_ms) {
+                std::time_t tt = std::chrono::system_clock::to_time_t(
+                    std::chrono::system_clock::time_point(
+                        std::chrono::milliseconds(member->muted_until_ms)));
+                std::tm tm = *std::localtime(&tt);
+                char buf[32]{};
+                std::snprintf(buf, sizeof(buf), "%04d-%02d-%02d %02d:%02d:%02d",
+                    tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday,
+                    tm.tm_hour, tm.tm_min, tm.tm_sec);
+
+                auto const err =
+                    make_error_payload("MUTED", std::string{ "你已被禁言至 " } + buf);
+                auto msg = protocol::make_line("ERROR", err);
+                send_text(std::move(msg));
+                co_return;
+            }
+        }
+    }
+
+    auto const content = j.at("content").get<std::string>();
+    auto const client_msg_id =
+        j.contains("clientMsgId") ? j.at("clientMsgId").get<std::string>() : "";
+
+    // 单独捕获数据库写入异常
+    database::StoredMessage stored{};
+    try {
+        stored = co_await database::append_text_message(conversation_id, user_id_, content);
+    } catch(std::exception const& ex) {
+        std::println("handle_send_msg DB error: {}", ex.what());
+        auto const err = make_error_payload("SERVER_ERROR_DB", ex.what());
+        auto msg = protocol::make_line("ERROR", err);
+        send_text(std::move(msg));
+        co_return;
+    }
+
+    // 发送 ACK
+    json ack;
+    ack["clientMsgId"] = client_msg_id;
+    ack["serverMsgId"] = std::to_string(stored.id);
+    ack["serverTimeMs"] = stored.server_time_ms;
+    ack["seq"] = stored.seq;
+
+    auto ack_msg = protocol::make_line("SEND_ACK", ack.dump());
+    send_text(std::move(ack_msg));
+
+    // 推送给其他会话成员，如失败仅记录错误，不影响 ACK
+    if(server_ != nullptr) {
+        try {
+            server_->broadcast_world_message(stored, user_id_, content, display_name_);
+        } catch(std::exception const& ex) {
+            auto const err = make_error_payload("SERVER_ERROR_PUSH", ex.what());
+            auto msg = protocol::make_line("ERROR", err);
+            send_text(std::move(msg));
+        }
     }
 
     co_return;

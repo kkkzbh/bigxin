@@ -18,6 +18,48 @@ Rectangle {
     property string currentContactUserId: ""
     property string currentRequestId: ""
 
+    // 根据当前选中联系人 ID / 用户 ID / 请求 ID
+    // 在最新的模型中同步右侧详情面板的数据。
+    function refreshCurrentSelection() {
+        if (!currentContactId && !currentContactUserId && !currentRequestId) {
+            return
+        }
+
+        // 优先使用“联系人”列表中的数据（已经成为好友时，以好友信息为准）。
+        for (var i = 0; i < contactsModel.count; ++i) {
+            var c = contactsModel.get(i)
+            if ((currentContactUserId && c.userId === currentContactUserId)
+                    || (currentContactId && c.wechatId === currentContactId)) {
+                currentContactId = c.wechatId
+                currentContactName = c.name
+                currentContactWeChatId = c.wechatId
+                currentContactSignature = c.signature || ""
+                // 好友视图不再展示“等待验证”，清空状态即可。
+                currentRequestStatus = ""
+                currentContactUserId = c.userId
+                currentRequestId = ""
+                return
+            }
+        }
+
+        // 若还不是好友，则尝试从“新的朋友”列表中同步状态（例如 PENDING -> 已添加）。
+        for (var j = 0; j < newFriendsModel.count; ++j) {
+            var r = newFriendsModel.get(j)
+            if ((currentRequestId && r.requestId === currentRequestId)
+                    || (currentContactUserId && r.userId === currentContactUserId)
+                    || (currentContactId && r.wechatId === currentContactId)) {
+                currentContactId = r.wechatId
+                currentContactName = r.name
+                currentContactWeChatId = r.wechatId
+                currentContactSignature = ""
+                currentRequestStatus = r.status || ""
+                currentContactUserId = r.userId
+                currentRequestId = r.requestId
+                return
+            }
+        }
+    }
+
     ListModel {
         id: newFriendsModel
     }
@@ -51,6 +93,8 @@ Rectangle {
                     msg: r.helloMsg || ""
                 })
             }
+            // 列表刷新后，根据最新数据同步右侧联系人详情视图。
+            refreshCurrentSelection()
         }
 
         function onFriendsReset(friends) {
@@ -68,6 +112,8 @@ Rectangle {
                     signature: f.signature || ""
                 })
             }
+            // 好友列表刷新后，优先使用好友信息更新当前详情。
+            refreshCurrentSelection()
         }
 
         function onConversationsReset(conversations) {
