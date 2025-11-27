@@ -21,7 +21,6 @@ add_executable(server
         server/server/broadcast.cpp
         server/server/push.cpp
         server/server/cache.cpp
-        server/redis/client.cpp
         database/connection.cpp
         database/auth.cpp
         database/friend.cpp
@@ -34,7 +33,6 @@ target_link_libraries(server
         libchat
         STDEXEC::asioexec_boost
         tbb
-        Boost::redis
 )
 
 add_executable(client

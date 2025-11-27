@@ -2,8 +2,6 @@
 #include <server.h>
 
 #include <database.h>
-#include <redis_client.h>
-#include <boost/mysql.hpp>
 
 #include <chrono>
 #include <ctime>
@@ -11,18 +9,10 @@
 #include <atomic>
 
 using nlohmann::json;
-namespace mysql = boost::mysql;
 namespace asio = boost::asio;
 
 namespace
 {
-    auto now_ms() -> i64
-    {
-        return std::chrono::duration_cast<std::chrono::milliseconds>(
-                   std::chrono::system_clock::now().time_since_epoch())
-            .count();
-    }
-
     auto cached_world_conversation_id() -> asio::awaitable<i64>
     {
         static std::atomic<i64> cached{ 0 };
@@ -31,77 +21,6 @@ namespace
         auto id = co_await database::get_world_conversation_id();
         cached.store(id, std::memory_order_relaxed);
         co_return id;
-    }
-
-    auto persist_message_async(
-        asio::any_io_executor exec,
-        database::StoredMessage stored,
-        i64 sender_id,
-        std::string content,
-        std::string msg_type
-    ) -> void
-    {
-        asio::co_spawn(
-            exec,
-            [stored,
-             sender_id,
-             content = std::move(content),
-             msg_type = std::move(msg_type)]() mutable -> asio::awaitable<void> {
-                try {
-                    auto conn_h = co_await database::acquire_connection();
-                    auto& conn = *conn_h;
-                    mysql::results r;
-                    co_await conn.async_execute(
-                        mysql::with_params(
-                            "INSERT INTO messages (id, conversation_id, sender_id, seq, msg_type, content, server_time_ms)"
-                            " VALUES ({}, {}, {}, {}, {}, {}, {})"
-                            " ON DUPLICATE KEY UPDATE content=VALUES(content), msg_type=VALUES(msg_type), server_time_ms=VALUES(server_time_ms)",
-                            stored.id,
-                            stored.conversation_id,
-                            sender_id,
-                            stored.seq,
-                            msg_type,
-                            content,
-                            stored.server_time_ms),
-                        r,
-                        asio::use_awaitable);
-                } catch(std::exception const& ex) {
-                    std::println("persist_message failed: {}", ex.what());
-                }
-                co_return;
-            },
-            asio::detached);
-    }
-
-    auto backfill_history_async(
-        asio::any_io_executor exec,
-        std::vector<database::LoadedMessage> messages
-    ) -> void
-    {
-        if(messages.empty()) return;
-        asio::co_spawn(
-            exec,
-            [messages = std::move(messages)]() -> asio::awaitable<void> {
-                for(auto const& msg : messages) {
-                    try {
-                        database::StoredMessage stored{};
-                        stored.conversation_id = msg.conversation_id;
-                        stored.id = msg.id;
-                        stored.seq = msg.seq;
-                        stored.server_time_ms = msg.server_time_ms;
-                        stored.msg_type = msg.msg_type;
-                        co_await redis::write_message(
-                            stored,
-                            msg.sender_id,
-                            msg.sender_display_name,
-                            msg.content);
-                    } catch(std::exception const& ex) {
-                        std::println("redis backfill failed: {}", ex.what());
-                    }
-                }
-                co_return;
-            },
-            asio::detached);
     }
 } // namespace
 
@@ -176,46 +95,34 @@ auto Session::handle_send_msg(std::string payload) -> asio::awaitable<void>
     }
 
     database::StoredMessage stored{};
-    stored.conversation_id = conversation_id;
-    stored.server_time_ms = now_ms();
-    stored.msg_type = msg_type;
 
     try {
-        // 在每个 Redis 操作前检查 session 是否正在关闭
+        // 检查 session 是否正在关闭
         if(closing_.load()) {
             co_return;
         }
-        stored.id = co_await redis::next_message_id();
-        
-        if(closing_.load()) {
-            co_return;
-        }
-        stored.seq = co_await redis::next_conversation_seq(conversation_id);
-        
-        if(closing_.load()) {
-            co_return;
-        }
-        co_await redis::write_message(stored, user_id_, display_name_, content);
+        // 直接使用数据库写入消息，append_text_message 会生成 id 和 seq
+        stored = co_await database::append_text_message(conversation_id, user_id_, content, msg_type);
     } catch(boost::system::system_error const& ex) {
         // Operation canceled / connection reset 是 session 关闭导致的正常情况，静默处理
         if(ex.code() == asio::error::operation_aborted ||
            ex.code() == asio::error::connection_reset ||
            ex.code() == asio::error::broken_pipe) {
-            std::println("redis write canceled (session closing)");
+            std::println("database write canceled (session closing)");
             co_return;
         }
-        std::println("redis write failed: {} ({})", ex.what(), ex.code().value());
+        std::println("database write failed: {} ({})", ex.what(), ex.code().value());
         // socket 可能已关闭，检查后再发送错误
         if(socket_.is_open() && !closing_.load()) {
-            auto const err = make_error_payload("SERVER_ERROR_REDIS", ex.what());
+            auto const err = make_error_payload("SERVER_ERROR_DB", ex.what());
             auto msg = protocol::make_line("ERROR", err);
             send_text(std::move(msg));
         }
         co_return;
     } catch(std::exception const& ex) {
-        std::println("redis write failed: {}", ex.what());
+        std::println("database write failed: {}", ex.what());
         if(socket_.is_open() && !closing_.load()) {
-            auto const err = make_error_payload("SERVER_ERROR_REDIS", ex.what());
+            auto const err = make_error_payload("SERVER_ERROR_DB", ex.what());
             auto msg = protocol::make_line("ERROR", err);
             send_text(std::move(msg));
         }
@@ -235,8 +142,6 @@ auto Session::handle_send_msg(std::string payload) -> asio::awaitable<void>
 
     auto ack_msg = protocol::make_line("SEND_ACK", ack.dump());
     send_text(std::move(ack_msg));
-
-    persist_message_async(strand_, stored, user_id_, content, msg_type);
 
     if(auto server = server_.lock()) {
         try {
@@ -291,17 +196,12 @@ auto Session::handle_history_req(std::string const& payload) -> asio::awaitable<
             conversation_id = co_await cached_world_conversation_id();
         }
 
-        auto messages = co_await redis::load_history(conversation_id, after_seq, before_seq, limit);
-
-        // 冷启动或缓存缺失时回源数据库，同时异步回填 Redis。
-        if(messages.empty()) {
-            if(after_seq > 0) {
-                messages = co_await database::load_user_conversation_since(conversation_id, after_seq, limit);
-            } else {
-                messages =
-                    co_await database::load_user_conversation_history(conversation_id, before_seq, limit);
-            }
-            backfill_history_async(socket_.get_executor(), messages);
+        // 直接从数据库加载历史消息
+        std::vector<database::LoadedMessage> messages;
+        if(after_seq > 0) {
+            messages = co_await database::load_user_conversation_since(conversation_id, after_seq, limit);
+        } else {
+            messages = co_await database::load_user_conversation_history(conversation_id, before_seq, limit);
         }
 
         json resp;

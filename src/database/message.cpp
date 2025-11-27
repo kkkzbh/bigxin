@@ -28,13 +28,30 @@ namespace database
                           std::chrono::system_clock::now().time_since_epoch())
                           .count();
 
-        // 直接从 messages 表中计算下一个 seq，避免额外的序列表依赖。
+        // 使用原子性的 INSERT ... SELECT 避免并发 seq 冲突
         mysql::results r;
         co_await conn.async_execute(
             mysql::with_params(
-                "SELECT COALESCE(MAX(seq), 0) + 1 AS next_seq"
-                " FROM messages WHERE conversation_id={}",
+                "INSERT INTO messages (conversation_id, sender_id, seq, msg_type, content, server_time_ms)"
+                " SELECT {}, {}, COALESCE(MAX(seq), 0) + 1, {}, {}, {}"
+                " FROM messages WHERE conversation_id = {}",
+                conversation_id,
+                sender_id,
+                msg_type,
+                content,
+                now_ms,
                 conversation_id),
+            r,
+            asio::use_awaitable
+        );
+
+        auto msg_id = static_cast<i64>(r.last_insert_id());
+
+        // 查询实际分配的 seq
+        co_await conn.async_execute(
+            mysql::with_params(
+                "SELECT seq FROM messages WHERE id = {}",
+                msg_id),
             r,
             asio::use_awaitable
         );
@@ -46,28 +63,12 @@ namespace database
                 seq = fv.as_int64();
             } else if(fv.is_uint64()) {
                 seq = static_cast<i64>(fv.as_uint64());
-            } else if(fv.is_string()) {
-                seq = std::stoll(std::string(fv.as_string()));
             }
         }
 
-        co_await conn.async_execute(
-            mysql::with_params(
-                "INSERT INTO messages (conversation_id, sender_id, seq, msg_type, content, server_time_ms)"
-                " VALUES ({}, {}, {}, {}, {}, {})",
-                conversation_id,
-                sender_id,
-                seq,
-                msg_type,
-                content,
-                now_ms),
-            r,
-            asio::use_awaitable
-        );
-
         StoredMessage stored{};
         stored.conversation_id = conversation_id;
-        stored.id = static_cast<i64>(r.last_insert_id());
+        stored.id = msg_id;
         stored.seq = seq;
         stored.server_time_ms = now_ms;
         stored.msg_type = msg_type;

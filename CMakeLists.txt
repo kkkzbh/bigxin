@@ -18,7 +18,6 @@ find_package(Threads REQUIRED)
 find_package(Qt6 6.5 REQUIRED COMPONENTS Quick QuickControls2 Network)
 find_package(boost_asio CONFIG REQUIRED)
 find_package(boost_mysql CONFIG REQUIRED)
-find_package(boost_redis CONFIG REQUIRED)
 find_package(nlohmann_json CONFIG REQUIRED)
 
 CPMAddPackage(

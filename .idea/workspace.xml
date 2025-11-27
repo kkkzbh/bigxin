@@ -97,22 +97,19 @@
     </configurations>
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="2dc32154-be48-467c-9695-c2dd10df8b29" name="更改" comment="v0.34 PostgreSQL -&gt; MySQL，asio -&gt; boost::asio，并引入boost::Mysql">
-      <change beforePath="$PROJECT_DIR$/.idea/dataSources.local.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/dataSources.local.xml" afterDir="false" />
+    <list default="true" id="2dc32154-be48-467c-9695-c2dd10df8b29" name="更改" comment="Bad v0.35 引入Redis，压测效果不理想，服务器会崩溃">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/CMakeLists.txt" beforeDir="false" afterPath="$PROJECT_DIR$/CMakeLists.txt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/cmake-build-debug/_deps/stdexec-src/cmake/import_standalone_asio.cmake" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-debug/_deps/stdexec-src/cmake/import_standalone_asio.cmake" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/cmake-build-release/_deps/stdexec-src/cmake/import_standalone_asio.cmake" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-release/_deps/stdexec-src/cmake/import_standalone_asio.cmake" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/include/server.h" beforeDir="false" afterPath="$PROJECT_DIR$/include/server.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/include/session.h" beforeDir="false" afterPath="$PROJECT_DIR$/include/session.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/include/redis_client.h" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/src/CMakeLists.txt" beforeDir="false" afterPath="$PROJECT_DIR$/src/CMakeLists.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/benchmark/benchmark_runner.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/benchmark/benchmark_runner.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/database/message.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/database/message.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/server/redis/client.cpp" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/src/server/server.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/server/server.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/server/server/broadcast.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/server/server/broadcast.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/server/server/cache.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/server/server/cache.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/server/session/auth.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/server/session/auth.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/server/session/conversation.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/server/session/conversation.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/server/session/friend.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/server/session/friend.cpp" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/server/session/message.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/server/session/message.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/vcpkg.json" beforeDir="false" afterPath="$PROJECT_DIR$/vcpkg.json" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -325,8 +322,8 @@
       <window_info id="Commit_Guest" show_stripe_button="false" />
       <window_info id="Pull Requests" />
       <window_info id="Learn" show_stripe_button="false" />
-      <window_info active="true" content_ui="combo" id="Project" order="0" visible="true" weight="0.19831648" />
-      <window_info id="Commit" order="1" weight="0.19845013" />
+      <window_info content_ui="combo" id="Project" order="0" weight="0.19831648" />
+      <window_info active="true" id="Commit" order="1" visible="true" weight="0.19831648" />
       <window_info id="Structure" order="2" side_tool="true" weight="0.25" />
       <window_info anchor="bottom" id="TypeScript" />
       <window_info anchor="bottom" id="GitHub Copilot MCP Log" show_stripe_button="false" />
@@ -334,13 +331,13 @@
       <window_info anchor="bottom" id="Serial Monitor" />
       <window_info anchor="bottom" id="PythonProcessOutput" />
       <window_info anchor="bottom" id="clangd" />
-      <window_info anchor="bottom" id="Version Control" order="0" weight="0.34573412" />
+      <window_info anchor="bottom" id="Version Control" order="0" weight="0.41121033" />
       <window_info anchor="bottom" id="Problems" order="1" />
       <window_info anchor="bottom" id="Problems View" order="2" weight="0.029640429" />
       <window_info anchor="bottom" id="Terminal" order="3" weight="0.3572806" />
       <window_info anchor="bottom" id="Services" order="4" weight="0.027879342" />
       <window_info anchor="bottom" x="647" y="605" width="1401" height="499" id="CMake" order="5" weight="0.37945998" />
-      <window_info active="true" anchor="bottom" id="Run" order="6" visible="true" weight="0.34573412" />
+      <window_info active="true" anchor="bottom" id="Run" order="6" visible="true" weight="0.41121033" />
       <window_info anchor="bottom" id="Messages" order="7" weight="0.43501985" />
       <window_info anchor="bottom" id="Vcpkg" order="8" weight="0.3369159" />
       <window_info anchor="bottom" id="TODO" order="9" weight="0.43501985" />
@@ -379,6 +376,11 @@
     </key>
   </component>
   <component name="RunManager" selected="CMake 应用程序.client">
+    <configuration default="true" type="CLionExternalRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true">
+      <method v="2">
+        <option name="CLION.EXTERNAL.BUILD" enabled="true" />
+      </method>
+    </configuration>
     <configuration name="MAN" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="JuXin" TARGET_NAME="MAN" CONFIG_NAME="Release" RUN_TARGET_PROJECT_NAME="JuXin" RUN_TARGET_NAME="MAN">
       <method v="2">
         <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
@@ -594,7 +596,7 @@
       <workItem from="1763973588341" duration="4817000" />
       <workItem from="1764006623827" duration="15536000" />
       <workItem from="1764153879763" duration="6522000" />
-      <workItem from="1764231375437" duration="10186000" />
+      <workItem from="1764231375437" duration="10795000" />
     </task>
     <task id="LOCAL-00001" summary="基础CMAKE，示例程序">
       <option name="closed" value="true" />
@@ -724,7 +726,15 @@
       <option name="project" value="LOCAL" />
       <updated>1764227999942</updated>
     </task>
-    <option name="localTasksCounter" value="17" />
+    <task id="LOCAL-00017" summary="Bad v0.35 引入Redis，压测效果不理想，服务器会崩溃">
+      <option name="closed" value="true" />
+      <created>1764262779403</created>
+      <option name="number" value="00017" />
+      <option name="presentableId" value="LOCAL-00017" />
+      <option name="project" value="LOCAL" />
+      <updated>1764262779403</updated>
+    </task>
+    <option name="localTasksCounter" value="18" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -775,7 +785,8 @@
     <MESSAGE value="v0.29 优化服务器性能，添加缓存和安全限制&#10;&#10;- 添加Session写缓冲区10MB限制,防止慢客户端OOM攻击&#10;- 实现会话成员列表缓存,减少80%+重复数据库查询&#10;- 在会话成员变动时自动失效缓存,保证数据一致性&#10;- 优化JSON解析,使用非抛出版本减少异常处理开销&#10;&#10;性能提升:&#10;- 群聊消息广播延迟降低83%&#10;- 高并发场景吞吐量提升5-6倍&#10;- 完全防御慢客户端内存攻击" />
     <MESSAGE value="Bad-v0.32 PostgreSQL迁移到MySQL" />
     <MESSAGE value="v0.34 PostgreSQL -&gt; MySQL，asio -&gt; boost::asio，并引入boost::Mysql" />
-    <option name="LAST_COMMIT_MESSAGE" value="v0.34 PostgreSQL -&gt; MySQL，asio -&gt; boost::asio，并引入boost::Mysql" />
+    <MESSAGE value="Bad v0.35 引入Redis，压测效果不理想，服务器会崩溃" />
+    <option name="LAST_COMMIT_MESSAGE" value="Bad v0.35 引入Redis，压测效果不理想，服务器会崩溃" />
   </component>
   <component name="XSLT-Support.FileAssociations.UIState">
     <expand />

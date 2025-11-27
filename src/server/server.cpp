@@ -12,7 +12,6 @@
 #include <session.h>
 #include <server.h>
 #include <database/connection.h>
-#include <redis_client.h>
 
 /// \brief 程序入口：启动 IoRunner 和 TCP 服务器，便于用 nc 调试协议。
 /// \param argc 命令行参数个数。
@@ -29,15 +28,12 @@ auto main(int argc, char** argv) -> int
     auto pool = execpools::asio_thread_pool{ thread_count };
     auto exec = pool.get_executor();
 
-    redis::init_pool(exec);
     database::init_pool(exec);
     std::println("chat server listening on port {}, thread_count is {}", port, thread_count);
 
     // 使用 stdexec sender 模型启动并同步等待服务器协程结束
     auto server_sender = async_start_server(exec, port);
     stdexec::sync_wait(server_sender);
-    // 正常退出时停止 Redis 连接池，避免 async_run 在析构阶段访问已销毁对象。
-    redis::shutdown_pool();
 
     return 0;
 }

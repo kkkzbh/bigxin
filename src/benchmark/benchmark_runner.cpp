@@ -234,7 +234,7 @@ namespace benchmark
             stats_.ack_timeout += ack_stats.ack_timeout.load();
         }
 
-        // 等待 5 秒后再断开连接，给服务端足够时间处理完所有 Redis 操作
+        // 等待 5 秒后再断开连接，给服务端足够时间处理完所有数据库操作
         std::cout << "[BenchmarkRunner] Waiting 5 seconds before disconnecting...\n";
         asio::steady_timer disconnect_wait_timer{ io_ };
         disconnect_wait_timer.expires_after(std::chrono::seconds(5));
@@ -330,7 +330,7 @@ namespace benchmark
             stats_.ack_timeout += ack_stats.ack_timeout.load();
         }
 
-        // 等待 5 秒后再断开连接，给服务端足够时间处理完所有 Redis 操作
+        // 等待 5 秒后再断开连接，给服务端足够时间处理完所有数据库操作
         std::cout << "[BenchmarkRunner] Waiting 5 seconds before disconnecting...\n";
         asio::steady_timer disconnect_wait_timer{ io_ };
         disconnect_wait_timer.expires_after(std::chrono::seconds(5));
