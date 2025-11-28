@@ -157,9 +157,8 @@ auto Session::handle_create_group_req(std::string const& payload) -> asio::await
         if(conv_name.empty()) {
             try {
                 auto conn_h = co_await database::acquire_connection();
-                auto& conn = *conn_h;
                 boost::mysql::results r;
-                co_await conn.async_execute(
+                co_await conn_h->async_execute(
                     mysql::with_params(
                         "SELECT name FROM conversations WHERE id = {} LIMIT 1",
                         conv_id),
@@ -532,9 +531,8 @@ auto Session::handle_leave_conv_req(std::string const& payload) -> asio::awaitab
         std::string conv_type;
         {
             auto conn_h = co_await database::acquire_connection();
-            auto& conn = *conn_h;
             boost::mysql::results r;
-            co_await conn.async_execute(
+            co_await conn_h->async_execute(
                 mysql::with_params(
                     "SELECT type FROM conversations WHERE id = {} LIMIT 1",
                     conv_id),

@@ -9,6 +9,7 @@
 #include <atomic>
 #include <chrono>
 #include <memory>
+#include <mutex>
 #include <random>
 #include <vector>
 
@@ -107,6 +108,7 @@ namespace benchmark
         AccountManager& account_manager_;
 
         std::vector<std::shared_ptr<BenchmarkClient>> clients_;
+        std::mutex clients_mutex_;  // 保护 clients_ 的互斥锁
         Statistics stats_;
 
         std::mt19937 rng_;

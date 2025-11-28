@@ -99,38 +99,68 @@ namespace benchmark
     auto BenchmarkRunner::run_connection_benchmark() -> asio::awaitable<void>
     {
         std::cout << "\n[BenchmarkRunner] Starting connection benchmark...\n";
+
+        // 计算实际使用的时间窗口（毫秒）
+        auto window_ms = config_.connect_window_seconds > 0
+            ? config_.connect_window_seconds * 1000
+            : config_.connect_delay_max_ms;
+
         std::cout << std::format(
-            "[BenchmarkRunner] {} accounts, delay range: {}-{} ms\n",
+            "[BenchmarkRunner] {} accounts, connect window: {} ms\n",
             config_.account_count,
-            config_.connect_delay_min_ms,
-            config_.connect_delay_max_ms
+            window_ms
         );
 
         stats_.start_time = std::chrono::steady_clock::now();
         running_ = true;
 
         auto const& accounts = account_manager_.accounts();
+        auto task_count = std::min(config_.account_count, accounts.size());
+
+        // 使用 atomic 计数器跟踪完成的任务数
+        auto completed = std::make_shared<std::atomic<std::size_t>>(0);
 
         // 并行启动所有客户端的连接任务（每个任务内部自带随机延迟）
-        for(std::size_t i = 0; i < accounts.size() && running_; ++i) {
-            asio::co_spawn(io_, client_connect_task(i), asio::detached);
+        for(std::size_t i = 0; i < task_count && running_; ++i) {
+            asio::co_spawn(
+                io_,
+                [this, i, completed, task_count]() -> asio::awaitable<void> {
+                    co_await client_connect_task(i);
+                    auto done = completed->fetch_add(1) + 1;
+                    // 每完成 10% 输出一次进度
+                    if(done % (task_count / 10 + 1) == 0 || done == task_count) {
+                        std::cout << std::format(
+                            "[BenchmarkRunner] Progress: {}/{} tasks completed\n",
+                            done, task_count
+                        );
+                    }
+                },
+                asio::detached
+            );
         }
 
         std::cout << std::format(
             "[BenchmarkRunner] Spawned {} connection tasks, waiting for completion...\n",
-            accounts.size()
+            task_count
         );
 
-        // 等待足够时间让所有连接完成（最大延迟 + 连接超时）
-        auto wait_seconds = (config_.connect_delay_max_ms / 1000) + 15;
-        asio::steady_timer wait_timer{ io_ };
-        wait_timer.expires_after(std::chrono::seconds(wait_seconds));
-        co_await wait_timer.async_wait(asio::use_awaitable);
+        // 等待所有任务完成或超时
+        auto wait_seconds = (window_ms / 1000) + 15;
+        auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(wait_seconds);
+
+        while(completed->load() < task_count && std::chrono::steady_clock::now() < deadline) {
+            asio::steady_timer wait_timer{ io_ };
+            wait_timer.expires_after(std::chrono::milliseconds(500));
+            co_await wait_timer.async_wait(asio::use_awaitable);
+        }
 
         stats_.end_time = std::chrono::steady_clock::now();
         running_ = false;
 
-        std::cout << "[BenchmarkRunner] Connection benchmark completed.\n";
+        std::cout << std::format(
+            "[BenchmarkRunner] Connection benchmark completed. {}/{} tasks finished.\n",
+            completed->load(), task_count
+        );
         stats_.print_report();
     }
 
@@ -379,8 +409,13 @@ namespace benchmark
             co_return;
         }
 
+        // 计算实际使用的时间窗口（毫秒）
+        auto window_ms = config_.connect_window_seconds > 0
+            ? config_.connect_window_seconds * 1000
+            : config_.connect_delay_max_ms;
+
         // 每个任务内部自己处理随机延迟，实现并行的随机延迟连接
-        auto delay = random_delay_ms(config_.connect_delay_min_ms, config_.connect_delay_max_ms);
+        auto delay = random_delay_ms(config_.connect_delay_min_ms, window_ms);
         asio::steady_timer timer{ io_ };
         timer.expires_after(std::chrono::milliseconds(delay));
         co_await timer.async_wait(asio::use_awaitable);
@@ -418,7 +453,10 @@ namespace benchmark
             }
         );
 
-        clients_.push_back(client);
+        {
+            std::lock_guard lock{ clients_mutex_ };
+            clients_.push_back(client);
+        }
     }
 
     auto BenchmarkRunner::client_message_task(

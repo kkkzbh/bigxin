@@ -32,6 +32,7 @@ auto print_usage(char const* program_name) -> void
     std::cout << "  --accounts <num>    账号数量 (默认: 200)\n";
     std::cout << "  --groups <num>      群聊数量 (默认: 10)\n";
     std::cout << "  --duration <sec>    压测持续时间秒 (默认: 60)\n";
+    std::cout << "  --connect-window <sec>  连接时间窗口秒，所有连接在此窗口内完成 (默认: 4)\n";
     std::cout << "  --threads <num>     线程数量 (默认: 硬件并发数)\n";
     std::cout << "  --help              显示帮助信息\n";
     std::cout << "\n";
@@ -90,6 +91,9 @@ auto parse_args(int argc, char* argv[], benchmark::Config& config, std::string& 
         else if(arg == "--duration" && i + 1 < argc) {
             config.test_duration_seconds = static_cast<std::uint32_t>(std::stoul(argv[++i]));
         }
+        else if(arg == "--connect-window" && i + 1 < argc) {
+            config.connect_window_seconds = static_cast<std::uint32_t>(std::stoul(argv[++i]));
+        }
         else if(arg == "--threads" && i + 1 < argc) {
             config.thread_count = static_cast<std::size_t>(std::stoul(argv[++i]));
         }
@@ -127,6 +131,7 @@ auto main(int argc, char* argv[]) -> int
     std::cout << std::format("账号前缀: {}\n", config.account_prefix);
     std::cout << std::format("账号数量: {}\n", config.account_count);
     std::cout << std::format("群聊数量: {}\n", config.group_count);
+    std::cout << std::format("连接窗口: {} 秒\n", config.connect_window_seconds);
     std::cout << std::format("线程数量: {}\n", thread_count);
     std::cout << std::format("压测模式: {}\n", mode);
     std::cout << "========================================\n\n";

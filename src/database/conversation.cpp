@@ -18,10 +18,9 @@ namespace database
     auto get_world_conversation_id() -> asio::awaitable<i64>
     {
         auto conn_h = co_await acquire_connection();
-        auto& conn = *conn_h;
 
         mysql::results r;
-        co_await conn.async_execute(
+        co_await conn_h->async_execute(
             "SELECT id FROM conversations WHERE type='GROUP' AND name='世界' LIMIT 1",
             r,
             asio::use_awaitable
@@ -44,13 +43,12 @@ namespace database
         auto b = std::max(user1, user2);
 
         auto conn_h = co_await acquire_connection();
-        auto& conn = *conn_h;
         mysql::results r;
 
-        co_await conn.async_execute("START TRANSACTION", r, asio::use_awaitable);
+        co_await conn_h->async_execute("START TRANSACTION", r, asio::use_awaitable);
 
         // 1) 直接查是否已有
-        co_await conn.async_execute(
+        co_await conn_h->async_execute(
             mysql::with_params(
                 "SELECT conversation_id FROM single_conversations"
                 " WHERE user1_id={} AND user2_id={} LIMIT 1",
@@ -60,12 +58,12 @@ namespace database
             asio::use_awaitable
         );
         if(!r.rows().empty()) {
-            co_await conn.async_execute("COMMIT", r, asio::use_awaitable);
+            co_await conn_h->async_execute("COMMIT", r, asio::use_awaitable);
             co_return r.rows().front().at(0).as_int64();
         }
 
         // 2) 创建 conversations 记录
-        co_await conn.async_execute(
+        co_await conn_h->async_execute(
             mysql::with_params(
                 "INSERT INTO conversations (type, name, owner_user_id)"
                 " VALUES ('SINGLE', '', {})",
@@ -76,7 +74,7 @@ namespace database
         auto conv_id = static_cast<i64>(r.last_insert_id());
 
         // 3) 成员关系
-        co_await conn.async_execute(
+        co_await conn_h->async_execute(
             mysql::with_params(
                 "INSERT INTO conversation_members (conversation_id, user_id, role)"
                 " VALUES ({}, {}, 'MEMBER'), ({}, {}, 'MEMBER')",
@@ -89,7 +87,7 @@ namespace database
         );
 
         // 4) 记录 single_conversations，利用唯一约束避免重复
-        co_await conn.async_execute(
+        co_await conn_h->async_execute(
             mysql::with_params(
                 "INSERT INTO single_conversations (user1_id, user2_id, conversation_id)"
                 " VALUES ({}, {}, {})"
@@ -101,7 +99,7 @@ namespace database
             asio::use_awaitable
         );
 
-        co_await conn.async_execute("COMMIT", r, asio::use_awaitable);
+        co_await conn_h->async_execute("COMMIT", r, asio::use_awaitable);
         co_return conv_id;
     }
 
@@ -122,13 +120,12 @@ namespace database
         }
 
         auto conn_h = co_await acquire_connection();
-        auto& conn = *conn_h;
         mysql::results r;
 
         auto pick_display_name = [&](i64 uid) -> asio::awaitable<std::string>
         {
             mysql::results local;
-            co_await conn.async_execute(
+            co_await conn_h->async_execute(
                 mysql::with_params(
                     "SELECT display_name FROM users WHERE id={} LIMIT 1",
                     uid),
@@ -163,10 +160,10 @@ namespace database
             name = std::move(joined);
         }
 
-        co_await conn.async_execute("START TRANSACTION", r, asio::use_awaitable);
+        co_await conn_h->async_execute("START TRANSACTION", r, asio::use_awaitable);
 
         // 创建群聊
-        co_await conn.async_execute(
+        co_await conn_h->async_execute(
             mysql::with_params(
                 "INSERT INTO conversations (type, name, owner_user_id)"
                 " VALUES ('GROUP', {}, {})",
@@ -178,7 +175,7 @@ namespace database
         auto conv_id = static_cast<i64>(r.last_insert_id());
 
         // 插入群主
-        co_await conn.async_execute(
+        co_await conn_h->async_execute(
             mysql::with_params(
                 "INSERT INTO conversation_members (conversation_id, user_id, role)"
                 " VALUES ({}, {}, 'OWNER')",
@@ -190,7 +187,7 @@ namespace database
 
         // 插入成员
         for(auto uid : member_ids) {
-            co_await conn.async_execute(
+            co_await conn_h->async_execute(
                 mysql::with_params(
                     "INSERT INTO conversation_members (conversation_id, user_id, role)"
                     " VALUES ({}, {}, 'MEMBER')",
@@ -201,17 +198,16 @@ namespace database
             );
         }
 
-        co_await conn.async_execute("COMMIT", r, asio::use_awaitable);
+        co_await conn_h->async_execute("COMMIT", r, asio::use_awaitable);
         co_return conv_id;
     }
 
     auto load_user_conversations(i64 user_id) -> asio::awaitable<std::vector<ConversationInfo>>
     {
         auto conn_h = co_await acquire_connection();
-        auto& conn = *conn_h;
         mysql::results r;
 
-        co_await conn.async_execute(
+        co_await conn_h->async_execute(
             mysql::with_params(
                 "SELECT c.id, c.type, c.name, peer.display_name AS peer_name,"
                 " COALESCE(msg_stats.max_seq, 0) AS last_seq, COALESCE(msg_stats.max_time, 0) AS last_time "
@@ -263,10 +259,9 @@ namespace database
         -> asio::awaitable<std::optional<MemberInfo>>
     {
         auto conn_h = co_await acquire_connection();
-        auto& conn = *conn_h;
         mysql::results r;
 
-        co_await conn.async_execute(
+        co_await conn_h->async_execute(
             mysql::with_params(
                 "SELECT cm.role, cm.muted_until_ms, u.display_name "
                 "FROM conversation_members cm JOIN users u ON u.id = cm.user_id "
@@ -294,10 +289,9 @@ namespace database
         -> asio::awaitable<void>
     {
         auto conn_h = co_await acquire_connection();
-        auto& conn = *conn_h;
         mysql::results r;
 
-        co_await conn.async_execute(
+        co_await conn_h->async_execute(
             mysql::with_params(
                 "UPDATE conversation_members SET muted_until_ms = {}"
                 " WHERE conversation_id = {} AND user_id = {}",
@@ -313,10 +307,9 @@ namespace database
     auto load_conversation_members(i64 conversation_id) -> asio::awaitable<std::vector<MemberInfo>>
     {
         auto conn_h = co_await acquire_connection();
-        auto& conn = *conn_h;
         mysql::results r;
 
-        co_await conn.async_execute(
+        co_await conn_h->async_execute(
             mysql::with_params(
                 "SELECT cm.user_id, cm.role, cm.muted_until_ms, u.display_name "
                 "FROM conversation_members cm JOIN users u ON u.id = cm.user_id "
@@ -342,10 +335,9 @@ namespace database
     auto remove_conversation_member(i64 conversation_id, i64 user_id) -> asio::awaitable<void>
     {
         auto conn_h = co_await acquire_connection();
-        auto& conn = *conn_h;
         mysql::results r;
 
-        co_await conn.async_execute(
+        co_await conn_h->async_execute(
             mysql::with_params(
                 "DELETE FROM conversation_members WHERE conversation_id={} AND user_id={}",
                 conversation_id,
@@ -361,12 +353,11 @@ namespace database
         if(conversation_id <= 0) co_return;
 
         auto conn_h = co_await acquire_connection();
-        auto& conn = *conn_h;
         mysql::results r;
 
-        co_await conn.async_execute("START TRANSACTION", r, asio::use_awaitable);
+        co_await conn_h->async_execute("START TRANSACTION", r, asio::use_awaitable);
 
-        co_await conn.async_execute(
+        co_await conn_h->async_execute(
             mysql::with_params(
                 "DELETE FROM messages WHERE conversation_id={}",
                 conversation_id),
@@ -374,7 +365,7 @@ namespace database
             asio::use_awaitable
         );
 
-        co_await conn.async_execute(
+        co_await conn_h->async_execute(
             mysql::with_params(
                 "DELETE FROM conversation_members WHERE conversation_id={}",
                 conversation_id),
@@ -382,7 +373,7 @@ namespace database
             asio::use_awaitable
         );
 
-        co_await conn.async_execute(
+        co_await conn_h->async_execute(
             mysql::with_params(
                 "DELETE FROM single_conversations WHERE conversation_id={}",
                 conversation_id),
@@ -390,7 +381,7 @@ namespace database
             asio::use_awaitable
         );
 
-        co_await conn.async_execute(
+        co_await conn_h->async_execute(
             mysql::with_params(
                 "DELETE FROM conversation_sequences WHERE conversation_id={}",
                 conversation_id),
@@ -398,7 +389,7 @@ namespace database
             asio::use_awaitable
         );
 
-        co_await conn.async_execute(
+        co_await conn_h->async_execute(
             mysql::with_params(
                 "DELETE FROM conversations WHERE id={}",
                 conversation_id),
@@ -406,6 +397,6 @@ namespace database
             asio::use_awaitable
         );
 
-        co_await conn.async_execute("COMMIT", r, asio::use_awaitable);
+        co_await conn_h->async_execute("COMMIT", r, asio::use_awaitable);
     }
 } // namespace database

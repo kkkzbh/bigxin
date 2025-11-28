@@ -1,10 +1,14 @@
 #include "benchmark_client.h"
 
+#include <boost/asio/experimental/awaitable_operators.hpp>
+
 #include <iostream>
 #include <format>
 
 namespace benchmark
 {
+    using namespace asio::experimental::awaitable_operators;
+
     BenchmarkClient::BenchmarkClient(asio::io_context& io)
         : io_{ io }
         , socket_{ io }
@@ -20,19 +24,42 @@ namespace benchmark
         -> asio::awaitable<bool>
     {
         try {
+            // 设置连接超时 5 秒
+            asio::steady_timer timeout_timer{ io_ };
+            timeout_timer.expires_after(std::chrono::seconds(5));
+
             tcp::resolver resolver{ io_ };
-            auto endpoints = co_await resolver.async_resolve(
-                host,
-                std::to_string(port),
-                asio::use_awaitable
+
+            // 使用 awaitable_operators 实现超时
+            auto resolve_result = co_await (
+                resolver.async_resolve(host, std::to_string(port), asio::use_awaitable)
+                || timeout_timer.async_wait(asio::use_awaitable)
             );
 
-            co_await asio::async_connect(socket_, endpoints, asio::use_awaitable);
+            if(resolve_result.index() == 1) {
+                // 超时
+                co_return false;
+            }
+
+            auto endpoints = std::get<0>(resolve_result);
+
+            // 重置超时计时器
+            timeout_timer.expires_after(std::chrono::seconds(5));
+
+            auto connect_result = co_await (
+                asio::async_connect(socket_, endpoints, asio::use_awaitable)
+                || timeout_timer.async_wait(asio::use_awaitable)
+            );
+
+            if(connect_result.index() == 1) {
+                // 超时
+                co_return false;
+            }
+
             connected_ = true;
             co_return true;
         }
-        catch(std::exception const& e) {
-            std::cerr << "[BenchmarkClient] Connect failed: " << e.what() << "\n";
+        catch(std::exception const&) {
             co_return false;
         }
     }
@@ -277,7 +304,7 @@ namespace benchmark
         co_return protocol::parse_line(line);
     }
 
-    auto BenchmarkClient::wait_for_response(std::string const& expected_command)
+    auto BenchmarkClient::wait_for_response(std::string const& expected_command, int timeout_seconds)
         -> asio::awaitable<json>
     {
         // 先检查待处理队列
@@ -289,9 +316,23 @@ namespace benchmark
             }
         }
 
-        // 持续读取直到获得期望的响应
+        // 设置超时
+        asio::steady_timer timeout_timer{ io_ };
+        timeout_timer.expires_after(std::chrono::seconds(timeout_seconds));
+
+        // 持续读取直到获得期望的响应或超时
         while(true) {
-            auto frame = co_await read_response();
+            auto read_result = co_await (
+                read_response()
+                || timeout_timer.async_wait(asio::use_awaitable)
+            );
+
+            if(read_result.index() == 1) {
+                // 超时，返回空 JSON
+                co_return json{};
+            }
+
+            auto frame = std::get<0>(std::move(read_result));
 
             if(frame.command == expected_command) {
                 co_return json::parse(frame.payload);

@@ -35,6 +35,8 @@ namespace benchmark
         std::uint32_t connect_delay_min_ms = 0;
         /// 连接延迟最大值（毫秒）
         std::uint32_t connect_delay_max_ms = 4000;
+        /// 连接时间窗口（秒），所有连接将在此窗口内均匀分布，0 表示使用 delay_max
+        std::uint32_t connect_window_seconds = 0;
 
         // ==================== 消息压测配置 ====================
         /// 消息发送间隔最小值（毫秒）

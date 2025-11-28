@@ -97,19 +97,30 @@
     </configurations>
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="2dc32154-be48-467c-9695-c2dd10df8b29" name="更改" comment="Bad v0.35 引入Redis，压测效果不理想，服务器会崩溃">
+    <list default="true" id="2dc32154-be48-467c-9695-c2dd10df8b29" name="更改" comment="v0.36 直接移除Redis，纯异步访问MySQL，压测结果理想，可作为第一版本Release">
+      <change beforePath="$PROJECT_DIR$/.idea/sqldialects.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/sqldialects.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/CMakeLists.txt" beforeDir="false" afterPath="$PROJECT_DIR$/CMakeLists.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cmake-build-asan/CMakeCache.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cmake-build-asan/CMakeFiles/4.2.0/CMakeCXXCompiler.cmake" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cmake-build-asan/CMakeFiles/4.2.0/CMakeDetermineCompilerABI_CXX.bin" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cmake-build-asan/CMakeFiles/4.2.0/CMakeSystem.cmake" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cmake-build-asan/CMakeFiles/4.2.0/CompilerIdCXX/CMakeCXXCompilerId.cpp" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cmake-build-asan/CMakeFiles/CMakeConfigureLog.yaml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cmake-build-asan/CMakeFiles/cmake.check_cache" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cmake-build-asan/cmake/CPM_0.42.0.cmake" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cmake-build-asan/cpm-package-lock.cmake" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/cmake-build-debug/_deps/stdexec-src/cmake/import_standalone_asio.cmake" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-debug/_deps/stdexec-src/cmake/import_standalone_asio.cmake" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/cmake-build-release/_deps/stdexec-src/cmake/import_standalone_asio.cmake" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-release/_deps/stdexec-src/cmake/import_standalone_asio.cmake" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/include/redis_client.h" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/CMakeLists.txt" beforeDir="false" afterPath="$PROJECT_DIR$/src/CMakeLists.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/benchmark/benchmark_client.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/benchmark/benchmark_client.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/benchmark/benchmark_client.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/benchmark/benchmark_client.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/benchmark/benchmark_config.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/benchmark/benchmark_config.h" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/benchmark/benchmark_runner.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/benchmark/benchmark_runner.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/benchmark/benchmark_runner.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/benchmark/benchmark_runner.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/benchmark/main.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/benchmark/main.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/database/conversation.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/database/conversation.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/database/friend.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/database/friend.cpp" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/database/message.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/database/message.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/server/redis/client.cpp" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/server/server.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/server/server.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/server/session/message.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/server/session/message.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/vcpkg.json" beforeDir="false" afterPath="$PROJECT_DIR$/vcpkg.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/server/session/conversation.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/server/session/conversation.cpp" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -156,93 +167,14 @@
   }
 }</component>
   <component name="HighlightingSettingsPerFile">
-    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock:///home/kkkzbh/code/chat/include/database/connection.h" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock:///home/kkkzbh/code/chat/include/database/connection.h" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock:///home/kkkzbh/code/chat/include/database/connection.h" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock:///home/kkkzbh/code/chat/include/database/connection.h" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock:///home/kkkzbh/code/chat/include/database/connection.h" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock:///home/kkkzbh/code/chat/include/database/connection.h" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock:///home/kkkzbh/code/chat/include/database/connection.h" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock:///home/kkkzbh/code/chat/include/database/connection.h" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock:///home/kkkzbh/code/chat/include/database/connection.h" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock:///home/kkkzbh/code/chat/include/database/connection.h" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock:///home/kkkzbh/code/chat/include/database/connection.h" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock:///home/kkkzbh/code/chat/include/database/connection.h" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/include/server.h" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/include/session.h" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/src/client/client.cpp" root0="FORCE_HIGHLIGHTING" />
-    <setting file="mock:///home/kkkzbh/code/chat/src/database/auth.cpp" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock:///home/kkkzbh/code/chat/src/database/auth.cpp" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock:///home/kkkzbh/code/chat/src/database/auth.cpp" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock:///home/kkkzbh/code/chat/src/database/auth.cpp" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock:///home/kkkzbh/code/chat/src/database/auth.cpp" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock:///home/kkkzbh/code/chat/src/database/auth.cpp" root0="SKIP_HIGHLIGHTING" />
+    <setting file="mock:///home/kkkzbh/code/chat/src/database/conversation.cpp" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/src/main.cpp" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/src/server/server.cpp" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/src/server/server/broadcast.cpp" root0="FORCE_HIGHLIGHTING" />
     <setting file="file:///usr/local/gcc16-1116/include/c++/16.0.0/bits/atomic_base.h" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock://diff.cpp" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock://diff.cpp" root0="SKIP_HIGHLIGHTING" />
   </component>
   <component name="MacroExpansionManager">
     <option name="directoryName" value="4aTo6yeX" />
@@ -322,29 +254,29 @@
       <window_info id="Commit_Guest" show_stripe_button="false" />
       <window_info id="Pull Requests" />
       <window_info id="Learn" show_stripe_button="false" />
-      <window_info content_ui="combo" id="Project" order="0" weight="0.19831648" />
-      <window_info active="true" id="Commit" order="1" visible="true" weight="0.19831648" />
+      <window_info active="true" content_ui="combo" id="Project" order="0" visible="true" weight="0.1881068" />
+      <window_info id="Commit" order="1" weight="0.1882155" />
       <window_info id="Structure" order="2" side_tool="true" weight="0.25" />
       <window_info anchor="bottom" id="TypeScript" />
       <window_info anchor="bottom" id="GitHub Copilot MCP Log" show_stripe_button="false" />
       <window_info anchor="bottom" id="File Transfer" />
-      <window_info anchor="bottom" id="Serial Monitor" />
       <window_info anchor="bottom" id="PythonProcessOutput" />
       <window_info anchor="bottom" id="clangd" />
-      <window_info anchor="bottom" id="Version Control" order="0" weight="0.41121033" />
+      <window_info anchor="bottom" id="Version Control" order="0" weight="0.47085428" />
       <window_info anchor="bottom" id="Problems" order="1" />
       <window_info anchor="bottom" id="Problems View" order="2" weight="0.029640429" />
-      <window_info anchor="bottom" id="Terminal" order="3" weight="0.3572806" />
+      <window_info anchor="bottom" id="Terminal" order="3" weight="0.2876506" />
       <window_info anchor="bottom" id="Services" order="4" weight="0.027879342" />
       <window_info anchor="bottom" x="647" y="605" width="1401" height="499" id="CMake" order="5" weight="0.37945998" />
-      <window_info active="true" anchor="bottom" id="Run" order="6" visible="true" weight="0.41121033" />
-      <window_info anchor="bottom" id="Messages" order="7" weight="0.43501985" />
+      <window_info active="true" anchor="bottom" id="Run" order="6" visible="true" weight="0.2873621" />
+      <window_info anchor="bottom" id="Messages" order="7" weight="0.28793973" />
       <window_info anchor="bottom" id="Vcpkg" order="8" weight="0.3369159" />
       <window_info anchor="bottom" id="TODO" order="9" weight="0.43501985" />
       <window_info anchor="bottom" id="Python Packages" order="10" weight="0.42535883" />
-      <window_info anchor="bottom" id="Database Changes" order="11" weight="0.4128866" />
+      <window_info anchor="bottom" id="Database Changes" order="11" weight="0.41121033" />
       <window_info anchor="bottom" id="Debug" order="12" weight="0.027626812" />
-      <window_info anchor="bottom" id="Find" order="13" weight="0.33006912" />
+      <window_info anchor="bottom" id="Serial Monitor" order="13" weight="0.30906463" />
+      <window_info anchor="bottom" id="Find" order="14" weight="0.33006912" />
       <window_info anchor="right" id="make" side_tool="true" />
       <window_info anchor="right" id="Coverage" side_tool="true" />
       <window_info anchor="right" id="Python Console" />
@@ -355,7 +287,7 @@
       <window_info anchor="right" id="AIAssistant" order="1" weight="0.25" />
       <window_info anchor="right" id="Gradle" order="2" weight="0.25" />
       <window_info anchor="right" id="Maven" order="3" weight="0.25" />
-      <window_info active="true" anchor="right" id="Database" order="4" visible="true" weight="0.22525254" />
+      <window_info active="true" anchor="right" id="Database" order="4" visible="true" weight="0.2131877" />
       <window_info anchor="right" id="github.copilotToolWindow" order="5" weight="0.34985352" />
       <window_info anchor="right" id="GitHub Copilot Chat" order="6" show_stripe_button="false" weight="0.34985352" />
     </layout>
@@ -376,11 +308,6 @@
     </key>
   </component>
   <component name="RunManager" selected="CMake 应用程序.client">
-    <configuration default="true" type="CLionExternalRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true">
-      <method v="2">
-        <option name="CLION.EXTERNAL.BUILD" enabled="true" />
-      </method>
-    </configuration>
     <configuration name="MAN" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="JuXin" TARGET_NAME="MAN" CONFIG_NAME="Release" RUN_TARGET_PROJECT_NAME="JuXin" RUN_TARGET_NAME="MAN">
       <method v="2">
         <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
@@ -596,7 +523,12 @@
       <workItem from="1763973588341" duration="4817000" />
       <workItem from="1764006623827" duration="15536000" />
       <workItem from="1764153879763" duration="6522000" />
-      <workItem from="1764231375437" duration="10795000" />
+      <workItem from="1764231375437" duration="19964000" />
+      <workItem from="1764329702929" duration="4159000" />
+      <workItem from="1764333925495" duration="1112000" />
+      <workItem from="1764335052269" duration="1725000" />
+      <workItem from="1764348699625" duration="406000" />
+      <workItem from="1764349290077" duration="6000" />
     </task>
     <task id="LOCAL-00001" summary="基础CMAKE，示例程序">
       <option name="closed" value="true" />
@@ -734,7 +666,15 @@
       <option name="project" value="LOCAL" />
       <updated>1764262779403</updated>
     </task>
-    <option name="localTasksCounter" value="18" />
+    <task id="LOCAL-00018" summary="v0.36 直接移除Redis，纯异步访问MySQL，压测结果理想，可作为第一版本Release">
+      <option name="closed" value="true" />
+      <created>1764263658556</created>
+      <option name="number" value="00018" />
+      <option name="presentableId" value="LOCAL-00018" />
+      <option name="project" value="LOCAL" />
+      <updated>1764263658556</updated>
+    </task>
+    <option name="localTasksCounter" value="19" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -786,7 +726,8 @@
     <MESSAGE value="Bad-v0.32 PostgreSQL迁移到MySQL" />
     <MESSAGE value="v0.34 PostgreSQL -&gt; MySQL，asio -&gt; boost::asio，并引入boost::Mysql" />
     <MESSAGE value="Bad v0.35 引入Redis，压测效果不理想，服务器会崩溃" />
-    <option name="LAST_COMMIT_MESSAGE" value="Bad v0.35 引入Redis，压测效果不理想，服务器会崩溃" />
+    <MESSAGE value="v0.36 直接移除Redis，纯异步访问MySQL，压测结果理想，可作为第一版本Release" />
+    <option name="LAST_COMMIT_MESSAGE" value="v0.36 直接移除Redis，纯异步访问MySQL，压测结果理想，可作为第一版本Release" />
   </component>
   <component name="XSLT-Support.FileAssociations.UIState">
     <expand />

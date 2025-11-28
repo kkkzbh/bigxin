@@ -22,7 +22,6 @@ namespace database
     ) -> asio::awaitable<StoredMessage>
     {
         auto conn_h = co_await acquire_connection();
-        auto& conn = *conn_h;
 
         auto now_ms = std::chrono::duration_cast<std::chrono::milliseconds>(
                           std::chrono::system_clock::now().time_since_epoch())
@@ -30,7 +29,7 @@ namespace database
 
         // 使用原子性的 INSERT ... SELECT 避免并发 seq 冲突
         mysql::results r;
-        co_await conn.async_execute(
+        co_await conn_h->async_execute(
             mysql::with_params(
                 "INSERT INTO messages (conversation_id, sender_id, seq, msg_type, content, server_time_ms)"
                 " SELECT {}, {}, COALESCE(MAX(seq), 0) + 1, {}, {}, {}"
@@ -48,7 +47,7 @@ namespace database
         auto msg_id = static_cast<i64>(r.last_insert_id());
 
         // 查询实际分配的 seq
-        co_await conn.async_execute(
+        co_await conn_h->async_execute(
             mysql::with_params(
                 "SELECT seq FROM messages WHERE id = {}",
                 msg_id),
@@ -91,10 +90,9 @@ namespace database
         if(limit <= 0) limit = 50;
 
         auto conn_h = co_await acquire_connection();
-        auto& conn = *conn_h;
         mysql::results r;
         if(before_seq > 0) {
-            co_await conn.async_execute(
+            co_await conn_h->async_execute(
                 mysql::with_params(
                     "SELECT m.id, m.conversation_id, m.sender_id, u.display_name, m.seq, m.msg_type,"
                     " m.content, m.server_time_ms "
@@ -108,7 +106,7 @@ namespace database
                 asio::use_awaitable
             );
         } else {
-            co_await conn.async_execute(
+            co_await conn_h->async_execute(
                 mysql::with_params(
                     "SELECT m.id, m.conversation_id, m.sender_id, u.display_name, m.seq, m.msg_type,"
                     " m.content, m.server_time_ms "
@@ -150,10 +148,9 @@ namespace database
         if(limit <= 0) limit = 100;
 
         auto conn_h = co_await acquire_connection();
-        auto& conn = *conn_h;
         mysql::results r;
         if(after_seq > 0) {
-            co_await conn.async_execute(
+            co_await conn_h->async_execute(
                 mysql::with_params(
                     "SELECT m.id, m.conversation_id, m.sender_id, u.display_name, m.seq, m.msg_type,"
                     " m.content, m.server_time_ms "
@@ -167,7 +164,7 @@ namespace database
                 asio::use_awaitable
             );
         } else {
-            co_await conn.async_execute(
+            co_await conn_h->async_execute(
                 mysql::with_params(
                     "SELECT m.id, m.conversation_id, m.sender_id, u.display_name, m.seq, m.msg_type,"
                     " m.content, m.server_time_ms "

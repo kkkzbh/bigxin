@@ -122,8 +122,8 @@ namespace benchmark
         /// \brief 读取一行响应
         auto read_response() -> asio::awaitable<protocol::Frame>;
 
-        /// \brief 等待特定命令的响应
-        auto wait_for_response(std::string const& expected_command)
+        /// \brief 等待特定命令的响应（带超时）
+        auto wait_for_response(std::string const& expected_command, int timeout_seconds = 10)
             -> asio::awaitable<json>;
 
         /// \brief 处理收到的 SEND_ACK

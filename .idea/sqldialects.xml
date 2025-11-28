@@ -5,11 +5,9 @@
     <file url="file://$PROJECT_DIR$/src/database/sql/conversation_sequences.sql" dialect="MySQL" />
     <file url="file://$PROJECT_DIR$/src/database/sql/conversations.sql" dialect="MySQL" />
     <file url="file://$PROJECT_DIR$/src/database/sql/friend_requests.sql" dialect="MySQL" />
-    <file url="file://$PROJECT_DIR$/src/database/sql/friends.sql" dialect="MySQL" />
     <file url="file://$PROJECT_DIR$/src/database/sql/messages.sql" dialect="MySQL" />
     <file url="file://$PROJECT_DIR$/src/database/sql/migration_001_sequence.sql" dialect="MySQL" />
     <file url="file://$PROJECT_DIR$/src/database/sql/single_conversations.sql" dialect="MySQL" />
     <file url="file://$PROJECT_DIR$/src/database/sql/users.sql" dialect="MySQL" />
-    <file url="PROJECT" dialect="PostgreSQL" />
   </component>
 </project>
