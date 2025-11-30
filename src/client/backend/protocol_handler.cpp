@@ -117,6 +117,8 @@ void ProtocolHandler::handleCommand(QString command, QJsonObject payload)
         handleMuteMemberResponse(payload);
     } else if(command == QStringLiteral("UNMUTE_MEMBER_RESP")) {
         handleUnmuteMemberResponse(payload);
+    } else if(command == QStringLiteral("SET_ADMIN_RESP")) {
+        handleSetAdminResponse(payload);
     } else if(command == QStringLiteral("LEAVE_CONV_RESP")) {
         handleLeaveConversationResponse(payload);
     } else if(command == QStringLiteral("ERROR")) {
@@ -351,6 +353,22 @@ void ProtocolHandler::handleMuteMemberResponse(QJsonObject const& obj)
 }
 
 void ProtocolHandler::handleUnmuteMemberResponse(QJsonObject const& obj)
+{
+    auto const ok = obj.value(QStringLiteral("ok")).toBool(false);
+    if(!ok) {
+        auto const msg = obj.value(QStringLiteral("errorMsg")).toString();
+        if(!msg.isEmpty()) {
+            emit errorOccurred(msg);
+        }
+        return;
+    }
+    auto const conv_id = obj.value(QStringLiteral("conversationId")).toString();
+    if(!conv_id.isEmpty()) {
+        emit needRequestConversationMembers(conv_id);
+    }
+}
+
+void ProtocolHandler::handleSetAdminResponse(QJsonObject const& obj)
 {
     auto const ok = obj.value(QStringLiteral("ok")).toBool(false);
     if(!ok) {

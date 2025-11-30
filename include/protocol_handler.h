@@ -126,6 +126,7 @@ private:
     void handleLeaveConversationResponse(QJsonObject const& obj);
     void handleMuteMemberResponse(QJsonObject const& obj);
     void handleUnmuteMemberResponse(QJsonObject const& obj);
+    void handleSetAdminResponse(QJsonObject const& obj);
     void handleErrorResponse(QJsonObject const& obj);
     void handleFriendListResponse(QJsonObject const& obj);
     void handleFriendRequestListResponse(QJsonObject const& obj);

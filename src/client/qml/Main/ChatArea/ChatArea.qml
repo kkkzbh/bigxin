@@ -95,6 +95,24 @@ Rectangle {
                     continue
 
                 map[m.userId] = m
+            }
+
+            // 按角色排序：群主 -> 管理员（按昵称） -> 成员（按昵称）
+            const sorted = Object.values(map).sort((a, b) => {
+                // 群主优先
+                if (a.role === "OWNER") return -1
+                if (b.role === "OWNER") return 1
+                // 管理员其次
+                if (a.role === "ADMIN" && b.role !== "ADMIN") return -1
+                if (b.role === "ADMIN" && a.role !== "ADMIN") return 1
+                // 同角色按昵称排序
+                const nameA = (a.displayName || "").toLowerCase()
+                const nameB = (b.displayName || "").toLowerCase()
+                return nameA.localeCompare(nameB)
+            })
+
+            for (let i = 0; i < sorted.length; ++i) {
+                const m = sorted[i]
                 memberListModel.append({
                     userId: m.userId,
                     displayName: m.displayName || "",
@@ -129,6 +147,21 @@ Rectangle {
         return m.mutedUntilMs > Date.now()
     }
 
+    function getUserRole(userId) {
+        const m = memberMap[userId]
+        return m ? (m.role || "") : ""
+    }
+
+    function formatNameWithRole(name, role) {
+        if (!name) return ""
+        if (role === "OWNER") {
+            return "[群主] " + name
+        } else if (role === "ADMIN") {
+            return "[管理员] " + name
+        }
+        return name
+    }
+
     // 切换会话详情侧边栏（好友 / 群统一）。
     function toggleDetailPanel() {
         if (!root.hasSelection)
@@ -153,6 +186,8 @@ Rectangle {
         targetUserId: root.contextTargetUserId
         targetUserName: root.contextTargetName
         isMuted: root.isUserMuted(root.contextTargetUserId)
+        targetRole: root.getUserRole(root.contextTargetUserId)
+        myRole: root.myRole
 
         onMuteRequested: {
             if (!root.muteDialog) {
@@ -169,6 +204,10 @@ Rectangle {
 
         onUnmuteRequested: {
             loginBackend.unmuteMember(root.conversationId, root.contextTargetUserId)
+        }
+
+        onSetAdminRequested: function(isAdmin) {
+            loginBackend.setAdmin(root.conversationId, root.contextTargetUserId, isAdmin)
         }
     }
 
@@ -250,12 +289,17 @@ Rectangle {
                                             return
                                         if (root.conversationType !== "GROUP")
                                             return
-                                        if (root.myRole !== "OWNER")
+                                        // 群主和管理员都可以右键
+                                        if (root.myRole !== "OWNER" && root.myRole !== "ADMIN")
+                                            return
+                                        // 不能对自己操作
+                                        if (senderId === loginBackend.userId)
                                             return
                                         root.contextTargetUserId = senderId
                                         root.contextTargetName = senderName
                                         avatarMenu.close()
                                         avatarMenu.isMuted = root.isUserMuted(root.contextTargetUserId)
+                                        avatarMenu.targetRole = root.getUserRole(root.contextTargetUserId)
                                         avatarMenu.popup(parent, mouse.x, mouse.y)
                                     }
                                 }
@@ -275,7 +319,7 @@ Rectangle {
 
                                 Text {
                                     visible: showName
-                                    text: senderName
+                                    text: root.formatNameWithRole(senderName, senderId ? root.getUserRole(senderId) : "")
                                     color: theme.textSecondary
                                     font.pixelSize: 12
                                     font.bold: false
@@ -691,7 +735,7 @@ Rectangle {
 
                                     Text {
                                         Layout.fillWidth: true
-                                        text: displayName || userId
+                                        text: root.formatNameWithRole(displayName || userId, role)
                                         color: theme.textSecondary
                                         font.pixelSize: 11
                                         horizontalAlignment: Text.AlignHCenter

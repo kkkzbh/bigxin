@@ -165,6 +165,10 @@ struct Session : std::enable_shared_from_this<Session>
                     auto payload = co_await handle_unmute_member_req(frame.payload);
                     auto msg = protocol::make_line("UNMUTE_MEMBER_RESP", payload);
                     send_text(std::move(msg));
+                } else if(frame.command == "SET_ADMIN_REQ") {
+                    auto payload = co_await handle_set_admin_req(frame.payload);
+                    auto msg = protocol::make_line("SET_ADMIN_RESP", payload);
+                    send_text(std::move(msg));
                 } else if(frame.command == "CONV_MEMBERS_REQ") {
                     auto payload = co_await handle_conv_members_req(frame.payload);
                     auto msg = protocol::make_line("CONV_MEMBERS_RESP", payload);
@@ -273,6 +277,9 @@ private:
 
     /// \brief 处理群成员解禁请求。
     auto handle_unmute_member_req(std::string const& payload) -> asio::awaitable<std::string>;
+
+    /// \brief 处理设置/取消管理员请求。
+    auto handle_set_admin_req(std::string const& payload) -> asio::awaitable<std::string>;
 
     /// \brief 处理会话成员列表请求。
     auto handle_conv_members_req(std::string const& payload) -> asio::awaitable<std::string>;

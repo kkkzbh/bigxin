@@ -391,6 +391,23 @@ void LoginBackend::unmuteMember(QString const& conversationId, QString const& ta
     network_manager_->sendCommand(QStringLiteral("UNMUTE_MEMBER_REQ"), obj);
 }
 
+void LoginBackend::setAdmin(QString const& conversationId, QString const& targetUserId, bool isAdmin)
+{
+    if(conversationId.isEmpty() || targetUserId.isEmpty()) {
+        return;
+    }
+    if(!network_manager_->isConnected()) {
+        setErrorMessage(QStringLiteral("与服务器的连接已断开"));
+        return;
+    }
+
+    QJsonObject obj;
+    obj.insert(QStringLiteral("conversationId"), conversationId);
+    obj.insert(QStringLiteral("targetUserId"), targetUserId);
+    obj.insert(QStringLiteral("isAdmin"), isAdmin);
+    network_manager_->sendCommand(QStringLiteral("SET_ADMIN_REQ"), obj);
+}
+
 void LoginBackend::requestHistory(QString const& conversationId)
 {
     if(conversationId.isEmpty()) {

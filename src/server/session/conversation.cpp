@@ -367,8 +367,9 @@ auto Session::handle_mute_member_req(std::string const& payload) -> asio::awaita
         if(!self_member.has_value()) {
             co_return make_error_payload("FORBIDDEN", "你不是该会话成员");
         }
-        if(self_member->role != "OWNER") {
-            co_return make_error_payload("FORBIDDEN", "仅群主可禁言成员");
+        // 群主和管理员都可以禁言
+        if(self_member->role != "OWNER" && self_member->role != "ADMIN") {
+            co_return make_error_payload("FORBIDDEN", "仅群主和管理员可禁言成员");
         }
 
         auto const target_member = co_await database::get_conversation_member(conv_id, target_id);
@@ -377,6 +378,10 @@ auto Session::handle_mute_member_req(std::string const& payload) -> asio::awaita
         }
         if(target_member->role == "OWNER") {
             co_return make_error_payload("FORBIDDEN", "不能禁言群主");
+        }
+        // 管理员不能禁言其他管理员
+        if(self_member->role == "ADMIN" && target_member->role == "ADMIN") {
+            co_return make_error_payload("FORBIDDEN", "管理员不能禁言其他管理员");
         }
 
         auto const now_ms = std::chrono::duration_cast<std::chrono::milliseconds>(
@@ -455,13 +460,18 @@ auto Session::handle_unmute_member_req(std::string const& payload) -> asio::awai
         if(!self_member.has_value()) {
             co_return make_error_payload("FORBIDDEN", "你不是该会话成员");
         }
-        if(self_member->role != "OWNER") {
-            co_return make_error_payload("FORBIDDEN", "仅群主可解除禁言");
+        // 群主和管理员都可以解禁
+        if(self_member->role != "OWNER" && self_member->role != "ADMIN") {
+            co_return make_error_payload("FORBIDDEN", "仅群主和管理员可解除禁言");
         }
 
         auto const target_member = co_await database::get_conversation_member(conv_id, target_id);
         if(!target_member.has_value()) {
             co_return make_error_payload("NOT_FOUND", "目标成员不存在");
+        }
+        // 管理员不能解禁其他管理员（虽然不能禁言也就不需要解禁，但为了逻辑完整性）
+        if(self_member->role == "ADMIN" && target_member->role == "ADMIN") {
+            co_return make_error_payload("FORBIDDEN", "管理员不能操作其他管理员");
         }
 
         co_await database::set_member_mute_until(conv_id, target_id, 0);
@@ -626,6 +636,91 @@ auto Session::handle_leave_conv_req(std::string const& payload) -> asio::awaitab
         resp["conversationId"] = std::to_string(conv_id);
         resp["isDissolved"] = true;
         resp["memberCountBefore"] = member_count;
+        co_return resp.dump();
+    } catch(json::parse_error const&) {
+        co_return make_error_payload("INVALID_JSON", "请求 JSON 解析失败");
+    } catch(std::exception const& ex) {
+        co_return make_error_payload("SERVER_ERROR", ex.what());
+    }
+}
+
+auto Session::handle_set_admin_req(std::string const& payload) -> asio::awaitable<std::string>
+{
+    if(!authenticated_) {
+        co_return make_error_payload("NOT_AUTHENTICATED", "请先登录");
+    }
+
+    try {
+        auto j = payload.empty() ? json::object() : json::parse(payload);
+        if(!j.contains("conversationId") || !j.contains("targetUserId") || !j.contains("isAdmin")) {
+            co_return make_error_payload("INVALID_PARAM", "缺少必要字段");
+        }
+
+        auto conv_id = i64{};
+        auto target_id = i64{};
+        auto is_admin = false;
+        try {
+            conv_id = std::stoll(j.at("conversationId").get<std::string>());
+            target_id = std::stoll(j.at("targetUserId").get<std::string>());
+            is_admin = j.at("isAdmin").get<bool>();
+        } catch(std::exception const&) {
+            co_return make_error_payload("INVALID_PARAM", "conversationId 或 targetUserId 非法");
+        }
+        if(conv_id <= 0 || target_id <= 0) {
+            co_return make_error_payload("INVALID_PARAM", "参数非法");
+        }
+
+        auto const self_member = co_await database::get_conversation_member(conv_id, user_id_);
+        if(!self_member.has_value()) {
+            co_return make_error_payload("FORBIDDEN", "你不是该会话成员");
+        }
+        if(self_member->role != "OWNER") {
+            co_return make_error_payload("FORBIDDEN", "仅群主可设置管理员");
+        }
+
+        auto const target_member = co_await database::get_conversation_member(conv_id, target_id);
+        if(!target_member.has_value()) {
+            co_return make_error_payload("NOT_FOUND", "目标成员不存在");
+        }
+        if(target_member->role == "OWNER") {
+            co_return make_error_payload("FORBIDDEN", "不能更改群主角色");
+        }
+
+        auto const new_role = is_admin ? "ADMIN" : "MEMBER";
+        if(target_member->role == new_role) {
+            // 角色未变，直接成功
+            json resp;
+            resp["ok"] = true;
+            resp["conversationId"] = std::to_string(conv_id);
+            resp["targetUserId"] = std::to_string(target_id);
+            resp["isAdmin"] = is_admin;
+            co_return resp.dump();
+        }
+
+        co_await database::set_member_role(conv_id, target_id, new_role);
+
+        if(auto server = server_.lock()) {
+            server->invalidate_member_list_cache(conv_id);
+        }
+
+        auto const target_name = target_member->display_name;
+        auto const sys_content = is_admin
+            ? ("已将 " + target_name + " 设为管理员")
+            : ("已取消 " + target_name + " 的管理员身份");
+        
+        auto const stored =
+            co_await database::append_text_message(conv_id, user_id_, sys_content, "SYSTEM");
+
+        if(auto server = server_.lock()) {
+            server->broadcast_system_message(conv_id, stored, sys_content);
+            server->send_conv_members(conv_id);
+        }
+
+        json resp;
+        resp["ok"] = true;
+        resp["conversationId"] = std::to_string(conv_id);
+        resp["targetUserId"] = std::to_string(target_id);
+        resp["isAdmin"] = is_admin;
         co_return resp.dump();
     } catch(json::parse_error const&) {
         co_return make_error_payload("INVALID_JSON", "请求 JSON 解析失败");

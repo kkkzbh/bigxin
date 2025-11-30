@@ -52,6 +52,7 @@ public:
     Q_INVOKABLE void openSingleConversation(QString const& peerUserId);
     Q_INVOKABLE void muteMember(QString const& conversationId, QString const& targetUserId, qint64 durationSeconds);
     Q_INVOKABLE void unmuteMember(QString const& conversationId, QString const& targetUserId);
+    Q_INVOKABLE void setAdmin(QString const& conversationId, QString const& targetUserId, bool isAdmin);
     Q_INVOKABLE void requestHistory(QString const& conversationId);
     Q_INVOKABLE void openConversation(QString const& conversationId);
 

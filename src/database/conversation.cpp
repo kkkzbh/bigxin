@@ -304,6 +304,25 @@ namespace database
         co_return;
     }
 
+    auto set_member_role(i64 conversation_id, i64 user_id, std::string const& role)
+        -> asio::awaitable<void>
+    {
+        auto conn_h = co_await acquire_connection();
+        mysql::results r;
+
+        co_await conn_h->async_execute(
+            mysql::with_params(
+                "UPDATE conversation_members SET role = {}"
+                " WHERE conversation_id = {} AND user_id = {}",
+                role,
+                conversation_id,
+                user_id),
+            r,
+            asio::use_awaitable
+        );
+        co_return;
+    }
+
     auto load_conversation_members(i64 conversation_id) -> asio::awaitable<std::vector<MemberInfo>>
     {
         auto conn_h = co_await acquire_connection();

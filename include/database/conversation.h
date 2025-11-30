@@ -49,6 +49,13 @@ namespace database
         i64 muted_until_ms
     ) -> boost::asio::awaitable<void>;
 
+    /// \brief 设置会话成员的角色（OWNER/ADMIN/MEMBER）。
+    auto set_member_role(
+        i64 conversation_id,
+        i64 user_id,
+        std::string const& role
+    ) -> boost::asio::awaitable<void>;
+
     /// \brief 加载指定会话的全部成员（含角色与禁言状态）。
     auto load_conversation_members(i64 conversation_id)
         -> boost::asio::awaitable<std::vector<MemberInfo>>;
