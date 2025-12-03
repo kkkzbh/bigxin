@@ -201,3 +201,48 @@ auto Server::send_conv_members(i64 conversation_id, i64 only_user_id) -> void
         asio::detached
     );
 }
+
+auto Server::send_group_join_request_list_to(i64 target_user_id) -> void
+{
+    if(target_user_id <= 0) {
+        return;
+    }
+
+    asio::co_spawn(
+        strand_,
+        [this, target_user_id]() -> asio::awaitable<void> {
+            try {
+                auto const requests = co_await database::load_group_join_requests_for_admin(target_user_id);
+
+                json resp;
+                resp["ok"] = true;
+
+                json items = json::array();
+                for(auto const& r : requests) {
+                    json obj;
+                    obj["requestId"] = std::to_string(r.id);
+                    obj["fromUserId"] = std::to_string(r.from_user_id);
+                    obj["account"] = r.account;
+                    obj["displayName"] = Session::normalize_whitespace(r.display_name);
+                    obj["groupId"] = std::to_string(r.group_id);
+                    obj["groupName"] = r.group_name;
+                    obj["status"] = r.status;
+                    obj["helloMsg"] = r.hello_msg;
+                    items.push_back(std::move(obj));
+                }
+
+                resp["requests"] = std::move(items);
+                auto const line = protocol::make_line("GROUP_JOIN_REQ_LIST_RESP", resp.dump());
+
+                for_user_sessions(target_user_id, [&line](std::shared_ptr<Session> const& s) {
+                    if(s->is_authenticated()) {
+                        s->send_text(line);
+                    }
+                });
+            } catch(...) {
+            }
+            co_return;
+        },
+        asio::detached
+    );
+}

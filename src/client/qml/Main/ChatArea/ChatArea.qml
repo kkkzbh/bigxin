@@ -44,6 +44,9 @@ Rectangle {
     property string requestStatus: ""
     property string contactUserId: ""
     property string contactRequestId: ""
+    property string contactRequestType: ""
+    property string contactGroupName: ""
+    property string contactGroupId: ""
 
     // 会话详情侧边栏状态
     property bool detailPanelVisible: false
@@ -548,6 +551,9 @@ Rectangle {
             requestStatus: root.requestStatus
             contactUserId: root.contactUserId
             requestId: root.contactRequestId
+            requestType: root.contactRequestType
+            groupName: root.contactGroupName
+            groupId: root.contactGroupId
         }
     }
 
@@ -690,6 +696,62 @@ Rectangle {
                     ColumnLayout {
                         width: parent.width
                         spacing: 12
+
+                        // 群信息头部（群头像、群名称、群号）
+                        ColumnLayout {
+                            Layout.fillWidth: true
+                            Layout.alignment: Qt.AlignHCenter
+                            spacing: 8
+                            visible: root.conversationType === "GROUP"
+
+                            // 群头像
+                            Rectangle {
+                                Layout.alignment: Qt.AlignHCenter
+                                width: 64
+                                height: 64
+                                radius: 8
+                                color: "#4fbf73"
+
+                                Text {
+                                    anchors.centerIn: parent
+                                    text: (root.conversationTitle || "").slice(0, 1)
+                                    color: "#ffffff"
+                                    font.pixelSize: 28
+                                    font.bold: true
+                                }
+                            }
+
+                            // 群名称
+                            Text {
+                                Layout.alignment: Qt.AlignHCenter
+                                Layout.fillWidth: true
+                                text: root.conversationTitle || ""
+                                color: theme.textPrimary
+                                font.pixelSize: 16
+                                font.bold: true
+                                horizontalAlignment: Text.AlignHCenter
+                                elide: Text.ElideRight
+                            }
+
+                            // 群号
+                            Text {
+                                Layout.alignment: Qt.AlignHCenter
+                                text: qsTr("群号: ") + (root.conversationId || "")
+                                color: theme.textSecondary
+                                font.pixelSize: 12
+                                horizontalAlignment: Text.AlignHCenter
+                            }
+                        }
+
+                        // 分隔线
+                        Rectangle {
+                            Layout.fillWidth: true
+                            height: 1
+                            color: theme.separatorHorizontal
+                            visible: root.conversationType === "GROUP"
+                            Layout.topMargin: 4
+                            Layout.bottomMargin: 4
+                        }
 
                         Text {
                             Layout.fillWidth: true

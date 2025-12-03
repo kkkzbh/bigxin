@@ -34,8 +34,11 @@ LoginBackend::LoginBackend(QObject* parent)
     connect(protocol_handler_, &ProtocolHandler::conversationMembersReady, this, &LoginBackend::conversationMembersReady);
     connect(protocol_handler_, &ProtocolHandler::friendsReset, this, &LoginBackend::friendsReset);
     connect(protocol_handler_, &ProtocolHandler::friendRequestsReset, this, &LoginBackend::friendRequestsReset);
+    connect(protocol_handler_, &ProtocolHandler::groupJoinRequestsReset, this, &LoginBackend::groupJoinRequestsReset);
     connect(protocol_handler_, &ProtocolHandler::friendSearchFinished, this, &LoginBackend::friendSearchFinished);
+    connect(protocol_handler_, &ProtocolHandler::groupSearchFinished, this, &LoginBackend::groupSearchFinished);
     connect(protocol_handler_, &ProtocolHandler::friendRequestSucceeded, this, &LoginBackend::friendRequestSucceeded);
+    connect(protocol_handler_, &ProtocolHandler::groupJoinRequestSucceeded, this, &LoginBackend::groupJoinRequestSucceeded);
     connect(protocol_handler_, &ProtocolHandler::singleConversationReady, this, &LoginBackend::singleConversationReady);
     connect(protocol_handler_, &ProtocolHandler::groupCreated, this, &LoginBackend::groupCreated);
 
@@ -44,6 +47,7 @@ LoginBackend::LoginBackend(QObject* parent)
     connect(protocol_handler_, &ProtocolHandler::needRequestConversationMembers, this, &LoginBackend::requestConversationMembers);
     connect(protocol_handler_, &ProtocolHandler::needRequestFriendRequestList, this, &LoginBackend::requestFriendRequestList);
     connect(protocol_handler_, &ProtocolHandler::needRequestFriendList, this, &LoginBackend::requestFriendList);
+    connect(protocol_handler_, &ProtocolHandler::needRequestGroupJoinRequestList, this, &LoginBackend::requestGroupJoinRequestList);
 }
 
 LoginBackend::~LoginBackend()
@@ -548,4 +552,69 @@ void LoginBackend::sendCurrentCommand()
     }
 
     network_manager_->sendCommand(command, obj);
+}
+
+void LoginBackend::searchGroupById(QString const& groupId)
+{
+    auto const trimmed = groupId.trimmed();
+    if(trimmed.isEmpty()) {
+        QVariantMap result;
+        result.insert(QStringLiteral("ok"), false);
+        result.insert(QStringLiteral("errorCode"), QStringLiteral("INVALID_PARAM"));
+        result.insert(QStringLiteral("errorMsg"), QStringLiteral("群号不能为空"));
+        emit groupSearchFinished(result);
+        return;
+    }
+    if(!network_manager_->isConnected()) {
+        setErrorMessage(QStringLiteral("与服务器的连接已断开"));
+        return;
+    }
+
+    QJsonObject obj;
+    obj.insert(QStringLiteral("groupId"), trimmed);
+    network_manager_->sendCommand(QStringLiteral("GROUP_SEARCH_REQ"), obj);
+}
+
+void LoginBackend::sendGroupJoinRequest(QString const& groupId, QString const& helloMsg)
+{
+    if(groupId.trimmed().isEmpty()) {
+        return;
+    }
+    if(!network_manager_->isConnected()) {
+        setErrorMessage(QStringLiteral("与服务器的连接已断开"));
+        return;
+    }
+
+    QJsonObject obj;
+    obj.insert(QStringLiteral("groupId"), groupId.trimmed());
+    if(!helloMsg.trimmed().isEmpty()) {
+        obj.insert(QStringLiteral("helloMsg"), helloMsg.trimmed());
+    }
+
+    network_manager_->sendCommand(QStringLiteral("GROUP_JOIN_REQ"), obj);
+}
+
+void LoginBackend::requestGroupJoinRequestList()
+{
+    if(!network_manager_->isConnected()) {
+        return;
+    }
+
+    network_manager_->sendCommand(QStringLiteral("GROUP_JOIN_REQ_LIST_REQ"), QJsonObject{});
+}
+
+void LoginBackend::acceptGroupJoinRequest(QString const& requestId, bool accept)
+{
+    if(requestId.trimmed().isEmpty()) {
+        return;
+    }
+    if(!network_manager_->isConnected()) {
+        setErrorMessage(QStringLiteral("与服务器的连接已断开"));
+        return;
+    }
+
+    QJsonObject obj;
+    obj.insert(QStringLiteral("requestId"), requestId.trimmed());
+    obj.insert(QStringLiteral("accept"), accept);
+    network_manager_->sendCommand(QStringLiteral("GROUP_JOIN_ACCEPT_REQ"), obj);
 }

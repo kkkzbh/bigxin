@@ -18,10 +18,16 @@ Rectangle {
     property bool isStranger: false
     // 联系人用户 ID（用于发消息 / 添加好友等操作）。
     property string contactUserId: ""
-    // 好友申请 ID（用于“同意”按钮）。
+    // 好友申请 ID（用于"同意"按钮）。
     property string requestId: ""
-    // 是否已经向该用户发送过好友申请（用于禁用“添加到通讯录”按钮）。
+    // 是否已经向该用户发送过好友申请（用于禁用"添加到通讯录"按钮）。
     property bool hasPendingRequest: false
+    // 请求类型：friendRequest / groupJoinRequest / 空
+    property string requestType: ""
+    // 入群申请的目标群名称
+    property string groupName: ""
+    // 入群申请的目标群ID
+    property string groupId: ""
 
     // Content
     Item {
@@ -162,9 +168,9 @@ Rectangle {
                 ActionButton { iconText: "📹"; labelText: "视频聊天" }
             }
 
-            // Agree Button
+            // Agree Button (for friend requests)
             Button {
-                visible: root.requestStatus === "waiting"
+                visible: root.requestStatus === "waiting" && root.requestType === "friendRequest"
                 text: "同意"
                 Layout.alignment: Qt.AlignHCenter
                 Layout.preferredWidth: 120
@@ -184,6 +190,87 @@ Rectangle {
                     if (root.requestId && root.requestId !== "") {
                         loginBackend.acceptFriendRequest(root.requestId)
                     }
+                }
+            }
+
+            // Buttons for group join requests
+            ColumnLayout {
+                visible: root.requestType === "groupJoinRequest"
+                Layout.alignment: Qt.AlignHCenter
+                spacing: 12
+
+                Label {
+                    visible: root.groupName !== ""
+                    text: qsTr("申请加入群聊: ") + root.groupName
+                    color: theme.textSecondary
+                    font.pixelSize: 14
+                    Layout.alignment: Qt.AlignHCenter
+                }
+
+                RowLayout {
+                    visible: root.requestStatus === "waiting"
+                    Layout.alignment: Qt.AlignHCenter
+                    spacing: 20
+
+                    Button {
+                        text: qsTr("同意")
+                        Layout.preferredWidth: 100
+                        Layout.preferredHeight: 36
+                        background: Rectangle {
+                            color: "#4fbf73"
+                            radius: 4
+                        }
+                        contentItem: Text {
+                            text: parent.text
+                            color: "white"
+                            font.pixelSize: 14
+                            horizontalAlignment: Text.AlignHCenter
+                            verticalAlignment: Text.AlignVCenter
+                        }
+                        onClicked: {
+                            if (root.requestId && root.requestId !== "") {
+                                loginBackend.acceptGroupJoinRequest(root.requestId, true)
+                            }
+                        }
+                    }
+
+                    Button {
+                        text: qsTr("拒绝")
+                        Layout.preferredWidth: 100
+                        Layout.preferredHeight: 36
+                        background: Rectangle {
+                            color: "#e74c3c"
+                            radius: 4
+                        }
+                        contentItem: Text {
+                            text: parent.text
+                            color: "white"
+                            font.pixelSize: 14
+                            horizontalAlignment: Text.AlignHCenter
+                            verticalAlignment: Text.AlignVCenter
+                        }
+                        onClicked: {
+                            if (root.requestId && root.requestId !== "") {
+                                loginBackend.acceptGroupJoinRequest(root.requestId, false)
+                            }
+                        }
+                    }
+                }
+
+                Label {
+                    visible: root.requestStatus === "accepted"
+                    text: qsTr("已同意该申请")
+                    color: "#4fbf73"
+                    font.pixelSize: 14
+                    Layout.alignment: Qt.AlignHCenter
+                }
+
+                Label {
+                    visible: root.requestStatus === "rejected"
+                    text: qsTr("已拒绝该申请")
+                    color: "#e74c3c"
+                    font.pixelSize: 14
+                    Layout.alignment: Qt.AlignHCenter
                 }
             }
 

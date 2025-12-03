@@ -17,6 +17,9 @@ Rectangle {
     property string currentRequestStatus: ""
     property string currentContactUserId: ""
     property string currentRequestId: ""
+    property string currentRequestType: ""
+    property string currentGroupName: ""
+    property string currentGroupId: ""
 
     // 根据当前选中联系人 ID / 用户 ID / 请求 ID
     // 在最新的模型中同步右侧详情面板的数据。
@@ -72,29 +75,73 @@ Rectangle {
         id: groupsModel
     }
 
-    // 同步后端好友列表 / 好友申请列表到本地模型。
+    // 缓存好友申请和入群申请列表
+    property var cachedFriendRequests: []
+    property var cachedGroupJoinRequests: []
+
+    // 合并重建"新的朋友"模型
+    function rebuildNewFriendsModel(friendReqs, groupReqs) {
+        if (friendReqs !== null) cachedFriendRequests = friendReqs
+        if (groupReqs !== null) cachedGroupJoinRequests = groupReqs
+
+        newFriendsModel.clear()
+
+        // 添加好友申请
+        for (var i = 0; i < cachedFriendRequests.length; ++i) {
+            var r = cachedFriendRequests[i]
+            var name = (r.displayName || "").replace(/\s+/g, " ").trim()
+            newFriendsModel.append({
+                type: "friendRequest",
+                userId: r.fromUserId,
+                requestId: r.requestId,
+                name: name,
+                avatarColor: "#a29bfe",
+                wechatId: r.account,
+                signature: "",
+                status: r.status === "PENDING" ? "waiting" : "added",
+                msg: r.helloMsg || "",
+                groupId: "",
+                groupName: ""
+            })
+        }
+
+        // 添加入群申请
+        for (var j = 0; j < cachedGroupJoinRequests.length; ++j) {
+            var g = cachedGroupJoinRequests[j]
+            var gname = (g.displayName || "").replace(/\s+/g, " ").trim()
+            var statusText = "waiting"
+            if (g.status === "ACCEPTED") statusText = "accepted"
+            else if (g.status === "REJECTED") statusText = "rejected"
+            else if (g.status === "PENDING") statusText = "waiting"
+
+            newFriendsModel.append({
+                type: "groupJoinRequest",
+                userId: g.fromUserId,
+                requestId: g.requestId,
+                name: gname,
+                avatarColor: "#74b9ff",
+                wechatId: g.account,
+                signature: "",
+                status: statusText,
+                msg: g.helloMsg || qsTr("申请加入群聊: ") + (g.groupName || ""),
+                groupId: g.groupId || "",
+                groupName: g.groupName || ""
+            })
+        }
+
+        refreshCurrentSelection()
+    }
+
+    // 同步后端好友列表 / 好友申请列表 / 入群申请列表到本地模型。
     Connections {
         target: loginBackend
 
         function onFriendRequestsReset(requests) {
-            newFriendsModel.clear()
-            for (var i = 0; i < requests.length; ++i) {
-                var r = requests[i]
-                var name = (r.displayName || "").replace(/\s+/g, " ").trim()
-                newFriendsModel.append({
-                    type: "request",
-                    userId: r.fromUserId,
-                    requestId: r.requestId,
-                    name: name,
-                    avatarColor: "#a29bfe",
-                    wechatId: r.account,
-                    signature: "",
-                    status: r.status === "PENDING" ? "waiting" : "added",
-                    msg: r.helloMsg || ""
-                })
-            }
-            // 列表刷新后，根据最新数据同步右侧联系人详情视图。
-            refreshCurrentSelection()
+            rebuildNewFriendsModel(requests, null)
+        }
+
+        function onGroupJoinRequestsReset(requests) {
+            rebuildNewFriendsModel(null, requests)
         }
 
         function onFriendsReset(friends) {
@@ -360,6 +407,9 @@ Rectangle {
                     root.currentRequestStatus = model.status || ""
                     root.currentContactUserId = model.userId || ""
                     root.currentRequestId = model.requestId || ""
+                    root.currentRequestType = model.type || ""
+                    root.currentGroupName = model.groupName || ""
+                    root.currentGroupId = model.groupId || ""
                     root.currentIndex = index // Just for compatibility
                 }
             }
@@ -395,7 +445,7 @@ Rectangle {
                         Layout.fillWidth: true
                     }
                     Label {
-                        visible: model.type === "request"
+                        visible: model.type === "friendRequest" || model.type === "groupJoinRequest"
                         text: model.msg || ""
                         color: theme.textSecondary
                         font.pixelSize: 12
@@ -406,8 +456,18 @@ Rectangle {
 
                 // Status Tag for Requests
                 Label {
-                    visible: model.type === "request"
-                    text: model.status === "waiting" ? "等待验证" : "已添加"
+                    visible: model.type === "friendRequest" || model.type === "groupJoinRequest"
+                    text: {
+                        if (model.type === "friendRequest") {
+                            return model.status === "waiting" ? qsTr("等待验证") : qsTr("已添加")
+                        } else if (model.type === "groupJoinRequest") {
+                            if (model.status === "waiting") return qsTr("待处理")
+                            if (model.status === "accepted") return qsTr("已同意")
+                            if (model.status === "rejected") return qsTr("已拒绝")
+                            return ""
+                        }
+                        return ""
+                    }
                     color: "#7d7d7d"
                     font.pixelSize: 12
                 }

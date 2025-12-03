@@ -42,6 +42,9 @@ Rectangle {
     property string currentRequestStatus: contactList.currentRequestStatus
     property string currentContactUserId: contactList.currentContactUserId
     property string currentRequestId: contactList.currentRequestId
+    property string currentRequestType: contactList.currentRequestType
+    property string currentGroupName: contactList.currentGroupName
+    property string currentGroupId: contactList.currentGroupId
 
     // 用户主动打开单聊后等待选中的会话 ID（仅主动操作使用，不影响被动消息）。
     property string pendingSelectConversationId: ""

@@ -85,6 +85,9 @@ signals:
     /// \brief 好友申请列表就绪。
     void friendRequestsReset(QVariantList requests);
 
+    /// \brief 入群申请列表就绪（给群主/管理员看的）。
+    void groupJoinRequestsReset(QVariantList requests);
+
     /// \brief 好友搜索完成。
     void friendSearchFinished(QVariantMap result);
 
@@ -96,6 +99,12 @@ signals:
 
     /// \brief 群聊创建成功。
     void groupCreated(QString conversationId, QString title);
+
+    /// \brief 群聊搜索完成。
+    void groupSearchFinished(QVariantMap result);
+
+    /// \brief 入群申请发送成功。
+    void groupJoinRequestSucceeded();
 
     /// \brief 处理失败，发出错误信息。
     void errorOccurred(QString errorMessage);
@@ -111,6 +120,9 @@ signals:
 
     /// \brief 需要请求好友列表。
     void needRequestFriendList();
+
+    /// \brief 需要请求入群申请列表。
+    void needRequestGroupJoinRequestList();
 
 private slots:
     void handleCommand(QString command, QJsonObject payload);
@@ -135,6 +147,10 @@ private:
     void handleFriendAcceptResponse(QJsonObject const& obj);
     void handleOpenSingleConvResponse(QJsonObject const& obj);
     void handleCreateGroupResponse(QJsonObject const& obj);
+    void handleGroupSearchResponse(QJsonObject const& obj);
+    void handleGroupJoinResponse(QJsonObject const& obj);
+    void handleGroupJoinRequestListResponse(QJsonObject const& obj);
+    void handleGroupJoinAcceptResponse(QJsonObject const& obj);
 
     NetworkManager* network_manager_;
     MessageCache* message_cache_;

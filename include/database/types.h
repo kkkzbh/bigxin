@@ -194,4 +194,74 @@ namespace database
         /// \brief 服务器时间戳（毫秒）。
         i64 server_time_ms{};
     };
+
+    /// \brief 群聊搜索结果。
+    struct SearchGroupResult
+    {
+        /// \brief 是否查询成功。
+        bool ok{};
+        /// \brief 错误码（例如 NOT_FOUND）。
+        std::string error_code{};
+        /// \brief 错误信息。
+        std::string error_msg{};
+        /// \brief 群聊 ID（会话 ID）。
+        i64 group_id{};
+        /// \brief 群名称。
+        std::string name{};
+        /// \brief 群成员人数。
+        i64 member_count{};
+        /// \brief 当前用户是否已是群成员。
+        bool is_member{};
+    };
+
+    /// \brief 入群申请结果。
+    struct GroupJoinRequestResult
+    {
+        /// \brief 是否操作成功。
+        bool ok{};
+        /// \brief 错误码，例如 ALREADY_MEMBER。
+        std::string error_code{};
+        /// \brief 错误信息。
+        std::string error_msg{};
+        /// \brief 成功时的申请 ID。
+        i64 request_id{};
+    };
+
+    /// \brief 入群申请信息，用于"新的朋友"列表中显示入群申请。
+    struct GroupJoinRequestInfo
+    {
+        /// \brief 申请 ID。
+        i64 id{};
+        /// \brief 申请发起者用户 ID。
+        i64 from_user_id{};
+        /// \brief 申请发起者账号。
+        std::string account{};
+        /// \brief 申请发起者昵称。
+        std::string display_name{};
+        /// \brief 目标群聊 ID。
+        i64 group_id{};
+        /// \brief 目标群聊名称。
+        std::string group_name{};
+        /// \brief 当前状态：PENDING / ACCEPTED / REJECTED。
+        std::string status{};
+        /// \brief 打招呼信息。
+        std::string hello_msg{};
+    };
+
+    /// \brief 处理入群申请的结果。
+    struct AcceptGroupJoinResult
+    {
+        /// \brief 是否操作成功。
+        bool ok{};
+        /// \brief 错误码。
+        std::string error_code{};
+        /// \brief 错误信息。
+        std::string error_msg{};
+        /// \brief 新成员的基础信息。
+        UserInfo new_member{};
+        /// \brief 群聊 ID。
+        i64 group_id{};
+        /// \brief 群聊名称。
+        std::string group_name{};
+    };
 } // namespace database

@@ -18,6 +18,7 @@ add_executable(server
         server/session/message.cpp
         server/session/friend.cpp
         server/session/conversation.cpp
+        server/session/group.cpp
         server/server/broadcast.cpp
         server/server/push.cpp
         server/server/cache.cpp
@@ -26,6 +27,7 @@ add_executable(server
         database/friend.cpp
         database/conversation.cpp
         database/message.cpp
+        database/group.cpp
 )
 
 target_link_libraries(server
@@ -55,6 +57,7 @@ set_source_files_properties(client/qml/Theme.qml
          QML_FILES
          client/qml/Theme.qml
          client/qml/Main/Dialogs/AddFriendDialog.qml
+         client/qml/Main/Dialogs/JoinGroupDialog.qml
          client/qml/Main/Dialogs/MySpinBox.qml
          client/qml/Main/Dialogs/PlusMenu.qml
          client/qml/Main/Dialogs/SettingsDialog.qml

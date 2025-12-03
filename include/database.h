@@ -9,3 +9,4 @@
 #include <database/friend.h>
 #include <database/conversation.h>
 #include <database/message.h>
+#include <database/group.h>

@@ -55,6 +55,10 @@ public:
     Q_INVOKABLE void setAdmin(QString const& conversationId, QString const& targetUserId, bool isAdmin);
     Q_INVOKABLE void requestHistory(QString const& conversationId);
     Q_INVOKABLE void openConversation(QString const& conversationId);
+    Q_INVOKABLE void searchGroupById(QString const& groupId);
+    Q_INVOKABLE void sendGroupJoinRequest(QString const& groupId, QString const& helloMsg);
+    Q_INVOKABLE void requestGroupJoinRequestList();
+    Q_INVOKABLE void acceptGroupJoinRequest(QString const& requestId, bool accept = true);
 
 signals:
     void busyChanged();
@@ -78,8 +82,11 @@ signals:
     void conversationMembersReady(QString conversationId, QVariantList members);
     void friendsReset(QVariantList friends);
     void friendRequestsReset(QVariantList requests);
+    void groupJoinRequestsReset(QVariantList requests);
     void friendSearchFinished(QVariantMap result);
+    void groupSearchFinished(QVariantMap result);
     void friendRequestSucceeded();
+    void groupJoinRequestSucceeded();
     void singleConversationReady(QString conversationId, QString conversationType);
     void groupCreated(QString conversationId, QString title);
 

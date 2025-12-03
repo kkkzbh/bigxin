@@ -177,6 +177,22 @@ struct Session : std::enable_shared_from_this<Session>
                     auto payload = co_await handle_leave_conv_req(frame.payload);
                     auto msg = protocol::make_line("LEAVE_CONV_RESP", payload);
                     send_text(std::move(msg));
+                } else if(frame.command == "GROUP_SEARCH_REQ") {
+                    auto payload = co_await handle_group_search_req(frame.payload);
+                    auto msg = protocol::make_line("GROUP_SEARCH_RESP", payload);
+                    send_text(std::move(msg));
+                } else if(frame.command == "GROUP_JOIN_REQ") {
+                    auto payload = co_await handle_group_join_req(frame.payload);
+                    auto msg = protocol::make_line("GROUP_JOIN_RESP", payload);
+                    send_text(std::move(msg));
+                } else if(frame.command == "GROUP_JOIN_REQ_LIST_REQ") {
+                    auto payload = co_await handle_group_join_req_list_req(frame.payload);
+                    auto msg = protocol::make_line("GROUP_JOIN_REQ_LIST_RESP", payload);
+                    send_text(std::move(msg));
+                } else if(frame.command == "GROUP_JOIN_ACCEPT_REQ") {
+                    auto payload = co_await handle_group_join_accept_req(frame.payload);
+                    auto msg = protocol::make_line("GROUP_JOIN_ACCEPT_RESP", payload);
+                    send_text(std::move(msg));
                 } else {
                     // 默认 echo，方便用 nc 观察未知命令。
                     auto payload = std::string{ "{\"command\":\"" + frame.command + "\"}" };
@@ -287,6 +303,22 @@ private:
     /// \brief 处理退群 / 解散群聊请求。
     /// \param payload LEAVE_CONV_REQ 的 JSON 文本。
     auto handle_leave_conv_req(std::string const& payload) -> asio::awaitable<std::string>;
+
+    /// \brief 处理群聊搜索请求，返回 GROUP_SEARCH_RESP 的 JSON 串。
+    /// \param payload GROUP_SEARCH_REQ 的 JSON 文本。
+    auto handle_group_search_req(std::string const& payload) -> asio::awaitable<std::string>;
+
+    /// \brief 处理入群申请请求，返回 GROUP_JOIN_RESP 的 JSON 串。
+    /// \param payload GROUP_JOIN_REQ 的 JSON 文本。
+    auto handle_group_join_req(std::string const& payload) -> asio::awaitable<std::string>;
+
+    /// \brief 处理入群申请列表请求，返回 GROUP_JOIN_REQ_LIST_RESP 的 JSON 串。
+    /// \param payload GROUP_JOIN_REQ_LIST_REQ 的 JSON 文本。
+    auto handle_group_join_req_list_req(std::string const& payload) -> asio::awaitable<std::string>;
+
+    /// \brief 处理入群申请（同意/拒绝），返回 GROUP_JOIN_ACCEPT_RESP 的 JSON 串。
+    /// \param payload GROUP_JOIN_ACCEPT_REQ 的 JSON 文本。
+    auto handle_group_join_accept_req(std::string const& payload) -> asio::awaitable<std::string>;
 
     /// \brief 构造带错误码的通用错误响应 JSON 串。
     auto make_error_payload(std::string const& code, std::string const& msg) const -> std::string

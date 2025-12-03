@@ -109,6 +109,10 @@ private:
     /// \brief 主动下发会话列表给指定用户，结构同 CONV_LIST_RESP。
     auto send_conv_list_to(i64 target_user_id) -> void;
 
+    /// \brief 主动向指定用户推送一份最新的入群申请列表。
+    /// \details 用 GROUP_JOIN_REQ_LIST_RESP 的形式下发。
+    auto send_group_join_request_list_to(i64 target_user_id) -> void;
+
     /// \brief 推送指定会话的成员列表给会话成员（或指定用户）。
     /// \param conversation_id 会话 ID。
     /// \param only_user_id 若大于 0，则仅向该用户推送；为 0 时向所有在线群成员推送。

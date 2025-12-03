@@ -7,7 +7,7 @@
     <option name="/Default/Environment/Hierarchy/GeneratedFilesCacheKey/Timestamp/@EntryValue" value="3" type="long" />
     <option name="/Default/Housekeeping/FeatureSuggestion/FeatureSuggestionManager/DisabledSuggesters/=SwitchToGoToActionSuggester/@EntryIndexedValue" value="true" type="bool" />
     <option name="/Default/Housekeeping/GlobalSettingsUpgraded/IsUpgraded/@EntryValue" value="true" type="bool" />
-    <option name="/Default/Housekeeping/OptionsDialog/SelectedPageId/@EntryValue" value="CppFormatterOtherPage" type="string" />
+    <option name="/Default/Housekeeping/OptionsDialog/SelectedPageId/@EntryValue" value="RiderCppLiveTemplatesSettings" type="string" />
     <option name="/Default/RiderDebugger/RiderRestoreDecompile/RestoreDecompileSetting/@EntryValue" value="false" type="bool" />
   </component>
   <component name="CMakePresetLoader">{
@@ -22,6 +22,7 @@
   <component name="CMakeRunConfigurationManager">
     <generated>
       <config projectName="JuXin" targetName="example.server_theme.let_value" />
+      <config projectName="JuXin" targetName="example.problem" />
       <config projectName="JuXin" targetName="NightlyMemoryCheck" folderName="CTestDashboardTargets" />
       <config projectName="JuXin" targetName="example.benchmark.asio_thread_pool" />
       <config projectName="JuXin" targetName="example.scope" />
@@ -97,23 +98,29 @@
     </configurations>
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="2dc32154-be48-467c-9695-c2dd10df8b29" name="更改" comment="v0.37 Release 0.01">
-      <change beforePath="$PROJECT_DIR$/.idea/shelf/_2025_11_23_04_34____.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/shelf/在进行签出之前于_2025_11_23_04_34_取消提交了更改_[更改]/shelved.patch" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/sqldialects.xml" beforeDir="false" />
+    <list default="true" id="2dc32154-be48-467c-9695-c2dd10df8b29" name="更改" comment="v0.38 添加管理员功能，群聊昵称优化，显示群主与管理员，群聊设置界面成员列表排序合理化。">
+      <change beforePath="$PROJECT_DIR$/.idea/dataSources/49af4bf5-0153-42ec-8169-5ca8fa71848f.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/dataSources/49af4bf5-0153-42ec-8169-5ca8fa71848f.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/data_source_mapping.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/data_source_mapping.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/cmake-build-debug/_deps/stdexec-src/cmake/import_standalone_asio.cmake" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-debug/_deps/stdexec-src/cmake/import_standalone_asio.cmake" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/cmake-build-release/_deps/stdexec-src/cmake/import_standalone_asio.cmake" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-release/_deps/stdexec-src/cmake/import_standalone_asio.cmake" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/include/database/conversation.h" beforeDir="false" afterPath="$PROJECT_DIR$/include/database/conversation.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/doc/protocol.md" beforeDir="false" afterPath="$PROJECT_DIR$/doc/protocol.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/include/database.h" beforeDir="false" afterPath="$PROJECT_DIR$/include/database.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/include/database/types.h" beforeDir="false" afterPath="$PROJECT_DIR$/include/database/types.h" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/include/login.backend.h" beforeDir="false" afterPath="$PROJECT_DIR$/include/login.backend.h" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/include/protocol_handler.h" beforeDir="false" afterPath="$PROJECT_DIR$/include/protocol_handler.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/include/server.h" beforeDir="false" afterPath="$PROJECT_DIR$/include/server.h" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/include/session.h" beforeDir="false" afterPath="$PROJECT_DIR$/include/session.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/CMakeLists.txt" beforeDir="false" afterPath="$PROJECT_DIR$/src/CMakeLists.txt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/client/backend/login_backend.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/client/backend/login_backend.cpp" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/client/backend/protocol_handler.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/client/backend/protocol_handler.cpp" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/client/qml/Main/ChatArea/ChatArea.qml" beforeDir="false" afterPath="$PROJECT_DIR$/src/client/qml/Main/ChatArea/ChatArea.qml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/client/qml/Main/Dialogs/UserContextMenu.qml" beforeDir="false" afterPath="$PROJECT_DIR$/src/client/qml/Main/Dialogs/UserContextMenu.qml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/database/conversation.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/database/conversation.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/server/session/conversation.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/server/session/conversation.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/client/qml/Main/ChatArea/ContactDetailView.qml" beforeDir="false" afterPath="$PROJECT_DIR$/src/client/qml/Main/ChatArea/ContactDetailView.qml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/client/qml/Main/ChatList/ChatList.qml" beforeDir="false" afterPath="$PROJECT_DIR$/src/client/qml/Main/ChatList/ChatList.qml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/client/qml/Main/ChatList/ContactListView.qml" beforeDir="false" afterPath="$PROJECT_DIR$/src/client/qml/Main/ChatList/ContactListView.qml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/client/qml/Main/Dialogs/PlusMenu.qml" beforeDir="false" afterPath="$PROJECT_DIR$/src/client/qml/Main/Dialogs/PlusMenu.qml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/client/qml/Main/Main.qml" beforeDir="false" afterPath="$PROJECT_DIR$/src/client/qml/Main/Main.qml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/server/server/push.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/server/server/push.cpp" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -248,7 +255,7 @@
       <window_info id="Commit_Guest" show_stripe_button="false" />
       <window_info id="Pull Requests" />
       <window_info id="Learn" show_stripe_button="false" />
-      <window_info active="true" content_ui="combo" id="Project" order="0" visible="true" weight="0.2264622" />
+      <window_info active="true" content_ui="combo" id="Project" order="0" visible="true" weight="0.25552577" />
       <window_info id="Commit" order="1" weight="0.2264622" />
       <window_info id="Structure" order="2" side_tool="true" weight="0.25" />
       <window_info anchor="bottom" id="TypeScript" />
@@ -256,14 +263,14 @@
       <window_info anchor="bottom" id="File Transfer" />
       <window_info anchor="bottom" id="PythonProcessOutput" />
       <window_info anchor="bottom" id="clangd" />
-      <window_info anchor="bottom" id="Version Control" order="0" weight="0.42539108" />
+      <window_info anchor="bottom" id="Version Control" order="0" weight="0.24778324" />
       <window_info anchor="bottom" id="Problems" order="1" />
       <window_info anchor="bottom" id="Problems View" order="2" weight="0.029640429" />
       <window_info anchor="bottom" id="Terminal" order="3" weight="0.3610537" />
-      <window_info anchor="bottom" id="Services" order="4" weight="0.027879342" />
-      <window_info anchor="bottom" x="647" y="605" width="1401" height="499" id="CMake" order="5" weight="0.37945998" />
-      <window_info active="true" anchor="bottom" id="Run" order="6" visible="true" weight="0.3610537" />
-      <window_info anchor="bottom" id="Messages" order="7" weight="0.3610537" />
+      <window_info anchor="bottom" id="Services" order="4" weight="0.03004926" />
+      <window_info anchor="bottom" x="647" y="605" width="1401" height="499" id="CMake" order="5" weight="0.40738916" />
+      <window_info active="true" anchor="bottom" id="Run" order="6" visible="true" weight="0.03004926" />
+      <window_info anchor="bottom" id="Messages" order="7" weight="0.40738916" />
       <window_info anchor="bottom" id="Vcpkg" order="8" weight="0.3369159" />
       <window_info anchor="bottom" id="TODO" order="9" weight="0.43501985" />
       <window_info anchor="bottom" id="Python Packages" order="10" weight="0.42535883" />
@@ -281,7 +288,7 @@
       <window_info anchor="right" id="AIAssistant" order="1" weight="0.25" />
       <window_info anchor="right" id="Gradle" order="2" weight="0.25" />
       <window_info anchor="right" id="Maven" order="3" weight="0.25" />
-      <window_info active="true" anchor="right" id="Database" order="4" visible="true" weight="0.21291013" />
+      <window_info active="true" anchor="right" id="Database" order="4" visible="true" weight="0.24012056" />
       <window_info anchor="right" id="github.copilotToolWindow" order="5" weight="0.34985352" />
       <window_info anchor="right" id="GitHub Copilot Chat" order="6" show_stripe_button="false" weight="0.34985352" />
     </layout>
@@ -302,6 +309,11 @@
     </key>
   </component>
   <component name="RunManager" selected="CMake 应用程序.client">
+    <configuration default="true" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
     <configuration name="MAN" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="JuXin" TARGET_NAME="MAN" CONFIG_NAME="Release" RUN_TARGET_PROJECT_NAME="JuXin" RUN_TARGET_NAME="MAN">
       <method v="2">
         <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
@@ -385,6 +397,11 @@
         <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
       </method>
     </configuration>
+    <configuration name="example.problem" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="JuXin" TARGET_NAME="example.problem" CONFIG_NAME="Debug" RUN_TARGET_PROJECT_NAME="JuXin" RUN_TARGET_NAME="example.problem">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
     <configuration name="example.retry" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="JuXin" TARGET_NAME="example.retry" CONFIG_NAME="Release" RUN_TARGET_PROJECT_NAME="JuXin" RUN_TARGET_NAME="example.retry">
       <method v="2">
         <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
@@ -457,6 +474,7 @@
       <item itemvalue="CMake 应用程序.example.hello_coro" />
       <item itemvalue="CMake 应用程序.example.hello_world" />
       <item itemvalue="CMake 应用程序.example.io_uring" />
+      <item itemvalue="CMake 应用程序.example.problem" />
       <item itemvalue="CMake 应用程序.example.retry" />
       <item itemvalue="CMake 应用程序.example.scope" />
       <item itemvalue="CMake 应用程序.example.server_theme.let_value" />
@@ -524,7 +542,8 @@
       <workItem from="1764348699625" duration="406000" />
       <workItem from="1764349290077" duration="3229000" />
       <workItem from="1764510643599" duration="3105000" />
-      <workItem from="1764514101146" duration="10000" />
+      <workItem from="1764514101146" duration="983000" />
+      <workItem from="1764735676133" duration="1653000" />
     </task>
     <task id="LOCAL-00001" summary="基础CMAKE，示例程序">
       <option name="closed" value="true" />
@@ -678,7 +697,15 @@
       <option name="project" value="LOCAL" />
       <updated>1764349377415</updated>
     </task>
-    <option name="localTasksCounter" value="20" />
+    <task id="LOCAL-00020" summary="v0.38 添加管理员功能，群聊昵称优化，显示群主与管理员，群聊设置界面成员列表排序合理化。">
+      <option name="closed" value="true" />
+      <created>1764514301233</created>
+      <option name="number" value="00020" />
+      <option name="presentableId" value="LOCAL-00020" />
+      <option name="project" value="LOCAL" />
+      <updated>1764514301234</updated>
+    </task>
+    <option name="localTasksCounter" value="21" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -732,7 +759,8 @@
     <MESSAGE value="Bad v0.35 引入Redis，压测效果不理想，服务器会崩溃" />
     <MESSAGE value="v0.36 直接移除Redis，纯异步访问MySQL，压测结果理想，可作为第一版本Release" />
     <MESSAGE value="v0.37 Release 0.01" />
-    <option name="LAST_COMMIT_MESSAGE" value="v0.37 Release 0.01" />
+    <MESSAGE value="v0.38 添加管理员功能，群聊昵称优化，显示群主与管理员，群聊设置界面成员列表排序合理化。" />
+    <option name="LAST_COMMIT_MESSAGE" value="v0.38 添加管理员功能，群聊昵称优化，显示群主与管理员，群聊设置界面成员列表排序合理化。" />
   </component>
   <component name="XSLT-Support.FileAssociations.UIState">
     <expand />

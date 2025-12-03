@@ -121,6 +121,14 @@ void ProtocolHandler::handleCommand(QString command, QJsonObject payload)
         handleSetAdminResponse(payload);
     } else if(command == QStringLiteral("LEAVE_CONV_RESP")) {
         handleLeaveConversationResponse(payload);
+    } else if(command == QStringLiteral("GROUP_SEARCH_RESP")) {
+        handleGroupSearchResponse(payload);
+    } else if(command == QStringLiteral("GROUP_JOIN_RESP")) {
+        handleGroupJoinResponse(payload);
+    } else if(command == QStringLiteral("GROUP_JOIN_REQ_LIST_RESP")) {
+        handleGroupJoinRequestListResponse(payload);
+    } else if(command == QStringLiteral("GROUP_JOIN_ACCEPT_RESP")) {
+        handleGroupJoinAcceptResponse(payload);
     } else if(command == QStringLiteral("ERROR")) {
         handleErrorResponse(payload);
     }
@@ -553,4 +561,89 @@ void ProtocolHandler::handleCreateGroupResponse(QJsonObject const& obj)
 
     emit needRequestConversationList();
     emit groupCreated(conv_id, title);
+}
+
+void ProtocolHandler::handleGroupSearchResponse(QJsonObject const& obj)
+{
+    QVariantMap result;
+    auto const ok = obj.value(QStringLiteral("ok")).toBool(false);
+
+    if(!ok) {
+        result.insert(QStringLiteral("ok"), false);
+        result.insert(QStringLiteral("errorCode"), obj.value(QStringLiteral("errorCode")).toString());
+        result.insert(QStringLiteral("errorMsg"), obj.value(QStringLiteral("errorMsg")).toString());
+        emit groupSearchFinished(result);
+        return;
+    }
+
+    auto const group = obj.value(QStringLiteral("group")).toObject();
+    result.insert(QStringLiteral("ok"), true);
+    result.insert(QStringLiteral("groupId"), group.value(QStringLiteral("groupId")).toString());
+    result.insert(QStringLiteral("name"), group.value(QStringLiteral("name")).toString());
+    result.insert(QStringLiteral("memberCount"), static_cast<qint64>(group.value(QStringLiteral("memberCount")).toDouble(0)));
+    result.insert(QStringLiteral("isMember"), obj.value(QStringLiteral("isMember")).toBool(false));
+
+    emit groupSearchFinished(result);
+}
+
+void ProtocolHandler::handleGroupJoinResponse(QJsonObject const& obj)
+{
+    auto const ok = obj.value(QStringLiteral("ok")).toBool(false);
+    if(!ok) {
+        auto const msg = obj.value(QStringLiteral("errorMsg")).toString(QStringLiteral("申请加入群聊失败"));
+        if(!msg.isEmpty()) {
+            emit errorOccurred(msg);
+        }
+        return;
+    }
+
+    emit groupJoinRequestSucceeded();
+}
+
+void ProtocolHandler::handleGroupJoinRequestListResponse(QJsonObject const& obj)
+{
+    auto const ok = obj.value(QStringLiteral("ok")).toBool(true);
+    if(!ok) {
+        auto const msg = obj.value(QStringLiteral("errorMsg")).toString();
+        if(!msg.isEmpty()) {
+            emit errorOccurred(msg);
+        }
+        return;
+    }
+
+    auto const array = obj.value(QStringLiteral("requests")).toArray();
+
+    QVariantList list;
+    list.reserve(array.size());
+
+    for(auto const& item : array) {
+        auto const r = item.toObject();
+        QVariantMap map;
+        map.insert(QStringLiteral("requestId"), r.value(QStringLiteral("requestId")).toString());
+        map.insert(QStringLiteral("fromUserId"), r.value(QStringLiteral("fromUserId")).toString());
+        map.insert(QStringLiteral("account"), r.value(QStringLiteral("account")).toString());
+        map.insert(QStringLiteral("displayName"), r.value(QStringLiteral("displayName")).toString());
+        map.insert(QStringLiteral("groupId"), r.value(QStringLiteral("groupId")).toString());
+        map.insert(QStringLiteral("groupName"), r.value(QStringLiteral("groupName")).toString());
+        map.insert(QStringLiteral("status"), r.value(QStringLiteral("status")).toString());
+        map.insert(QStringLiteral("helloMsg"), r.value(QStringLiteral("helloMsg")).toString());
+        list.push_back(map);
+    }
+
+    emit groupJoinRequestsReset(list);
+}
+
+void ProtocolHandler::handleGroupJoinAcceptResponse(QJsonObject const& obj)
+{
+    auto const ok = obj.value(QStringLiteral("ok")).toBool(false);
+    if(!ok) {
+        auto const msg = obj.value(QStringLiteral("errorMsg")).toString(QStringLiteral("处理入群申请失败"));
+        if(!msg.isEmpty()) {
+            emit errorOccurred(msg);
+        }
+        return;
+    }
+
+    // 成功后，刷新入群申请列表
+    emit needRequestGroupJoinRequestList();
 }

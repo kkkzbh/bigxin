@@ -38,6 +38,7 @@ ApplicationWindow {
         loginBackend.requestConversationList()
         loginBackend.requestFriendList()
         loginBackend.requestFriendRequestList()
+        loginBackend.requestGroupJoinRequestList()
     }
 
     Connections {
@@ -314,11 +315,17 @@ ApplicationWindow {
             id: addMenu
             parent: window.contentItem
             startGroupDialog: startGroupDialog
+            joinGroupDialog: joinGroupDialog
         }
 
         // 添加好友独立窗口（非模态）
         AppTheme.AddFriendDialog {
             id: addFriendDialog
+        }
+
+        // 添加群聊独立窗口（非模态）
+        AppTheme.JoinGroupDialog {
+            id: joinGroupDialog
         }
 
         // 发起群聊弹窗（模态）
@@ -377,6 +384,9 @@ ApplicationWindow {
                 requestStatus: chatList.currentRequestStatus
                 contactUserId: chatList.currentContactUserId
                 contactRequestId: chatList.currentRequestId
+                contactRequestType: chatList.currentRequestType
+                contactGroupName: chatList.currentGroupName
+                contactGroupId: chatList.currentGroupId
 
                 Layout.fillWidth: true
                 Layout.fillHeight: true
