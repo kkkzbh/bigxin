@@ -343,6 +343,21 @@ void LoginBackend::acceptFriendRequest(QString const& requestId)
     network_manager_->sendCommand(QStringLiteral("FRIEND_ACCEPT_REQ"), obj);
 }
 
+void LoginBackend::rejectFriendRequest(QString const& requestId)
+{
+    if(requestId.trimmed().isEmpty()) {
+        return;
+    }
+    if(!network_manager_->isConnected()) {
+        setErrorMessage(QStringLiteral("与服务器的连接已断开"));
+        return;
+    }
+
+    QJsonObject obj;
+    obj.insert(QStringLiteral("requestId"), requestId.trimmed());
+    network_manager_->sendCommand(QStringLiteral("FRIEND_REJECT_REQ"), obj);
+}
+
 void LoginBackend::openSingleConversation(QString const& peerUserId)
 {
     if(peerUserId.trimmed().isEmpty()) {
@@ -452,6 +467,9 @@ void LoginBackend::openConversation(QString const& conversationId)
         obj.insert(QStringLiteral("limit"), 100);
         network_manager_->sendCommand(QStringLiteral("HISTORY_REQ"), obj);
     }
+
+    // 发出信号通知 UI 跳转到该会话
+    emit conversationOpened(conversationId);
 }
 
 void LoginBackend::onNetworkConnected()

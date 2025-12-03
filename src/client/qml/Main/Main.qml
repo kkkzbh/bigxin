@@ -44,12 +44,18 @@ ApplicationWindow {
     Connections {
         target: loginBackend
         function onSingleConversationReady(conversationId, conversationType) {
-            // 用户主动打开单聊时切回聊天页签，等待会话列表刷新后高亮。
+            // 用户主动打开单聊时切回聊天页签，立即尝试选中会话。
             window.currentTab = 0
+            chatList.selectConversation(conversationId)
+        }
+        function onConversationOpened(conversationId) {
+            // 用户从通讯录点击群聊的"发消息"时，切换到聊天页签并立即选中会话。
+            window.currentTab = 0
+            chatList.selectConversation(conversationId)
         }
         function onGroupCreated(conversationId, title) {
             window.currentTab = 0
-            chatList.pendingSelectConversationId = conversationId
+            chatList.selectConversation(conversationId)
         }
     }
 

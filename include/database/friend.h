@@ -52,4 +52,11 @@ namespace database
     /// \return 操作结果及新好友信息。
     auto accept_friend_request(i64 request_id, i64 current_user_id)
         -> boost::asio::awaitable<AcceptFriendRequestResult>;
+
+    /// \brief 拒绝一条好友申请。
+    /// \param request_id 好友申请 ID。
+    /// \param current_user_id 当前登录用户 ID（必须为申请接收者）。
+    /// \return 操作结果。
+    auto reject_friend_request(i64 request_id, i64 current_user_id)
+        -> boost::asio::awaitable<RejectFriendRequestResult>;
 } // namespace database

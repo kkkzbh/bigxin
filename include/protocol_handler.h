@@ -145,6 +145,7 @@ private:
     void handleFriendSearchResponse(QJsonObject const& obj);
     void handleFriendAddResponse(QJsonObject const& obj);
     void handleFriendAcceptResponse(QJsonObject const& obj);
+    void handleFriendRejectResponse(QJsonObject const& obj);
     void handleOpenSingleConvResponse(QJsonObject const& obj);
     void handleCreateGroupResponse(QJsonObject const& obj);
     void handleGroupSearchResponse(QJsonObject const& obj);

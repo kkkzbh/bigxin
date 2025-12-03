@@ -159,8 +159,23 @@ Rectangle {
                     iconText: "💬"
                     labelText: "发消息"
                     onTriggered: {
-                        if (root.contactUserId && root.contactUserId !== "") {
-                            loginBackend.openSingleConversation(root.contactUserId)
+                        console.log("[发消息] requestType:", root.requestType,
+                                    "contactUserId:", root.contactUserId,
+                                    "contactWeChatId:", root.contactWeChatId)
+                        // 群聊：使用 contactWeChatId（存储的是 conversationId）
+                        if (root.requestType === "group") {
+                            if (root.contactWeChatId && root.contactWeChatId !== "") {
+                                console.log("[发消息] 打开群聊会话:", root.contactWeChatId)
+                                loginBackend.openConversation(root.contactWeChatId)
+                            }
+                        } else {
+                            // 好友：使用 contactUserId
+                            if (root.contactUserId && root.contactUserId !== "") {
+                                console.log("[发消息] 打开单聊会话, peerUserId:", root.contactUserId)
+                                loginBackend.openSingleConversation(root.contactUserId)
+                            } else {
+                                console.log("[发消息] contactUserId 为空，无法打开单聊")
+                            }
                         }
                     }
                 }
@@ -168,29 +183,72 @@ Rectangle {
                 ActionButton { iconText: "📹"; labelText: "视频聊天" }
             }
 
-            // Agree Button (for friend requests)
-            Button {
+            // Agree/Reject Buttons (for friend requests)
+            RowLayout {
                 visible: root.requestStatus === "waiting" && root.requestType === "friendRequest"
-                text: "同意"
                 Layout.alignment: Qt.AlignHCenter
-                Layout.preferredWidth: 120
-                Layout.preferredHeight: 36
-                background: Rectangle {
-                    color: "#4fbf73"
-                    radius: 4
-                }
-                contentItem: Text {
-                    text: parent.text
-                    color: "white"
-                    font.pixelSize: 14
-                    horizontalAlignment: Text.AlignHCenter
-                    verticalAlignment: Text.AlignVCenter
-                }
-                onClicked: {
-                    if (root.requestId && root.requestId !== "") {
-                        loginBackend.acceptFriendRequest(root.requestId)
+                spacing: 20
+
+                Button {
+                    text: qsTr("同意")
+                    Layout.preferredWidth: 100
+                    Layout.preferredHeight: 36
+                    background: Rectangle {
+                        color: "#4fbf73"
+                        radius: 4
+                    }
+                    contentItem: Text {
+                        text: parent.text
+                        color: "white"
+                        font.pixelSize: 14
+                        horizontalAlignment: Text.AlignHCenter
+                        verticalAlignment: Text.AlignVCenter
+                    }
+                    onClicked: {
+                        if (root.requestId && root.requestId !== "") {
+                            loginBackend.acceptFriendRequest(root.requestId)
+                        }
                     }
                 }
+
+                Button {
+                    text: qsTr("拒绝")
+                    Layout.preferredWidth: 100
+                    Layout.preferredHeight: 36
+                    background: Rectangle {
+                        color: "#e74c3c"
+                        radius: 4
+                    }
+                    contentItem: Text {
+                        text: parent.text
+                        color: "white"
+                        font.pixelSize: 14
+                        horizontalAlignment: Text.AlignHCenter
+                        verticalAlignment: Text.AlignVCenter
+                    }
+                    onClicked: {
+                        if (root.requestId && root.requestId !== "") {
+                            loginBackend.rejectFriendRequest(root.requestId)
+                        }
+                    }
+                }
+            }
+
+            // 好友申请已处理的状态标签
+            Label {
+                visible: root.requestType === "friendRequest" && root.requestStatus === "accepted"
+                text: qsTr("已添加")
+                color: "#4fbf73"
+                font.pixelSize: 14
+                Layout.alignment: Qt.AlignHCenter
+            }
+
+            Label {
+                visible: root.requestType === "friendRequest" && root.requestStatus === "rejected"
+                text: qsTr("已拒绝")
+                color: "#e74c3c"
+                font.pixelSize: 14
+                Layout.alignment: Qt.AlignHCenter
             }
 
             // Buttons for group join requests

@@ -49,6 +49,20 @@ Rectangle {
     // 用户主动打开单聊后等待选中的会话 ID（仅主动操作使用，不影响被动消息）。
     property string pendingSelectConversationId: ""
 
+    // 尝试立即选中指定会话，如果找不到则设置 pending 等待刷新后选中
+    function selectConversation(conversationId) {
+        // 先尝试在当前列表中查找
+        for (var j = 0; j < chatModel.count; ++j) {
+            if (chatModel.get(j).conversationId === conversationId) {
+                listView.currentIndex = j
+                pendingSelectConversationId = ""
+                return
+            }
+        }
+        // 找不到，设置 pending 等待列表刷新
+        pendingSelectConversationId = conversationId
+    }
+
     ColumnLayout {
         anchors.fill: parent
         spacing: 0
@@ -213,13 +227,12 @@ Rectangle {
         }
     }
 
-    // 监听单聊打开完成信号：仅源于用户主动点击“发消息”。
+    // 监听单聊打开完成信号：仅源于用户主动点击"发消息"。
     Connections {
         target: loginBackend
 
         function onSingleConversationReady(conversationId, conversationType) {
-            pendingSelectConversationId = conversationId
-            // 等待下一次会话列表刷新后高亮该会话。
+            // Main.qml 已处理选中逻辑，这里不需要再设置
         }
     }
 }

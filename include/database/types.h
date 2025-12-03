@@ -131,6 +131,19 @@ namespace database
         i64 conversation_id{};
     };
 
+    /// \brief 拒绝好友申请的结果。
+    struct RejectFriendRequestResult
+    {
+        /// \brief 是否操作成功。
+        bool ok{};
+        /// \brief 错误码。
+        std::string error_code{};
+        /// \brief 错误信息。
+        std::string error_msg{};
+        /// \brief 申请发起者的用户 ID（用于推送更新）。
+        i64 from_user_id{};
+    };
+
     /// \brief 会话基础信息，用于会话列表展示。
     struct ConversationInfo
     {

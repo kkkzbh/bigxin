@@ -107,6 +107,8 @@ void ProtocolHandler::handleCommand(QString command, QJsonObject payload)
         handleFriendAddResponse(payload);
     } else if(command == QStringLiteral("FRIEND_ACCEPT_RESP")) {
         handleFriendAcceptResponse(payload);
+    } else if(command == QStringLiteral("FRIEND_REJECT_RESP")) {
+        handleFriendRejectResponse(payload);
     } else if(command == QStringLiteral("OPEN_SINGLE_CONV_RESP")) {
         handleOpenSingleConvResponse(payload);
     } else if(command == QStringLiteral("CREATE_GROUP_RESP")) {
@@ -521,6 +523,21 @@ void ProtocolHandler::handleFriendAcceptResponse(QJsonObject const& obj)
     // 同意成功后，刷新"新的朋友"列表和好友列表。
     emit needRequestFriendRequestList();
     emit needRequestFriendList();
+}
+
+void ProtocolHandler::handleFriendRejectResponse(QJsonObject const& obj)
+{
+    auto const ok = obj.value(QStringLiteral("ok")).toBool(false);
+    if(!ok) {
+        auto const msg = obj.value(QStringLiteral("errorMsg")).toString(QStringLiteral("拒绝好友申请失败"));
+        if(!msg.isEmpty()) {
+            emit errorOccurred(msg);
+        }
+        return;
+    }
+
+    // 拒绝成功后，刷新"新的朋友"列表。
+    emit needRequestFriendRequestList();
 }
 
 void ProtocolHandler::handleOpenSingleConvResponse(QJsonObject const& obj)

@@ -235,3 +235,49 @@ auto Session::handle_friend_accept_req(std::string const& payload) -> asio::awai
         co_return make_error_payload("SERVER_ERROR", ex.what());
     }
 }
+
+auto Session::handle_friend_reject_req(std::string const& payload) -> asio::awaitable<std::string>
+{
+    if(!authenticated_) {
+        co_return make_error_payload("NOT_AUTHENTICATED", "请先登录");
+    }
+
+    try {
+        auto j = payload.empty() ? json::object() : json::parse(payload);
+
+        if(!j.contains("requestId")) {
+            co_return make_error_payload("INVALID_PARAM", "缺少 requestId 字段");
+        }
+
+        auto const id_str = j.at("requestId").get<std::string>();
+        auto request_id = i64{};
+        try {
+            request_id = std::stoll(id_str);
+        } catch(std::exception const&) {
+            co_return make_error_payload("INVALID_PARAM", "requestId 非法");
+        }
+        if(request_id <= 0) {
+            co_return make_error_payload("INVALID_PARAM", "requestId 非法");
+        }
+
+        auto const result = co_await database::reject_friend_request(request_id, user_id_);
+        if(!result.ok) {
+            co_return make_error_payload(result.error_code, result.error_msg);
+        }
+
+        json resp;
+        resp["ok"] = true;
+
+        // 通知双方刷新好友请求列表
+        if(auto server = server_.lock()) {
+            server->send_friend_request_list_to(user_id_);
+            server->send_friend_request_list_to(result.from_user_id);
+        }
+
+        co_return resp.dump();
+    } catch(json::parse_error const&) {
+        co_return make_error_payload("INVALID_JSON", "请求 JSON 解析失败");
+    } catch(std::exception const& ex) {
+        co_return make_error_payload("SERVER_ERROR", ex.what());
+    }
+}

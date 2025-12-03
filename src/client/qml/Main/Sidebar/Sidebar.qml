@@ -97,7 +97,8 @@ Rectangle {
                             onEntered: tabItem.hovered = true
                             onExited: tabItem.hovered = false
                             onClicked: {
-                                root.currentIndex = index
+                                // 不要直接设置 root.currentIndex = index，否则会打破从父组件传入的绑定
+                                // 只发出信号，让父组件更新 window.currentTab，绑定会自动同步
                                 root.tabClicked(index, modelData.key)
                             }
                         }

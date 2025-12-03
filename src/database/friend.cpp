@@ -338,4 +338,68 @@ namespace database
         res.ok = true;
         co_return res;
     }
+
+    auto reject_friend_request(i64 request_id, i64 current_user_id)
+        -> asio::awaitable<RejectFriendRequestResult>
+    {
+        RejectFriendRequestResult res{};
+
+        if(request_id <= 0 || current_user_id <= 0) {
+            res.ok = false;
+            res.error_code = "INVALID_PARAM";
+            res.error_msg = "无效的请求参数";
+            co_return res;
+        }
+
+        auto conn_h = co_await acquire_connection();
+        mysql::results r;
+
+        // 查询申请详情
+        co_await conn_h->async_execute(
+            mysql::with_params(
+                "SELECT from_user_id, to_user_id, status FROM friend_requests WHERE id={} LIMIT 1",
+                request_id),
+            r,
+            asio::use_awaitable
+        );
+        if(r.rows().empty()) {
+            res.ok = false;
+            res.error_code = "NOT_FOUND";
+            res.error_msg = "好友申请不存在";
+            co_return res;
+        }
+
+        auto row = r.rows().front();
+        auto const from_user_id = row.at(0).as_int64();
+        auto const to_user_id = row.at(1).as_int64();
+        auto const status = std::string{row.at(2).as_string()};
+
+        if(to_user_id != current_user_id) {
+            res.ok = false;
+            res.error_code = "PERMISSION_DENIED";
+            res.error_msg = "无权操作此申请";
+            co_return res;
+        }
+
+        if(status != "PENDING") {
+            res.ok = false;
+            res.error_code = "INVALID_STATE";
+            res.error_msg = "好友申请状态已变更";
+            co_return res;
+        }
+
+        // 更新申请状态为 REJECTED
+        co_await conn_h->async_execute(
+            mysql::with_params(
+                "UPDATE friend_requests SET status='REJECTED', handled_at=CURRENT_TIMESTAMP"
+                " WHERE id={}",
+                request_id),
+            r,
+            asio::use_awaitable
+        );
+
+        res.ok = true;
+        res.from_user_id = from_user_id;
+        co_return res;
+    }
 } // namespace database
