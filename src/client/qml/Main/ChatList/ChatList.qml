@@ -119,6 +119,7 @@ Rectangle {
                         height: 42
                         radius: 6
                         color: avatarColor
+                        clip: true
 
                         Text {
                             anchors.centerIn: parent
@@ -126,6 +127,18 @@ Rectangle {
                             color: "#ffffff"
                             font.pixelSize: 18
                             font.bold: true
+                            visible: avatarImg.status !== Image.Ready
+                        }
+
+                        Image {
+                            id: avatarImg
+                            anchors.fill: parent
+                            // chatModel 里我们存了 avatarPath
+                            // 有时候 model 字段如果是 undefined 可能会报错，所以 || ""
+                            source: loginBackend.resolveAvatarUrl(model.avatarPath || "")
+                            fillMode: Image.PreserveAspectCrop
+                            visible: status === Image.Ready
+                            asynchronous: true
                         }
                     }
 

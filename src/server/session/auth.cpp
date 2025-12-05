@@ -35,6 +35,7 @@ auto Session::handle_register(std::string const& payload) -> asio::awaitable<std
         resp["ok"] = true;
         resp["userId"] = std::to_string(result.user.id);
         resp["displayName"] = result.user.display_name;
+        resp["avatarPath"] = result.user.avatar_path;
         co_return resp.dump();
     } catch(std::exception const& ex) {
         co_return make_error_payload("SERVER_ERROR", ex.what());
@@ -66,6 +67,7 @@ auto Session::handle_login(std::string const& payload) -> asio::awaitable<std::s
         user_id_ = result.user.id;
         account_ = result.user.account;
         display_name_ = result.user.display_name;
+        avatar_path_ = result.user.avatar_path;
 
         if(auto server = server_.lock()) {
             server->index_authenticated_session(shared_from_this());
@@ -77,6 +79,7 @@ auto Session::handle_login(std::string const& payload) -> asio::awaitable<std::s
         resp["ok"] = true;
         resp["userId"] = std::to_string(user_id_);
         resp["displayName"] = display_name_;
+        resp["avatarPath"] = avatar_path_;
         resp["worldConversationId"] = std::to_string(world_id);
         co_return resp.dump();
     } catch(json::parse_error const&) {
@@ -85,3 +88,4 @@ auto Session::handle_login(std::string const& payload) -> asio::awaitable<std::s
         co_return make_error_payload("SERVER_ERROR", ex.what());
     }
 }
+

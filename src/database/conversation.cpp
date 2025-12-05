@@ -210,11 +210,12 @@ namespace database
         co_await conn_h->async_execute(
             mysql::with_params(
                 "SELECT c.id, c.type, c.name, peer.display_name AS peer_name,"
-                " COALESCE(msg_stats.max_seq, 0) AS last_seq, COALESCE(msg_stats.max_time, 0) AS last_time "
+                " COALESCE(msg_stats.max_seq, 0) AS last_seq, COALESCE(msg_stats.max_time, 0) AS last_time, "
+                " peer.avatar_path "
                 "FROM conversations c "
                 "JOIN conversation_members cm ON cm.conversation_id = c.id "
                 "LEFT JOIN ("
-                "  SELECT cm2.conversation_id, u.display_name "
+                "  SELECT cm2.conversation_id, u.display_name, u.avatar_path "
                 "  FROM conversation_members cm2 "
                 "  JOIN users u ON u.id = cm2.user_id "
                 "  WHERE cm2.user_id <> {}"
@@ -250,6 +251,11 @@ namespace database
             }
             info.last_seq = row.at(4).as_int64();
             info.last_server_time_ms = row.at(5).as_int64();
+            info.last_seq = row.at(4).as_int64();
+            info.last_server_time_ms = row.at(5).as_int64();
+            if(!row.at(6).is_null()) {
+                info.avatar_path = std::string(row.at(6).as_string());
+            }
             result.push_back(std::move(info));
         }
         co_return result;
@@ -330,7 +336,7 @@ namespace database
 
         co_await conn_h->async_execute(
             mysql::with_params(
-                "SELECT cm.user_id, cm.role, cm.muted_until_ms, u.display_name "
+                "SELECT cm.user_id, cm.role, cm.muted_until_ms, u.display_name, u.avatar_path "
                 "FROM conversation_members cm JOIN users u ON u.id = cm.user_id "
                 "WHERE cm.conversation_id = {} ORDER BY cm.user_id ASC",
                 conversation_id),
@@ -346,6 +352,7 @@ namespace database
             info.role = row.at(1).as_string();
             info.muted_until_ms = row.at(2).as_int64();
             info.display_name = row.at(3).as_string();
+            info.avatar_path = row.at(4).is_null() ? "" : std::string(row.at(4).as_string());
             members.push_back(std::move(info));
         }
         co_return members;

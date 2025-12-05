@@ -21,6 +21,13 @@ namespace database
     auto update_display_name(i64 user_id, std::string const& new_name)
         -> boost::asio::awaitable<UpdateDisplayNameResult>;
 
+    /// \brief 更新指定用户的头像路径。
+    /// \param user_id 目标用户 ID。
+    /// \param avatar_path 新的头像路径。
+    /// \return 更新结果，包含错误信息或最新的用户信息。
+    auto update_avatar(i64 user_id, std::string const& avatar_path)
+        -> boost::asio::awaitable<UpdateDisplayNameResult>;
+
     /// \brief 尝试登录用户。
     /// \param account 登录账号。
     /// \param password 密码，当前为明文比较。
@@ -28,3 +35,4 @@ namespace database
     auto login_user(std::string const& account, std::string const& password)
         -> boost::asio::awaitable<LoginResult>;
 } // namespace database
+

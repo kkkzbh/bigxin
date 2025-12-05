@@ -133,6 +133,7 @@ auto Session::handle_group_join_req_list_req(std::string const& payload) -> asio
             obj["groupName"] = r.group_name;
             obj["status"] = r.status;
             obj["helloMsg"] = r.hello_msg;
+            obj["avatarPath"] = r.avatar_path;
             items.push_back(std::move(obj));
         }
 

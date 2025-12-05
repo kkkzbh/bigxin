@@ -2,9 +2,7 @@
 <project version="4">
   <component name="VcsDirectoryMappings">
     <mapping directory="$PROJECT_DIR$" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/cmake-build-debug/_deps/sqlpp23-src" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/cmake-build-debug/_deps/stdexec-src" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/cmake-build-release/_deps/sqlpp23-src" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/cmake-build-release/_deps/stdexec-src" vcs="Git" />
   </component>
 </project>

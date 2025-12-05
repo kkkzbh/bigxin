@@ -120,7 +120,8 @@ Rectangle {
                     userId: m.userId,
                     displayName: m.displayName || "",
                     role: m.role || "",
-                    mutedUntilMs: m.mutedUntilMs || 0
+                    mutedUntilMs: m.mutedUntilMs || 0,
+                    avatarPath: m.avatarPath || ""
                 })
             }
         }
@@ -163,6 +164,17 @@ Rectangle {
             return "[管理员] " + name
         }
         return name
+    }
+
+    function getUserAvatarUrl(userId) {
+        if (userId === loginBackend.userId) {
+            return loginBackend.avatarUrl
+        }
+        var m = memberMap[userId]
+        if (m && m.avatarPath) {
+            return loginBackend.resolveAvatarUrl(m.avatarPath)
+        }
+        return ""
     }
 
     // 切换会话详情侧边栏（好友 / 群统一）。
@@ -250,7 +262,18 @@ Rectangle {
                     spacing: 16
                     model: messageModel
                     clip: true
-                    Component.onCompleted: positionViewAtEnd()
+                    
+                    // 初始化时隐藏，等待数据加载后再显示
+                    visible: false
+
+                    // 监听内容高度变化，重置显示定时器
+                    onContentHeightChanged: {
+                        if (!visible && scrollTimer.running) {
+                            scrollTimer.restart()
+                        }
+                    }
+                    
+                    Component.onCompleted: scrollTimer.start()
 
                     delegate: Item {
                         id: messageDelegate
@@ -307,12 +330,26 @@ Rectangle {
                                     }
                                 }
 
+                                clip: true
+                                
+                                // 文本头像 (Fallback)
                                 Text {
                                     anchors.centerIn: parent
-                                    text: "TA"
+                                    text: (senderName || "A").slice(0, 1)
                                     color: "#ffffff"
                                     font.pixelSize: 16
                                     font.bold: true
+                                    visible: otherAvatarImg.status !== Image.Ready
+                                }
+
+                                // 图片头像
+                                Image {
+                                    id: otherAvatarImg
+                                    anchors.fill: parent
+                                    source: root.getUserAvatarUrl(senderId)
+                                    fillMode: Image.PreserveAspectCrop
+                                    visible: status === Image.Ready
+                                    asynchronous: true
                                 }
                             }
 
@@ -381,6 +418,7 @@ Rectangle {
                                 height: 42
                                 radius: 6
                                 color: "#ffffff"
+                                clip: true
 
                                 Text {
                                     anchors.centerIn: parent
@@ -388,6 +426,16 @@ Rectangle {
                                     color: "#222222"
                                     font.pixelSize: 16
                                     font.bold: true
+                                    visible: mineAvatarImg.status !== Image.Ready
+                                }
+
+                                Image {
+                                    id: mineAvatarImg
+                                    anchors.fill: parent
+                                    source: loginBackend.avatarUrl
+                                    fillMode: Image.PreserveAspectCrop
+                                    visible: status === Image.Ready
+                                    asynchronous: true
                                 }
                             }
                         }
@@ -585,6 +633,9 @@ Rectangle {
 
     // 当会话发生变化时，清空当前消息，并通过后端打开会话（先尝试从本地缓存加载，再必要时请求服务器历史）。
     onConversationIdChanged: {
+        //切换会话时先隐藏列表，防止看到滚动到底部的“跳跃”过程
+        messageList.visible = false
+        
         messageModel.clear()
         memberMap = ({})
         memberListModel.clear()
@@ -596,11 +647,24 @@ Rectangle {
             loginBackend.openConversation(conversationId)
             refreshConversationMembers()
         }
+        // 启动定时器，确保即使没有消息（或消息加载完后）也能触发显示
+        scrollTimer.restart()
     }
 
     // 防止会话类型变化时漏掉成员请求（例如先更新 ID，后更新类型）。
     onConversationTypeChanged: {
         refreshConversationMembers()
+    }
+
+    Timer {
+        id: scrollTimer
+        interval: 100  // 给足够时间让消息加载和布局完成
+        repeat: false
+        onTriggered: {
+            messageList.positionViewAtEnd()
+            // 滚动完成后再显示列表，实现“无缝”切换到底部的效果
+            messageList.visible = true
+        }
     }
 
     Connections {
@@ -628,7 +692,12 @@ Rectangle {
                 senderId: senderId,
                 content: trimmed
             })
-            messageList.positionViewAtEnd()
+            // 如果列表已显示，直接滚动；否则重置显示定时器
+            if (messageList.visible) {
+                messageList.positionViewAtEnd()
+            } else {
+                scrollTimer.restart()
+            }
         }
     }
 
@@ -785,6 +854,7 @@ Rectangle {
                                         height: 48
                                         radius: 6
                                         color: "#4fbf73"
+                                        clip: true
 
                                         Text {
                                             anchors.centerIn: parent
@@ -792,6 +862,17 @@ Rectangle {
                                             color: "#ffffff"
                                             font.pixelSize: 18
                                             font.bold: true
+                                            visible: memberAvatarImg.status !== Image.Ready
+                                        }
+
+                                        Image {
+                                            id: memberAvatarImg
+                                            anchors.fill: parent
+                                            // 侧边栏成员 model 里有 avatarPath
+                                            source: loginBackend.resolveAvatarUrl(avatarPath)
+                                            fillMode: Image.PreserveAspectCrop
+                                            visible: status === Image.Ready
+                                            asynchronous: true
                                         }
                                     }
 

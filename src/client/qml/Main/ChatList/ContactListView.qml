@@ -156,7 +156,8 @@ Rectangle {
                     name: name,
                     avatarColor: "#4fbf73",
                     wechatId: f.account,
-                    signature: f.signature || ""
+                    signature: f.signature || "",
+                    avatarPath: f.avatarPath || ""
                 })
             }
             // 好友列表刷新后，优先使用好友信息更新当前详情。
@@ -176,7 +177,8 @@ Rectangle {
                     wechatId: c.conversationId, // 复用字段以便选中逻辑
                     name: name,
                     avatarColor: "#4fbf73",
-                    signature: ""
+                    signature: "",
+                    avatarPath: c.avatarPath || ""
                 })
             }
         }
@@ -424,6 +426,7 @@ Rectangle {
                     height: 42
                     radius: 6
                     color: model.avatarColor
+                    clip: true
 
                     Text {
                         anchors.centerIn: parent
@@ -431,6 +434,16 @@ Rectangle {
                         color: "#ffffff"
                         font.pixelSize: 18
                         font.bold: true
+                        visible: contactAvatar.status !== Image.Ready
+                    }
+
+                    Image {
+                        id: contactAvatar
+                        anchors.fill: parent
+                        source: loginBackend.resolveAvatarUrl(model.avatarPath || "")
+                        fillMode: Image.PreserveAspectCrop
+                        visible: status === Image.Ready
+                        asynchronous: true
                     }
                 }
 

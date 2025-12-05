@@ -29,6 +29,9 @@ auto Session::handle_friend_list_req(std::string const& payload) -> asio::awaita
             u["account"] = f.account;
             u["displayName"] = f.display_name;
             u["region"] = "";
+            u["displayName"] = f.display_name;
+            u["avatarPath"] = f.avatar_path;
+            u["region"] = "";
             u["signature"] = "";
             items.push_back(std::move(u));
         }
@@ -69,6 +72,10 @@ auto Session::handle_friend_search_req(std::string const& payload) -> asio::awai
         user["userId"] = std::to_string(result.user.id);
         user["account"] = result.user.account;
         user["displayName"] = result.user.display_name;
+        user["region"] = "";
+        user["account"] = result.user.account;
+        user["displayName"] = result.user.display_name;
+        user["avatarPath"] = result.user.avatar_path;
         user["region"] = "";
         user["signature"] = "";
 
@@ -207,7 +214,10 @@ auto Session::handle_friend_accept_req(std::string const& payload) -> asio::awai
         json f;
         f["userId"] = std::to_string(result.friend_user.id);
         f["account"] = result.friend_user.account;
+        f["userId"] = std::to_string(result.friend_user.id);
+        f["account"] = result.friend_user.account;
         f["displayName"] = result.friend_user.display_name;
+        f["avatarPath"] = result.friend_user.avatar_path;
         resp["friend"] = std::move(f);
 
         if(result.conversation_id > 0) {

@@ -104,7 +104,7 @@ namespace database
 
             co_await conn.async_execute(
                 mysql::with_params(
-                    "SELECT id, account, display_name FROM users WHERE id = {} LIMIT 1",
+                    "SELECT id, account, display_name, avatar_path FROM users WHERE id = {} LIMIT 1",
                     user_id),
                 rows,
                 asio::use_awaitable
@@ -121,6 +121,7 @@ namespace database
             res.user.id = r.at(0).as_int64();
             res.user.account = r.at(1).as_string();
             res.user.display_name = r.at(2).as_string();
+            res.user.avatar_path = r.at(3).is_null() ? "" : std::string(r.at(3).as_string());
             co_return res;
         } catch(std::exception const& ex) {
             res.ok = false;
@@ -141,7 +142,7 @@ namespace database
         try {
             co_await conn.async_execute(
                 mysql::with_params(
-                    "SELECT id, password_hash, display_name FROM users WHERE account = {}"
+                    "SELECT id, password_hash, display_name, avatar_path FROM users WHERE account = {}"
                     " LIMIT 1",
                     account),
                 rows,
@@ -165,6 +166,7 @@ namespace database
             }
 
             auto user_id = r.at(0).as_int64();
+            auto avatar_path = r.at(3).is_null() ? "" : std::string(r.at(3).as_string());
             co_await conn.async_execute(
                 mysql::with_params(
                     "UPDATE users SET last_login_at = CURRENT_TIMESTAMP WHERE id = {}",
@@ -177,6 +179,67 @@ namespace database
             res.user.id = user_id;
             res.user.account = account;
             res.user.display_name = r.at(2).as_string();
+            res.user.avatar_path = avatar_path;
+            co_return res;
+        } catch(std::exception const& ex) {
+            res.ok = false;
+            res.error_code = "SERVER_ERROR";
+            res.error_msg = ex.what();
+            co_return res;
+        }
+    }
+
+    auto update_avatar(i64 user_id, std::string const& avatar_path)
+        -> asio::awaitable<UpdateDisplayNameResult>
+    {
+        UpdateDisplayNameResult res{};
+        if(user_id <= 0) {
+            res.ok = false;
+            res.error_code = "INVALID_PARAM";
+            res.error_msg = "无效参数";
+            co_return res;
+        }
+
+        auto handle = co_await acquire_handle();
+        auto& conn = *handle;
+        mysql::results rows;
+
+        try {
+            co_await conn.async_execute(
+                mysql::with_params(
+                    "UPDATE users SET avatar_path = {} WHERE id = {}",
+                    avatar_path,
+                    user_id),
+                rows,
+                asio::use_awaitable
+            );
+            if(rows.affected_rows() == 0) {
+                res.ok = false;
+                res.error_code = "NOT_FOUND";
+                res.error_msg = "用户不存在";
+                co_return res;
+            }
+
+            co_await conn.async_execute(
+                mysql::with_params(
+                    "SELECT id, account, display_name, avatar_path FROM users WHERE id = {} LIMIT 1",
+                    user_id),
+                rows,
+                asio::use_awaitable
+            );
+            if(rows.rows().empty()) {
+                res.ok = false;
+                res.error_code = "NOT_FOUND";
+                res.error_msg = "用户不存在";
+                co_return res;
+            }
+
+            auto r = rows.rows().front();
+            res.ok = true;
+            res.user.id = r.at(0).as_int64();
+            res.user.account = r.at(1).as_string();
+            res.user.display_name = r.at(2).as_string();
+            res.user.avatar_path = r.at(3).is_null() ? "" : std::string(r.at(3).as_string());
             co_return res;
         } catch(std::exception const& ex) {
             res.ok = false;
@@ -186,3 +249,4 @@ namespace database
         }
     }
 } // namespace database
+

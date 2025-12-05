@@ -38,7 +38,7 @@ namespace database
         mysql::results r;
         co_await conn_h->async_execute(
             mysql::with_params(
-                "SELECT u.id, u.account, u.display_name FROM friends f"
+                "SELECT u.id, u.account, u.display_name, u.avatar_path FROM friends f"
                 " JOIN users u ON u.id = f.friend_user_id"
                 " WHERE f.user_id = {} ORDER BY u.id ASC",
                 user_id),
@@ -53,6 +53,7 @@ namespace database
             info.id = row.at(0).as_int64();
             info.account = row.at(1).as_string();
             info.display_name = row.at(2).as_string();
+            info.avatar_path = row.at(3).is_null() ? "" : std::string(row.at(3).as_string());
             result.push_back(std::move(info));
         }
         co_return result;
@@ -73,7 +74,7 @@ namespace database
         mysql::results r;
         co_await conn_h->async_execute(
             mysql::with_params(
-                "SELECT id, account, display_name FROM users WHERE account={} LIMIT 1",
+                "SELECT id, account, display_name, avatar_path FROM users WHERE account={} LIMIT 1",
                 account),
             r,
             asio::use_awaitable
@@ -94,6 +95,7 @@ namespace database
         res.user.id = target_id;
         res.user.account = row.at(1).as_string();
         res.user.display_name = row.at(2).as_string();
+        res.user.avatar_path = row.at(3).is_null() ? "" : std::string(row.at(3).as_string());
         res.is_self = (current_user_id == target_id);
         res.is_friend = !res.is_self && co_await is_friend(current_user_id, target_id);
         co_return res;
@@ -201,7 +203,7 @@ namespace database
         co_await conn_h->async_execute(
             mysql::with_params(
                 "SELECT fr.id, fr.from_user_id, u.account, u.display_name, fr.status,"
-                " COALESCE(fr.hello_msg, '')"
+                " COALESCE(fr.hello_msg, ''), u.avatar_path "
                 " FROM friend_requests fr JOIN users u ON u.id = fr.from_user_id"
                 " WHERE fr.to_user_id = {} AND fr.status IN ('PENDING','ACCEPTED')"
                 " ORDER BY fr.created_at DESC",
@@ -220,6 +222,9 @@ namespace database
             info.display_name = row.at(3).as_string();
             info.status = row.at(4).as_string();
             info.hello_msg = row.at(5).as_string();
+            info.status = row.at(4).as_string();
+            info.hello_msg = row.at(5).as_string();
+            info.avatar_path = row.at(6).is_null() ? "" : std::string(row.at(6).as_string());
             result.push_back(std::move(info));
         }
         co_return result;
@@ -320,7 +325,7 @@ namespace database
             mysql::results r2;
             co_await conn_h->async_execute(
                 mysql::with_params(
-                    "SELECT id, account, display_name FROM users WHERE id={} LIMIT 1",
+                    "SELECT id, account, display_name, avatar_path FROM users WHERE id={} LIMIT 1",
                     from_user_id),
                 r2,
                 asio::use_awaitable
@@ -330,6 +335,7 @@ namespace database
                 res.friend_user.id = row.at(0).as_int64();
                 res.friend_user.account = row.at(1).as_string();
                 res.friend_user.display_name = row.at(2).as_string();
+                res.friend_user.avatar_path = row.at(3).is_null() ? "" : std::string(row.at(3).as_string());
             }
         }
 

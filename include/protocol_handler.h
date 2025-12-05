@@ -51,8 +51,9 @@ signals:
     /// \brief 登录成功。
     /// \param userId 用户 ID。
     /// \param displayName 用户显示昵称。
+    /// \param avatarPath 用户头像路径。
     /// \param worldConversationId 世界会话 ID。
-    void loginSucceeded(QString userId, QString displayName, QString worldConversationId);
+    void loginSucceeded(QString userId, QString displayName, QString avatarPath, QString worldConversationId);
 
     /// \brief 注册成功。
     /// \param account 注册的账号。
@@ -61,6 +62,10 @@ signals:
     /// \brief 昵称更新成功。
     /// \param displayName 新的显示昵称。
     void displayNameUpdated(QString displayName);
+
+    /// \brief 头像更新成功。
+    /// \param avatarPath 新的头像路径。
+    void avatarUpdated(QString avatarPath);
 
     /// \brief 收到服务器推送的聊天消息。
     void messageReceived(
@@ -131,6 +136,7 @@ private:
     void handleLoginResponse(QJsonObject const& obj);
     void handleRegisterResponse(QJsonObject const& obj);
     void handleProfileUpdateResponse(QJsonObject const& obj);
+    void handleAvatarUpdateResponse(QJsonObject const& obj);
     void handleMessagePush(QJsonObject const& obj);
     void handleHistoryResponse(QJsonObject const& obj);
     void handleConversationListResponse(QJsonObject const& obj);
@@ -158,6 +164,7 @@ private:
 
     QString user_id_;
     QString display_name_;
+    QString avatar_path_;
     QString world_conversation_id_;
     QString pending_account_;
 

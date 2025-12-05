@@ -2,6 +2,7 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 import QtQuick.Window
+import QtQuick.Dialogs
 
 import WeChatClient as AppTheme
 
@@ -28,6 +29,8 @@ Window {
     property string displayName: ""
     // 对外暴露：当前头像占位（后续可接入真实头像路径）
     property string avatarText: "A"
+    property string avatarPath: ""
+    property url avatarUrl: ""
 
     // TODO: 将来可在此定义信号，例如名称/头像变更提交给后端
 
@@ -180,12 +183,30 @@ Window {
                                     radius: 8
                                     color: "#4f90f2"
 
+                                    clip: true
+
+                                    // 文本头像（无图片时显示）
                                     Text {
                                         anchors.centerIn: parent
                                         text: root.avatarText
                                         color: "#ffffff"
                                         font.pixelSize: 30
                                         font.bold: true
+                                        visible: avatarImg.status !== Image.Ready
+                                    }
+
+                                    // 图片头像
+                                    Image {
+                                        id: avatarImg
+                                        anchors.fill: parent
+                                        // Windows 下需补充 file:/// 前缀，以确保本地路径能被正确加载
+                                        // 使用后端提供的绝对路径 URL
+                                        source: root.avatarUrl
+                                        fillMode: Image.PreserveAspectCrop
+                                        visible: status === Image.Ready
+                                        asynchronous: true
+                                        // 禁用缓存以确保更换头像后立即刷新
+                                        cache: false
                                     }
                                 }
 
@@ -205,6 +226,7 @@ Window {
                                         font.pixelSize: 13
                                     }
                                     // 预留：点击后弹出文件选择或头像编辑窗口
+                                    onClicked: avatarPicker.open()
                                 }
                             }
 
@@ -268,6 +290,27 @@ Window {
         }
     }
 
+    FileDialog {
+        id: avatarPicker
+        title: "选择头像"
+        nameFilters: ["图片文件 (*.jpg *.png *.jpeg *.bmp)"]
+        onAccepted: {
+            // QtQuick.Dialogs 在 Qt6 中使用 selectedFile (或者 currentFile)
+            var path = avatarPicker.selectedFile.toString()
+            // 简单的 URL 转本地路径处理
+            if (Qt.platform.os === "windows") {
+                // file:///C:/... -> C:/...
+                path = path.replace(/^(file:\/{3})/, "")
+            } else {
+                // file:///home/... -> /home/...
+                path = path.replace(/^(file:\/\/)/, "")
+            }
+            // 解码 URL 编码字符（如中文文件名）
+            path = decodeURIComponent(path)
+            loginBackend.updateAvatar(path)
+        }
+    }
+
     // 同步后端昵称变化到对话框 UI。
     Connections {
         target: loginBackend
@@ -278,6 +321,10 @@ Window {
             if (loginBackend.displayName.length > 0) {
                 root.avatarText = loginBackend.displayName[0]
             }
+        }
+
+        function onAvatarUrlChanged() {
+            root.avatarUrl = loginBackend.avatarUrl
         }
     }
 }

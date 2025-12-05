@@ -171,7 +171,7 @@ namespace database
         co_await conn_h->async_execute(
             mysql::with_params(
                 "SELECT gjr.id, gjr.from_user_id, u.account, u.display_name, "
-                "gjr.group_id, c.name, gjr.status, COALESCE(gjr.hello_msg, '') "
+                "gjr.group_id, c.name, gjr.status, COALESCE(gjr.hello_msg, ''), u.avatar_path "
                 "FROM group_join_requests gjr "
                 "JOIN users u ON u.id = gjr.from_user_id "
                 "JOIN conversations c ON c.id = gjr.group_id "
@@ -197,6 +197,7 @@ namespace database
             info.group_name = row.at(5).as_string();
             info.status = row.at(6).as_string();
             info.hello_msg = row.at(7).as_string();
+            info.avatar_path = row.at(8).is_null() ? "" : std::string(row.at(8).as_string());
             result.push_back(std::move(info));
         }
         co_return result;

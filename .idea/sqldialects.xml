@@ -3,5 +3,6 @@
   <component name="SqlDialectMappings">
     <file url="file://$PROJECT_DIR$/src/database/sql/friends.sql" dialect="MySQL" />
     <file url="file://$PROJECT_DIR$/src/database/sql/group_join_requests.sql" dialect="MySQL" />
+    <file url="file://$PROJECT_DIR$/src/database/sql/users.sql" dialect="MySQL" />
   </component>
 </project>

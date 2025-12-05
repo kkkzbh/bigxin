@@ -15,6 +15,8 @@ namespace database
         std::string account{};
         /// \brief 显示昵称。
         std::string display_name{};
+        /// \brief 头像文件路径（服务器端存储）。
+        std::string avatar_path{};
     };
 
     /// \brief 注册结果。
@@ -65,6 +67,8 @@ namespace database
         std::string account{};
         /// \brief 好友昵称。
         std::string display_name{};
+        /// \brief 头像文件路径。
+        std::string avatar_path{};
     };
 
     /// \brief 好友申请信息，用于"新的朋友"列表展示。
@@ -82,6 +86,8 @@ namespace database
         std::string status{};
         /// \brief 打招呼信息或来源文案。
         std::string hello_msg{};
+        /// \brief 申请发起者头像路径。
+        std::string avatar_path{};
     };
 
     /// \brief 按账号搜索好友的结果。
@@ -157,6 +163,8 @@ namespace database
         i64 last_seq{};
         /// \brief 当前会话最新消息的服务器时间戳（毫秒），若尚无消息则为 0。
         i64 last_server_time_ms{};
+        /// \brief 会话头像路径（单聊为对方头像）。
+        std::string avatar_path{};
     };
 
     /// \brief 会话成员信息。
@@ -170,6 +178,8 @@ namespace database
         std::string role{};
         /// \brief 禁言截止毫秒时间戳，0 表示未禁言。
         i64 muted_until_ms{};
+        /// \brief 头像文件路径。
+        std::string avatar_path{};
     };
 
     /// \brief 已持久化消息的简要信息。
@@ -259,6 +269,8 @@ namespace database
         std::string status{};
         /// \brief 打招呼信息。
         std::string hello_msg{};
+        /// \brief 申请发起者头像路径。
+        std::string avatar_path{};
     };
 
     /// \brief 处理入群申请的结果。

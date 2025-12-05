@@ -97,6 +97,8 @@ void ProtocolHandler::handleCommand(QString command, QJsonObject payload)
         handleConversationListResponse(payload);
     } else if(command == QStringLiteral("PROFILE_UPDATE_RESP")) {
         handleProfileUpdateResponse(payload);
+    } else if(command == QStringLiteral("AVATAR_UPDATE_RESP")) {
+        handleAvatarUpdateResponse(payload);
     } else if(command == QStringLiteral("FRIEND_LIST_RESP")) {
         handleFriendListResponse(payload);
     } else if(command == QStringLiteral("FRIEND_REQ_LIST_RESP")) {
@@ -147,13 +149,15 @@ void ProtocolHandler::handleLoginResponse(QJsonObject const& obj)
 
     auto const id = obj.value(QStringLiteral("userId")).toString();
     auto const name = obj.value(QStringLiteral("displayName")).toString();
+    auto const avatar = obj.value(QStringLiteral("avatarPath")).toString();
     auto const world_id = obj.value(QStringLiteral("worldConversationId")).toString();
 
     setUserId(id);
     setDisplayName(name);
+    avatar_path_ = avatar;
     setWorldConversationId(world_id);
 
-    emit loginSucceeded(id, name, world_id);
+    emit loginSucceeded(id, name, avatar, world_id);
 }
 
 void ProtocolHandler::handleRegisterResponse(QJsonObject const& obj)
@@ -183,6 +187,20 @@ void ProtocolHandler::handleProfileUpdateResponse(QJsonObject const& obj)
         setDisplayName(name);
         emit displayNameUpdated(name);
     }
+}
+
+void ProtocolHandler::handleAvatarUpdateResponse(QJsonObject const& obj)
+{
+    auto const ok = obj.value(QStringLiteral("ok")).toBool(false);
+    if(!ok) {
+        auto const msg = obj.value(QStringLiteral("errorMsg")).toString(QStringLiteral("修改头像失败"));
+        emit errorOccurred(msg);
+        return;
+    }
+
+    auto const avatar = obj.value(QStringLiteral("avatarPath")).toString();
+    avatar_path_ = avatar;
+    emit avatarUpdated(avatar);
 }
 
 void ProtocolHandler::handleMessagePush(QJsonObject const& obj)
@@ -276,7 +294,10 @@ void ProtocolHandler::handleConversationListResponse(QJsonObject const& obj)
         map.insert(QStringLiteral("conversationType"), type);
         map.insert(QStringLiteral("title"), title);
         map.insert(QStringLiteral("lastSeq"), last_seq);
+        map.insert(QStringLiteral("title"), title);
+        map.insert(QStringLiteral("lastSeq"), last_seq);
         map.insert(QStringLiteral("lastServerTimeMs"), last_time_ms);
+        map.insert(QStringLiteral("avatarPath"), conv.value(QStringLiteral("avatarPath")).toString());
 
         map.insert(QStringLiteral("preview"), conv.value(QStringLiteral("preview")).toString());
         map.insert(QStringLiteral("time"), conv.value(QStringLiteral("time")).toString());
@@ -329,6 +350,7 @@ void ProtocolHandler::handleConversationMembersResponse(QJsonObject const& obj)
         map.insert(QStringLiteral("displayName"), m.value(QStringLiteral("displayName")).toString());
         map.insert(QStringLiteral("role"), m.value(QStringLiteral("role")).toString());
         map.insert(QStringLiteral("mutedUntilMs"), static_cast<qint64>(m.value(QStringLiteral("mutedUntilMs")).toDouble(0)));
+        map.insert(QStringLiteral("avatarPath"), m.value(QStringLiteral("avatarPath")).toString());
         list.push_back(map);
     }
 
@@ -425,8 +447,10 @@ void ProtocolHandler::handleFriendListResponse(QJsonObject const& obj)
         map.insert(QStringLiteral("userId"), u.value(QStringLiteral("userId")).toString());
         map.insert(QStringLiteral("account"), u.value(QStringLiteral("account")).toString());
         map.insert(QStringLiteral("displayName"), u.value(QStringLiteral("displayName")).toString().simplified());
+        map.insert(QStringLiteral("avatarPath"), u.value(QStringLiteral("avatarPath")).toString());
         map.insert(QStringLiteral("region"), u.value(QStringLiteral("region")).toString());
         map.insert(QStringLiteral("signature"), u.value(QStringLiteral("signature")).toString());
+        map.insert(QStringLiteral("avatarPath"), u.value(QStringLiteral("avatarPath")).toString());
 
         list.push_back(map);
     }
@@ -460,6 +484,7 @@ void ProtocolHandler::handleFriendRequestListResponse(QJsonObject const& obj)
         map.insert(QStringLiteral("displayName"), r.value(QStringLiteral("displayName")).toString().simplified());
         map.insert(QStringLiteral("status"), r.value(QStringLiteral("status")).toString());
         map.insert(QStringLiteral("helloMsg"), r.value(QStringLiteral("helloMsg")).toString());
+        map.insert(QStringLiteral("avatarPath"), r.value(QStringLiteral("avatarPath")).toString());
 
         list.push_back(map);
     }
@@ -486,6 +511,7 @@ void ProtocolHandler::handleFriendSearchResponse(QJsonObject const& obj)
     result.insert(QStringLiteral("userId"), user_obj.value(QStringLiteral("userId")).toString());
     result.insert(QStringLiteral("account"), user_obj.value(QStringLiteral("account")).toString());
     result.insert(QStringLiteral("displayName"), user_obj.value(QStringLiteral("displayName")).toString());
+    result.insert(QStringLiteral("avatarPath"), user_obj.value(QStringLiteral("avatarPath")).toString());
     result.insert(QStringLiteral("region"), user_obj.value(QStringLiteral("region")).toString());
     result.insert(QStringLiteral("signature"), user_obj.value(QStringLiteral("signature")).toString());
 
@@ -644,6 +670,7 @@ void ProtocolHandler::handleGroupJoinRequestListResponse(QJsonObject const& obj)
         map.insert(QStringLiteral("groupName"), r.value(QStringLiteral("groupName")).toString());
         map.insert(QStringLiteral("status"), r.value(QStringLiteral("status")).toString());
         map.insert(QStringLiteral("helloMsg"), r.value(QStringLiteral("helloMsg")).toString());
+        map.insert(QStringLiteral("avatarPath"), r.value(QStringLiteral("avatarPath")).toString());
         list.push_back(map);
     }
 

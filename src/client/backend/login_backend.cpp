@@ -6,6 +6,8 @@
 #include <QJsonObject>
 #include <QJsonArray>
 #include <QDateTime>
+#include <QFile>
+#include <QFileInfo>
 
 LoginBackend::LoginBackend(QObject* parent)
     : QObject(parent)
@@ -26,6 +28,7 @@ LoginBackend::LoginBackend(QObject* parent)
         emit registrationSucceeded(pending_account_);
     });
     connect(protocol_handler_, &ProtocolHandler::displayNameUpdated, this, &LoginBackend::onDisplayNameUpdated);
+    connect(protocol_handler_, &ProtocolHandler::avatarUpdated, this, &LoginBackend::onAvatarUpdated);
     connect(protocol_handler_, &ProtocolHandler::errorOccurred, this, &LoginBackend::onProtocolError);
 
     // 直接转发的信号
@@ -75,9 +78,34 @@ auto LoginBackend::displayName() const -> QString
     return display_name_;
 }
 
+auto LoginBackend::avatarPath() const -> QString
+{
+    return avatar_path_;
+}
+
+auto LoginBackend::avatarUrl() const -> QUrl
+{
+    if(avatar_path_.isEmpty()) {
+        return QUrl();
+    }
+    // 将相对路径（如 server_data/avatars/x.jpg）转换为绝对路径 URL
+    // 注意：这依赖于 Client 和 Server 运行在同一目录下，或者 avatar_path_ 本身是绝对路径
+    // 如果 avatar_path_ 是相对路径，QFileInfo 会基于当前工作目录解析
+    // 对于 Windows 下的 WSL 路径，Qt 可能会有兼容问题，但在 User 场景下（同一 WSL 环境），应该没问题。
+    return QUrl::fromLocalFile(QFileInfo(avatar_path_).absoluteFilePath());
+}
+
 auto LoginBackend::worldConversationId() const -> QString
 {
     return world_conversation_id_;
+}
+
+auto LoginBackend::resolveAvatarUrl(QString const& path) -> QUrl
+{
+    if(path.isEmpty()) {
+        return QUrl();
+    }
+    return QUrl::fromLocalFile(QFileInfo(path).absoluteFilePath());
 }
 
 void LoginBackend::login(QString const& account, QString const& password)
@@ -153,6 +181,48 @@ void LoginBackend::updateDisplayName(QString const& newName)
     QJsonObject obj;
     obj.insert(QStringLiteral("displayName"), trimmed);
     network_manager_->sendCommand(QStringLiteral("PROFILE_UPDATE"), obj);
+}
+
+void LoginBackend::updateAvatar(QString const& avatarPath)
+{
+    if(user_id_.isEmpty()) {
+        setErrorMessage(QStringLiteral("请先登录后再修改头像"));
+        return;
+    }
+    if(!network_manager_->isConnected()) {
+        setErrorMessage(QStringLiteral("与服务器的连接已断开"));
+        return;
+    }
+
+    QFile file(avatarPath);
+    if(!file.exists()) {
+        setErrorMessage(QStringLiteral("找不到头像文件"));
+        return;
+    }
+    if(!file.open(QIODevice::ReadOnly)) {
+        setErrorMessage(QStringLiteral("无法读取头像文件"));
+        return;
+    }
+
+    // 限制文件大小（例如 2MB）
+    if(file.size() > 2 * 1024 * 1024) {
+        setErrorMessage(QStringLiteral("头像文件过大（最大 2MB）"));
+        return;
+    }
+
+    auto const data = file.readAll();
+    file.close();
+
+    auto const base64 = QString::fromLatin1(data.toBase64());
+    auto const extension = QFileInfo(avatarPath).suffix();
+
+    QJsonObject obj;
+    // 发送 Base64 数据而非本地路径
+    obj.insert(QStringLiteral("avatarData"), base64);
+    // 同时也发送扩展名，以便服务器保存正确的文件类型
+    obj.insert(QStringLiteral("extension"), extension.isEmpty() ? QStringLiteral("jpg") : extension);
+    
+    network_manager_->sendCommand(QStringLiteral("AVATAR_UPDATE"), obj);
 }
 
 void LoginBackend::clearError()
@@ -489,7 +559,7 @@ void LoginBackend::onProtocolError(QString errorMessage)
     setErrorMessage(errorMessage);
 }
 
-void LoginBackend::onLoginSucceeded(QString userId, QString displayName, QString worldConversationId)
+void LoginBackend::onLoginSucceeded(QString userId, QString displayName, QString avatarPath, QString worldConversationId)
 {
     setBusy(false);
     pending_command_ = PendingCommand::None;
@@ -504,6 +574,12 @@ void LoginBackend::onLoginSucceeded(QString userId, QString displayName, QString
         emit displayNameChanged();
     }
 
+    if(avatar_path_ != avatarPath) {
+        avatar_path_ = avatarPath;
+        emit avatarPathChanged();
+        emit avatarUrlChanged();
+    }
+
     if(!worldConversationId.isEmpty()) {
         world_conversation_id_ = worldConversationId;
     }
@@ -516,6 +592,16 @@ void LoginBackend::onDisplayNameUpdated(QString displayName)
     if(display_name_ != displayName) {
         display_name_ = displayName;
         emit displayNameChanged();
+    }
+    setErrorMessage(QString{});
+}
+
+void LoginBackend::onAvatarUpdated(QString avatarPath)
+{
+    if(avatar_path_ != avatarPath) {
+        avatar_path_ = avatarPath;
+        emit avatarPathChanged();
+        emit avatarUrlChanged();
     }
     setErrorMessage(QString{});
 }

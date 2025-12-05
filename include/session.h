@@ -129,6 +129,10 @@ struct Session : std::enable_shared_from_this<Session>
                     auto payload = co_await handle_profile_update(frame.payload);
                     auto msg = protocol::make_line("PROFILE_UPDATE_RESP", payload);
                     send_text(std::move(msg));
+                } else if(frame.command == "AVATAR_UPDATE") {
+                    auto payload = co_await handle_avatar_update(frame.payload);
+                    auto msg = protocol::make_line("AVATAR_UPDATE_RESP", payload);
+                    send_text(std::move(msg));
                 } else if(frame.command == "FRIEND_LIST_REQ") {
                     auto payload = co_await handle_friend_list_req(frame.payload);
                     auto msg = protocol::make_line("FRIEND_LIST_RESP", payload);
@@ -263,6 +267,10 @@ private:
     /// \brief 处理资料更新请求，返回 PROFILE_UPDATE_RESP 的 JSON 串。
     /// \param payload PROFILE_UPDATE 的 JSON 文本。
     auto handle_profile_update(std::string const& payload) -> asio::awaitable<std::string>;
+
+    /// \brief 处理头像更新请求，返回 AVATAR_UPDATE_RESP 的 JSON 串。
+    /// \param payload AVATAR_UPDATE 的 JSON 文本。
+    auto handle_avatar_update(std::string const& payload) -> asio::awaitable<std::string>;
 
     /// \brief 处理好友列表请求，返回 FRIEND_LIST_RESP 的 JSON 串。
     /// \param payload FRIEND_LIST_REQ 的 JSON 文本。
@@ -432,4 +440,6 @@ public:
     std::string account_{};
     /// \brief 当前会话绑定的昵称。
     std::string display_name_{};
+    /// \brief 当前会话绑定的头像路径。
+    std::string avatar_path_{};
 };

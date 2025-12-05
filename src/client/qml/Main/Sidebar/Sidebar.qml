@@ -22,6 +22,8 @@ Rectangle {
         anchors.bottomMargin: 8
         spacing: 4
 
+
+
         // 中间功能按钮：由上往下排布
         ColumnLayout {
             Layout.fillWidth: true
@@ -144,6 +146,8 @@ Rectangle {
                     onClicked: {
                         if (typeof settingsDialog !== "undefined" && settingsDialog) {
                             settingsDialog.displayName = loginBackend.displayName
+                            settingsDialog.avatarUrl = loginBackend.avatarUrl
+                            settingsDialog.avatarPath = loginBackend.avatarPath
                             settingsDialog.avatarText = loginBackend.displayName.length > 0
                                                        ? loginBackend.displayName[0]
                                                        : "A"

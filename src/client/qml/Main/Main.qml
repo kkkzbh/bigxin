@@ -98,17 +98,46 @@ ApplicationWindow {
                         id: avatar
                         width: 40
                         height: 40
-                        radius: 8
-                        color: "#ffffff"
+                        radius: 4
+                        color: "#4f90f2"
+                        clip: true
                         anchors.horizontalCenter: parent.horizontalCenter
                         anchors.verticalCenter: parent.verticalCenter
 
                         Text {
                             anchors.centerIn: parent
-                            text: "A"
-                            color: "#222222"
-                            font.pixelSize: 20
+                            text: loginBackend.displayName.length > 0 ? loginBackend.displayName[0].toUpperCase() : "A"
+                            color: "white"
+                            font.pixelSize: 18
                             font.bold: true
+                            visible: avatarImg.status !== Image.Ready
+                        }
+
+                        Image {
+                            id: avatarImg
+                            anchors.fill: parent
+                            source: loginBackend.avatarUrl
+                            fillMode: Image.PreserveAspectCrop
+                            visible: status === Image.Ready
+                            asynchronous: true
+                            cache: false
+                        }
+
+                        MouseArea {
+                            anchors.fill: parent
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: {
+                                if (typeof settingsDialog !== "undefined" && settingsDialog) {
+                                    settingsDialog.displayName = loginBackend.displayName
+                                    settingsDialog.avatarUrl = loginBackend.avatarUrl
+                                    settingsDialog.avatarPath = loginBackend.avatarPath
+                                    settingsDialog.avatarText = loginBackend.displayName.length > 0
+                                                               ? loginBackend.displayName[0]
+                                                               : "A"
+                                    settingsDialog.visible = true
+                                    settingsDialog.requestActivate()
+                                }
+                            }
                         }
                     }
                 }

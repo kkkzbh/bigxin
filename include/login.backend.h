@@ -5,6 +5,10 @@
 #include <QStringList>
 #include <QVariantList>
 #include <QVariantMap>
+#include <QFile>
+#include <QFileInfo>
+#include <QUrl>
+#include <QDir>
 
 class NetworkManager;
 class MessageCache;
@@ -21,6 +25,8 @@ class LoginBackend : public QObject
     Q_PROPERTY(QString errorMessage READ errorMessage NOTIFY errorMessageChanged)
     Q_PROPERTY(QString userId READ userId NOTIFY userIdChanged)
     Q_PROPERTY(QString displayName READ displayName NOTIFY displayNameChanged)
+    Q_PROPERTY(QString avatarPath READ avatarPath NOTIFY avatarPathChanged)
+    Q_PROPERTY(QUrl avatarUrl READ avatarUrl NOTIFY avatarUrlChanged)
 
 public:
     explicit LoginBackend(QObject* parent = nullptr);
@@ -30,11 +36,16 @@ public:
     auto errorMessage() const -> QString;
     auto userId() const -> QString;
     auto displayName() const -> QString;
+    auto avatarPath() const -> QString;
+    auto avatarUrl() const -> QUrl;
     auto worldConversationId() const -> QString;
+
+    Q_INVOKABLE QUrl resolveAvatarUrl(QString const& path);
 
     Q_INVOKABLE void login(QString const& account, QString const& password);
     Q_INVOKABLE void registerAccount(QString const& account, QString const& password, QString const& confirmPassword);
     Q_INVOKABLE void updateDisplayName(QString const& newName);
+    Q_INVOKABLE void updateAvatar(QString const& avatarPath);
     Q_INVOKABLE void clearError();
 
     Q_INVOKABLE void sendWorldTextMessage(QString const& text);
@@ -66,6 +77,8 @@ signals:
     void errorMessageChanged();
     void userIdChanged();
     void displayNameChanged();
+    void avatarPathChanged();
+    void avatarUrlChanged();
     void loginSucceeded();
     void registrationSucceeded(QString account);
 
@@ -96,8 +109,9 @@ private slots:
     void onNetworkConnected();
     void onNetworkError(QString errorMessage);
     void onProtocolError(QString errorMessage);
-    void onLoginSucceeded(QString userId, QString displayName, QString worldConversationId);
+    void onLoginSucceeded(QString userId, QString displayName, QString avatarPath, QString worldConversationId);
     void onDisplayNameUpdated(QString displayName);
+    void onAvatarUpdated(QString avatarPath);
     void onNetworkDisconnected();
 
 private:
@@ -120,6 +134,7 @@ private:
     QString error_message_;
     QString user_id_;
     QString display_name_;
+    QString avatar_path_;
     QString world_conversation_id_;
 
     PendingCommand pending_command_{ PendingCommand::None };

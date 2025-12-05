@@ -1482,7 +1482,7 @@ user2_id</ColNames>
       <UnderlyingIndexName>uk_single_pair</UnderlyingIndexName>
     </key>
     <column id="404" parent="312" name="id">
-      <AutoIncrement>1</AutoIncrement>
+      <AutoIncrement>29299</AutoIncrement>
       <NotNull>1</NotNull>
       <Position>1</Position>
       <StoredType>bigint|0s</StoredType>
@@ -1512,22 +1512,26 @@ user2_id</ColNames>
       <Position>6</Position>
       <StoredType>timestamp|0s</StoredType>
     </column>
-    <index id="410" parent="312" name="PRIMARY">
+    <column id="410" parent="312" name="avatar_path">
+      <Position>7</Position>
+      <StoredType>varchar(512)|0s</StoredType>
+    </column>
+    <index id="411" parent="312" name="PRIMARY">
       <ColNames>id</ColNames>
       <Type>btree</Type>
       <Unique>1</Unique>
     </index>
-    <index id="411" parent="312" name="account">
+    <index id="412" parent="312" name="account">
       <ColNames>account</ColNames>
       <Type>btree</Type>
       <Unique>1</Unique>
     </index>
-    <key id="412" parent="312" name="PRIMARY">
+    <key id="413" parent="312" name="PRIMARY">
       <NameSurrogate>1</NameSurrogate>
       <Primary>1</Primary>
       <UnderlyingIndexName>PRIMARY</UnderlyingIndexName>
     </key>
-    <key id="413" parent="312" name="account">
+    <key id="414" parent="312" name="account">
       <UnderlyingIndexName>account</UnderlyingIndexName>
     </key>
   </database-model>
