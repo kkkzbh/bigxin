@@ -4,7 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="BackendCodeEditorMiscSettings">
-    <option name="/Default/Environment/Hierarchy/GeneratedFilesCacheKey/Timestamp/@EntryValue" value="3" type="long" />
+    <option name="/Default/Environment/Hierarchy/GeneratedFilesCacheKey/Timestamp/@EntryValue" value="9" type="long" />
     <option name="/Default/Housekeeping/FeatureSuggestion/FeatureSuggestionManager/DisabledSuggesters/=SwitchToGoToActionSuggester/@EntryIndexedValue" value="true" type="bool" />
     <option name="/Default/Housekeeping/GlobalSettingsUpgraded/IsUpgraded/@EntryValue" value="true" type="bool" />
     <option name="/Default/Housekeeping/OptionsDialog/SelectedPageId/@EntryValue" value="RiderCppLiveTemplatesSettings" type="string" />
@@ -99,22 +99,12 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="2dc32154-be48-467c-9695-c2dd10df8b29" name="更改" comment="v0.39 微信PC不存在的功能，加群">
+      <change beforePath="$PROJECT_DIR$/.idea/dataSources.local.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/dataSources.local.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cmake-build-debug/_deps/stdexec-src/cmake/import_standalone_asio.cmake" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-debug/_deps/stdexec-src/cmake/import_standalone_asio.cmake" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cmake-build-release/_deps/stdexec-src/cmake/import_standalone_asio.cmake" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-release/_deps/stdexec-src/cmake/import_standalone_asio.cmake" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/include/database/friend.h" beforeDir="false" afterPath="$PROJECT_DIR$/include/database/friend.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/include/database/types.h" beforeDir="false" afterPath="$PROJECT_DIR$/include/database/types.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/include/login.backend.h" beforeDir="false" afterPath="$PROJECT_DIR$/include/login.backend.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/include/protocol_handler.h" beforeDir="false" afterPath="$PROJECT_DIR$/include/protocol_handler.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/include/session.h" beforeDir="false" afterPath="$PROJECT_DIR$/include/session.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/client/backend/login_backend.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/client/backend/login_backend.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/client/backend/protocol_handler.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/client/backend/protocol_handler.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/client/qml/Main/ChatArea/ContactDetailView.qml" beforeDir="false" afterPath="$PROJECT_DIR$/src/client/qml/Main/ChatArea/ContactDetailView.qml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/client/qml/Main/ChatList/ChatList.qml" beforeDir="false" afterPath="$PROJECT_DIR$/src/client/qml/Main/ChatList/ChatList.qml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/client/qml/Main/Main.qml" beforeDir="false" afterPath="$PROJECT_DIR$/src/client/qml/Main/Main.qml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/client/qml/Main/Sidebar/Sidebar.qml" beforeDir="false" afterPath="$PROJECT_DIR$/src/client/qml/Main/Sidebar/Sidebar.qml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/database/friend.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/database/friend.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/server/session/friend.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/server/session/friend.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/CMakeLists.txt" beforeDir="false" afterPath="$PROJECT_DIR$/CMakeLists.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/client/qml/Login/Login.qml" beforeDir="false" afterPath="$PROJECT_DIR$/src/client/qml/Login/Login.qml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/client/qml/Login/RegisterWindow.qml" beforeDir="false" afterPath="$PROJECT_DIR$/src/client/qml/Login/RegisterWindow.qml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/client/qml/Main/ChatArea/ChatArea.qml" beforeDir="false" afterPath="$PROJECT_DIR$/src/client/qml/Main/ChatArea/ChatArea.qml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -249,28 +239,28 @@
       <window_info id="Commit_Guest" show_stripe_button="false" />
       <window_info id="Pull Requests" />
       <window_info id="Learn" show_stripe_button="false" />
-      <window_info content_ui="combo" id="Project" order="0" weight="0.25552577" />
-      <window_info active="true" id="Commit" order="1" visible="true" weight="0.25552577" />
+      <window_info active="true" content_ui="combo" id="Project" order="0" visible="true" weight="0.23333333" />
+      <window_info id="Commit" order="1" weight="0.23333333" />
       <window_info id="Structure" order="2" side_tool="true" weight="0.25" />
       <window_info anchor="bottom" id="TypeScript" />
       <window_info anchor="bottom" id="GitHub Copilot MCP Log" show_stripe_button="false" />
       <window_info anchor="bottom" id="File Transfer" />
       <window_info anchor="bottom" id="PythonProcessOutput" />
       <window_info anchor="bottom" id="clangd" />
-      <window_info anchor="bottom" id="Version Control" order="0" weight="0.50098526" />
+      <window_info anchor="bottom" id="Version Control" order="0" weight="0.3858308" />
       <window_info anchor="bottom" id="Problems" order="1" />
       <window_info anchor="bottom" id="Problems View" order="2" weight="0.029640429" />
-      <window_info anchor="bottom" id="Terminal" order="3" weight="0.3610537" />
-      <window_info anchor="bottom" id="Services" order="4" weight="0.03004926" />
-      <window_info anchor="bottom" x="647" y="605" width="1401" height="499" id="CMake" order="5" weight="0.40738916" />
-      <window_info active="true" anchor="bottom" id="Run" order="6" visible="true" weight="0.3098522" />
-      <window_info anchor="bottom" id="Messages" order="7" weight="0.3098522" />
-      <window_info anchor="bottom" id="Vcpkg" order="8" weight="0.3369159" />
-      <window_info anchor="bottom" id="TODO" order="9" weight="0.43501985" />
-      <window_info anchor="bottom" id="Python Packages" order="10" weight="0.42535883" />
-      <window_info anchor="bottom" id="Database Changes" order="11" weight="0.41121033" />
-      <window_info anchor="bottom" id="Debug" order="12" weight="0.027626812" />
-      <window_info anchor="bottom" id="Serial Monitor" order="13" weight="0.30906463" />
+      <window_info anchor="bottom" x="647" y="605" width="1401" height="499" id="CMake" order="3" weight="0.39720076" />
+      <window_info anchor="bottom" id="Terminal" order="4" weight="0.22069317" />
+      <window_info anchor="bottom" id="Services" order="5" weight="0.03004926" />
+      <window_info active="true" anchor="bottom" id="Run" order="7" visible="true" weight="0.20801158" />
+      <window_info anchor="bottom" id="Messages" order="8" weight="0.20801158" />
+      <window_info anchor="bottom" id="Vcpkg" order="9" weight="0.3369159" />
+      <window_info anchor="bottom" id="TODO" order="10" weight="0.43501985" />
+      <window_info anchor="bottom" id="Python Packages" order="11" weight="0.42535883" />
+      <window_info anchor="bottom" id="Database Changes" order="12" weight="0.41121033" />
+      <window_info anchor="bottom" id="Debug" order="13" weight="0.027626812" />
+      <window_info anchor="bottom" id="Serial Monitor" order="14" weight="0.30906463" />
       <window_info anchor="bottom" id="Find" order="14" weight="0.33006912" />
       <window_info anchor="right" id="make" side_tool="true" />
       <window_info anchor="right" id="Coverage" side_tool="true" />
@@ -282,7 +272,7 @@
       <window_info anchor="right" id="AIAssistant" order="1" weight="0.25" />
       <window_info anchor="right" id="Gradle" order="2" weight="0.25" />
       <window_info anchor="right" id="Maven" order="3" weight="0.25" />
-      <window_info active="true" anchor="right" id="Database" order="4" visible="true" weight="0.24012056" />
+      <window_info active="true" anchor="right" id="Database" order="4" visible="true" weight="0.21929824" />
       <window_info anchor="right" id="github.copilotToolWindow" order="5" weight="0.34985352" />
       <window_info anchor="right" id="GitHub Copilot Chat" order="6" show_stripe_button="false" weight="0.34985352" />
     </layout>

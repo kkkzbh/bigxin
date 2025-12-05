@@ -11,8 +11,8 @@ ApplicationWindow {
 
     property var loginBackend
 
-    width: 640
-    height: 480
+    width: 800
+    height: 450
     visible: true
 
     // 全局主题单例
@@ -104,12 +104,13 @@ ApplicationWindow {
             TextField {
                 id: regAccountField
                 Layout.fillWidth: true
+                Layout.preferredHeight: 45
                 placeholderText: qsTr("账号（微信号 / 邮箱 / 手机号）")
                 color: theme.textPrimary
                 placeholderTextColor: theme.textSecondary
                 font.pixelSize: 14
                 background: Rectangle {
-                    radius: 4
+                    radius: 8
                     color: theme.chatAreaBackground
                     border.color: theme.separatorHorizontal
                     border.width: 1
@@ -120,13 +121,14 @@ ApplicationWindow {
             TextField {
                 id: regPasswordField
                 Layout.fillWidth: true
+                Layout.preferredHeight: 45
                 placeholderText: qsTr("密码")
                 echoMode: TextInput.Password
                 color: theme.textPrimary
                 placeholderTextColor: theme.textSecondary
                 font.pixelSize: 14
                 background: Rectangle {
-                    radius: 4
+                    radius: 8
                     color: theme.chatAreaBackground
                     border.color: theme.separatorHorizontal
                     border.width: 1
@@ -137,13 +139,14 @@ ApplicationWindow {
             TextField {
                 id: regConfirmField
                 Layout.fillWidth: true
+                Layout.preferredHeight: 45
                 placeholderText: qsTr("确认密码")
                 echoMode: TextInput.Password
                 color: theme.textPrimary
                 placeholderTextColor: theme.textSecondary
                 font.pixelSize: 14
                 background: Rectangle {
-                    radius: 4
+                    radius: 8
                     color: theme.chatAreaBackground
                     border.color: theme.separatorHorizontal
                     border.width: 1
@@ -168,8 +171,9 @@ ApplicationWindow {
 
                 Button {
                     text: qsTr("取消")
+                    Layout.preferredHeight: 45
                     background: Rectangle {
-                        radius: 4
+                        radius: 8
                         color: theme.sendButtonDisabled
                     }
                     contentItem: Label {
@@ -195,8 +199,9 @@ ApplicationWindow {
                              && regPasswordField.text.length > 0
                              && regConfirmField.text.length > 0
 
+                    Layout.preferredHeight: 45
                     background: Rectangle {
-                        radius: 4
+                        radius: 8
                         color: enabled ? theme.sendButtonEnabled : theme.sendButtonDisabled
                     }
 

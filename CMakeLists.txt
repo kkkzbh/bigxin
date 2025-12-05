@@ -21,12 +21,12 @@ find_package(boost_mysql CONFIG REQUIRED)
 find_package(nlohmann_json CONFIG REQUIRED)
 
 CPMAddPackage(
-    NAME stdexec
-    GITHUB_REPOSITORY NVIDIA/stdexec
-    GIT_TAG main
-    OPTIONS
-        "STDEXEC_ENABLE_ASIO ON"
-        "STDEXEC_ASIO_IMPLEMENTATION boost"
+        NAME stdexec
+        GITHUB_REPOSITORY NVIDIA/stdexec
+        GIT_TAG 57a03175f229944d64f1c2fb536d3194304dd354
+        OPTIONS
+            "STDEXEC_ENABLE_ASIO ON"
+            "STDEXEC_ASIO_IMPLEMENTATION boost"
 )
 
 qt_standard_project_setup(REQUIRES 6.5)

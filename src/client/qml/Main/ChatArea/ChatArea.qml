@@ -278,8 +278,8 @@ Rectangle {
                             spacing: 6
 
                             Rectangle {
-                                width: 36
-                                height: 36
+                                width: 42
+                                height: 42
                                 radius: 6
                                 color: "#4fbf73"
 
@@ -311,7 +311,7 @@ Rectangle {
                                     anchors.centerIn: parent
                                     text: "TA"
                                     color: "#ffffff"
-                                    font.pixelSize: 14
+                                    font.pixelSize: 16
                                     font.bold: true
                                 }
                             }
@@ -342,7 +342,7 @@ Rectangle {
                                         anchors.fill: parent
                                         text: content
                                         color: theme.bubbleOtherText
-                                        font.pixelSize: 14
+                                        font.pixelSize: 16
                                         wrapMode: Text.Wrap
                                     }
                                 }
@@ -371,14 +371,14 @@ Rectangle {
                                     anchors.fill: parent
                                     text: content
                                     color: theme.bubbleMineText
-                                    font.pixelSize: 14
+                                    font.pixelSize: 16
                                     wrapMode: Text.Wrap
                                 }
                             }
 
                             Rectangle {
-                                width: 36
-                                height: 36
+                                width: 42
+                                height: 42
                                 radius: 6
                                 color: "#ffffff"
 
@@ -386,7 +386,7 @@ Rectangle {
                                     anchors.centerIn: parent
                                     text: "我"
                                     color: "#222222"
-                                    font.pixelSize: 14
+                                    font.pixelSize: 16
                                     font.bold: true
                                 }
                             }

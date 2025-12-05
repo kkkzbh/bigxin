@@ -13,8 +13,8 @@ ApplicationWindow {
     property var registerWindow: null
     // 主界面窗口实例（避免重复创建，并防止被 GC 回收）。
     property Window mainWindow: null
-    width: 420
-    height: 360
+    width: 480
+    height: 400
     visible: true
 
     // 全局主题单例
@@ -84,7 +84,7 @@ ApplicationWindow {
         ColumnLayout {
             anchors.horizontalCenter: parent.horizontalCenter
             anchors.verticalCenter: parent.verticalCenter
-            width: 320
+            width: 380
             spacing: 16
 
             Label {
@@ -100,12 +100,13 @@ ApplicationWindow {
             TextField {
                 id: accountField
                 Layout.fillWidth: true
+                Layout.preferredHeight: 56
                 placeholderText: qsTr("邮箱 / 微信号 / 手机号")
                 color: theme.textPrimary
                 placeholderTextColor: theme.textSecondary
                 font.pixelSize: 14
                 background: Rectangle {
-                    radius: 4
+                    radius: 8
                     color: theme.chatAreaBackground
                     border.color: theme.separatorHorizontal
                     border.width: 1
@@ -116,13 +117,14 @@ ApplicationWindow {
             TextField {
                 id: passwordField
                 Layout.fillWidth: true
+                Layout.preferredHeight: 56
                 placeholderText: qsTr("密码")
                 echoMode: TextInput.Password
                 color: theme.textPrimary
                 placeholderTextColor: theme.textSecondary
                 font.pixelSize: 14
                 background: Rectangle {
-                    radius: 4
+                    radius: 8
                     color: theme.chatAreaBackground
                     border.color: theme.separatorHorizontal
                     border.width: 1
@@ -150,8 +152,9 @@ ApplicationWindow {
                              && accountField.text.length > 0
                              && passwordField.text.length > 0
 
+                    Layout.preferredHeight: 56
                     background: Rectangle {
-                        radius: 4
+                        radius: 8
                         color: loginButton.enabled ? theme.sendButtonEnabled
                                                    : theme.sendButtonDisabled
                     }
