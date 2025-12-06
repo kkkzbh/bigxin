@@ -35,6 +35,9 @@ Rectangle {
     property string contextTargetUserId: ""
     property string contextTargetName: ""
 
+    // AI 生成状态
+    property bool aiGenerating: false
+
     // 正常聊天界面，仅在有选中会话时显示
     property int currentTab: 0
     // 联系人详情（用于通讯录 Tab）
@@ -47,6 +50,89 @@ Rectangle {
     property string contactRequestType: ""
     property string contactGroupName: ""
     property string contactGroupId: ""
+
+    function generateAiReply() {
+        if (root.aiGenerating) return
+        root.aiGenerating = true
+        
+        // 1. 收集并在必要时截断上下文（最近 100 条）
+        var messages = []
+        var count = 0
+        var maxCount = 100
+        // 倒序遍历，收集最近的聊天记录
+        for (var i = messageModel.count - 1; i >= 0 && count < maxCount; i--) {
+            var item = messageModel.get(i)
+            if (!item) continue
+            
+            var s = item.sender
+            if (s === "system") continue
+            
+            // "other" -> 对方说的话 (user role for AI)
+            // "me" -> 我之前说的话 (assistant role for AI)
+            messages.unshift({
+                "role": (s === "me") ? "assistant" : "user",
+                "content": item.content
+            })
+            count++
+        }
+
+        // 2. 构造系统提示词
+        var systemPrompt = "你是一个智能聊天助手。根据给定的聊天上下文和用户当前正在输入的内容，帮助用户生成一个自然、得体的回复。\\n" +
+                           "规则：\\n" +
+                           "1. 回复应简洁自然，符合日常聊天风格\\n" +
+                           "2. 如果用户有当前输入，结合输入内容优化回复\\n" +
+                           "3. 如果没有用户输入，根据上下文生成合适的回复\\n" +
+                           "4. 保持友好、有礼貌的语气\\n" +
+                           "5. 只返回回复内容本身，不要添加任何解释或前缀"
+
+        var apiMessages = [
+            {"role": "system", "content": systemPrompt}
+        ].concat(messages)
+
+        // 3. 结合用户当前输入框内容
+        var currentInput = inputArea.text.trim()
+        if (currentInput.length > 0) {
+            apiMessages.push({
+                "role": "system",
+                "content": "用户当前输入框中有以下草稿/想法：\"" + currentInput + "\"。请基于此生成最终回复。"
+            })
+        }
+
+        // 4. 发起请求
+        var xhr = new XMLHttpRequest()
+        xhr.open("POST", "https://api.deepseek.com/chat/completions")
+        xhr.setRequestHeader("Content-Type", "application/json")
+        xhr.setRequestHeader("Authorization", "Bearer sk-768afb11a4c94fd9920a4a4b6eda45a7")
+
+        xhr.onreadystatechange = function() {
+            if (xhr.readyState === XMLHttpRequest.DONE) {
+                root.aiGenerating = false
+                if (xhr.status === 200) {
+                    try {
+                        var response = JSON.parse(xhr.responseText)
+                        if (response.choices && response.choices.length > 0) {
+                            var reply = response.choices[0].message.content
+                            inputArea.text = reply
+                        }
+                    } catch (e) {
+                        console.error("JSON Parse Error:", e)
+                    }
+                } else {
+                    console.error("AI API Error:", xhr.status, xhr.responseText)
+                }
+            }
+        }
+
+        var data = {
+            "model": "deepseek-reasoner",
+            "messages": apiMessages,
+            "temperature": 0.7,
+            "max_tokens": 500,
+            "stream": false
+        }
+
+        xhr.send(JSON.stringify(data))
+    }
 
     // 会话详情侧边栏状态
     property bool detailPanelVisible: false
@@ -493,16 +579,25 @@ Rectangle {
                         spacing: 10
 
                         ToolButton {
-                            text: "😊"
-                            background: null
-                        }
-                        ToolButton {
-                            text: "📎"
-                            background: null
-                        }
-                        ToolButton {
-                            text: "💻"
-                            background: null
+                            id: aiHelpBtn
+                            enabled: !root.aiGenerating && !root.isMuted
+                            
+                            contentItem: Image {
+                                source: "../../resource/ChatArea/openai.svg"
+                                fillMode: Image.PreserveAspectFit
+                                opacity: parent.enabled ? 1.0 : 0.4
+                                sourceSize.width: 20
+                                sourceSize.height: 20
+                                horizontalAlignment: Image.AlignHCenter
+                                verticalAlignment: Image.AlignVCenter
+                            }
+                            
+                            background: Rectangle {
+                                color: aiHelpBtn.hovered ? "#33888888" : "transparent"
+                                radius: 4
+                            }
+                            
+                            onClicked: root.generateAiReply()
                         }
                     }
 
