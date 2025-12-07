@@ -169,12 +169,19 @@ Rectangle {
                                 loginBackend.openConversation(root.contactWeChatId)
                             }
                         } else {
-                            // 好友：使用 contactUserId
+                            // 好友/联系人：使用 contactUserId
                             if (root.contactUserId && root.contactUserId !== "") {
                                 console.log("[发消息] 打开单聊会话, peerUserId:", root.contactUserId)
                                 loginBackend.openSingleConversation(root.contactUserId)
                             } else {
-                                console.log("[发消息] contactUserId 为空，无法打开单聊")
+                                // 如果 contactUserId 为空但 contactWeChatId 存在，可能是旧数据格式
+                                // 尝试使用 contactWeChatId 作为 fallback
+                                console.log("[发消息] contactUserId 为空，尝试使用 contactWeChatId:", root.contactWeChatId)
+                                if (root.contactWeChatId && root.contactWeChatId !== "") {
+                                    loginBackend.openSingleConversation(root.contactWeChatId)
+                                } else {
+                                    console.log("[发消息] contactUserId 和 contactWeChatId 都为空，无法打开单聊")
+                                }
                             }
                         }
                     }

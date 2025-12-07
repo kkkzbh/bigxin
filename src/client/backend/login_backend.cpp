@@ -488,16 +488,20 @@ void LoginBackend::deleteFriend(QString const& friendUserId)
 
 void LoginBackend::openSingleConversation(QString const& peerUserId)
 {
+    qDebug() << "[openSingleConversation] 收到调用, peerUserId:" << peerUserId;
     if(peerUserId.trimmed().isEmpty()) {
+        qDebug() << "[openSingleConversation] peerUserId 为空，返回";
         return;
     }
     if(!network_manager_->isConnected()) {
+        qDebug() << "[openSingleConversation] 网络未连接，返回";
         setErrorMessage(QStringLiteral("与服务器的连接已断开"));
         return;
     }
 
     QJsonObject obj;
     obj.insert(QStringLiteral("peerUserId"), peerUserId.trimmed());
+    qDebug() << "[openSingleConversation] 发送命令 OPEN_SINGLE_CONV_REQ, obj:" << obj;
     network_manager_->sendCommand(QStringLiteral("OPEN_SINGLE_CONV_REQ"), obj);
 }
 
@@ -809,4 +813,40 @@ void LoginBackend::markConversationAsRead(QString const& conversationId, qint64 
     }
 
     protocol_handler_->markConversationAsRead(conversationId, seq);
+}
+
+void LoginBackend::recallMessage(QString const& conversationId, QString const& serverMsgId)
+{
+    if(conversationId.isEmpty() || serverMsgId.isEmpty()) {
+        return;
+    }
+    if(!network_manager_->isConnected()) {
+        return;
+    }
+
+    protocol_handler_->recallMessage(conversationId, serverMsgId);
+}
+
+void LoginBackend::reactToMessage(QString const& conversationId, QString const& serverMsgId, QString const& reactionType)
+{
+    if(conversationId.isEmpty() || serverMsgId.isEmpty() || reactionType.isEmpty()) {
+        return;
+    }
+    if(!network_manager_->isConnected()) {
+        return;
+    }
+
+    protocol_handler_->reactToMessage(conversationId, serverMsgId, reactionType);
+}
+
+void LoginBackend::unreactToMessage(QString const& conversationId, QString const& serverMsgId, QString const& reactionType)
+{
+    if(conversationId.isEmpty() || serverMsgId.isEmpty() || reactionType.isEmpty()) {
+        return;
+    }
+    if(!network_manager_->isConnected()) {
+        return;
+    }
+
+    protocol_handler_->unreactToMessage(conversationId, serverMsgId, reactionType);
 }

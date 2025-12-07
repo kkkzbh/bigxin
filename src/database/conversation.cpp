@@ -174,8 +174,9 @@ namespace database
             asio::use_awaitable
         );
         if(!r.rows().empty()) {
+            auto const existing_conv_id = r.rows().front().at(0).as_int64();
             co_await conn_h->async_execute("COMMIT", r, asio::use_awaitable);
-            co_return r.rows().front().at(0).as_int64();
+            co_return existing_conv_id;
         }
 
         // 2) 创建 conversations 记录
