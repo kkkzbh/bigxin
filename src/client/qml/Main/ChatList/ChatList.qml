@@ -21,6 +21,8 @@ Rectangle {
     property string currentConversationType: ""
     property string currentConversationTitle: ""
     property string currentConversationAvatarPath: ""
+    property int currentLastReadSeq: 0
+    property int currentUnreadCount: 0
     
     // 监听 currentIndex 变化，更新当前会话信息
     onCurrentIndexChanged: {
@@ -29,12 +31,16 @@ Rectangle {
             currentConversationType = ""
             currentConversationTitle = ""
             currentConversationAvatarPath = ""
+            currentLastReadSeq = 0
+            currentUnreadCount = 0
         } else {
             const item = chatModel.get(currentIndex)
             currentConversationId = String(item.conversationId || "")
             currentConversationType = item.conversationType
             currentConversationTitle = item.title
             currentConversationAvatarPath = item.avatarPath || ""
+            currentLastReadSeq = item.lastReadSeq || 0
+            currentUnreadCount = item.unreadCount || 0
         }
     }
 
@@ -119,7 +125,13 @@ Rectangle {
                     hoverEnabled: true
                     onEntered: delegateRoot.hovered = true
                     onExited: delegateRoot.hovered = false
-                    onClicked: listView.currentIndex = index
+                    onClicked: {
+                        listView.currentIndex = index
+                        // 标记该会话为已读
+                        if (model.conversationId && model.lastSeq > 0) {
+                            loginBackend.markConversationAsRead(String(model.conversationId), model.lastSeq)
+                        }
+                    }
                 }
 
                 RowLayout {
@@ -193,14 +205,14 @@ Rectangle {
 
                             Rectangle {
                                 visible: unreadCount > 0
-                                width: 18
+                                width: unreadCount > 99 ? 24 : (unreadCount > 9 ? 22 : 18)
                                 height: 18
                                 radius: 9
                                 color: "#f24957"
 
                                 Text {
                                     anchors.centerIn: parent
-                                    text: unreadCount > 9 ? "9+" : unreadCount
+                                    text: unreadCount > 99 ? "99+" : unreadCount
                                     color: "#ffffff"
                                     font.pixelSize: 10
                                 }
@@ -285,6 +297,84 @@ Rectangle {
 
         function onSingleConversationReady(conversationId, conversationType) {
             // Main.qml 已处理选中逻辑，这里不需要再设置
+        }
+
+        function onConversationUnreadCleared(conversationId) {
+            // 本地更新会话列表中的未读数为0
+            for (var i = 0; i < chatModel.count; ++i) {
+                var item = chatModel.get(i)
+                if (String(item.conversationId || "") === String(conversationId)) {
+                    chatModel.setProperty(i, "unreadCount", 0)
+                    // 同时更新当前选中会话的未读数属性
+                    if (i === listView.currentIndex) {
+                        root.currentUnreadCount = 0
+                    }
+                    break
+                }
+            }
+        }
+        
+        // 监听消息接收，智能更新单个会话项而非刷新整个列表
+        function onMessageReceived(conversationId, senderId, senderDisplayName, content, msgType, serverTimeMs, seq) {
+            var targetIndex = -1
+            var currentItem = null
+            
+            // 查找目标会话
+            for (var i = 0; i < chatModel.count; ++i) {
+                var item = chatModel.get(i)
+                if (String(item.conversationId || "") === String(conversationId)) {
+                    targetIndex = i
+                    currentItem = item
+                    break
+                }
+            }
+            
+            if (targetIndex === -1) {
+                return  // 找不到会话，可能是新会话，等待列表刷新
+            }
+            
+            // 获取当前已知的最后一条消息的 seq
+            var lastKnownSeq = currentItem.lastSeq || 0
+            
+            // 判断是否是新消息（seq 大于已知的最大 seq）
+            var isNewMessage = seq > lastKnownSeq
+            
+            // 更新最后一条消息、时间和 lastSeq
+            chatModel.setProperty(targetIndex, "lastMessage", content)
+            chatModel.setProperty(targetIndex, "timestamp", serverTimeMs)
+            if (isNewMessage) {
+                chatModel.setProperty(targetIndex, "lastSeq", seq)
+            }
+            
+            // 如果是别人发送的消息且不是当前选中的会话，增加未读数
+            if (senderId !== loginBackend.userId && String(root.currentConversationId) !== String(conversationId)) {
+                var currentUnread = currentItem.unreadCount || 0
+                chatModel.setProperty(targetIndex, "unreadCount", currentUnread + 1)
+            }
+            
+            // 只有真正的新消息才将会话移到列表顶部
+            if (isNewMessage && targetIndex !== 0) {
+                var oldSelectedIndex = listView.currentIndex
+                var oldSelectedId = ""
+                
+                // 保存当前选中的会话ID
+                if (oldSelectedIndex >= 0 && oldSelectedIndex < chatModel.count) {
+                    oldSelectedId = String(chatModel.get(oldSelectedIndex).conversationId || "")
+                }
+                
+                // 移动会话到顶部
+                chatModel.move(targetIndex, 0, 1)
+                
+                // 重新计算选中索引：找到之前选中的会话现在的位置
+                if (oldSelectedId !== "") {
+                    for (var k = 0; k < chatModel.count; ++k) {
+                        if (String(chatModel.get(k).conversationId || "") === oldSelectedId) {
+                            listView.currentIndex = k
+                            break
+                        }
+                    }
+                }
+            }
         }
     }
 }

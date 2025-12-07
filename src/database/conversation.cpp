@@ -211,7 +211,9 @@ namespace database
             mysql::with_params(
                 "SELECT c.id, c.type, c.name, peer.display_name AS peer_name,"
                 " COALESCE(msg_stats.max_seq, 0) AS last_seq, COALESCE(msg_stats.max_time, 0) AS last_time, "
-                " CASE WHEN c.type = 'GROUP' THEN c.avatar_path ELSE peer.avatar_path END AS avatar_path "
+                " CASE WHEN c.type = 'GROUP' THEN c.avatar_path ELSE peer.avatar_path END AS avatar_path, "
+                " cm.last_read_seq, "
+                " GREATEST(0, COALESCE(msg_stats.max_seq, 0) - cm.last_read_seq) AS unread_count "
                 "FROM conversations c "
                 "JOIN conversation_members cm ON cm.conversation_id = c.id "
                 "LEFT JOIN ("
@@ -251,11 +253,11 @@ namespace database
             }
             info.last_seq = row.at(4).as_int64();
             info.last_server_time_ms = row.at(5).as_int64();
-            info.last_seq = row.at(4).as_int64();
-            info.last_server_time_ms = row.at(5).as_int64();
             if(!row.at(6).is_null()) {
                 info.avatar_path = std::string(row.at(6).as_string());
             }
+            info.last_read_seq = row.at(7).as_int64();
+            info.unread_count = row.at(8).as_int64();
             result.push_back(std::move(info));
         }
         co_return result;
@@ -525,6 +527,25 @@ namespace database
         } catch(std::exception const&) {
             co_return false;
         }
+    }
+
+    auto update_last_read_seq(i64 user_id, i64 conversation_id, i64 seq)
+        -> asio::awaitable<void>
+    {
+        auto conn_h = co_await acquire_connection();
+        mysql::results r;
+
+        co_await conn_h->async_execute(
+            mysql::with_params(
+                "UPDATE conversation_members SET last_read_seq = {}"
+                " WHERE conversation_id = {} AND user_id = {}",
+                seq,
+                conversation_id,
+                user_id),
+            r,
+            asio::use_awaitable
+        );
+        co_return;
     }
 } // namespace database
 

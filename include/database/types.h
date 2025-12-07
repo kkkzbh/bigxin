@@ -165,6 +165,10 @@ namespace database
         i64 last_server_time_ms{};
         /// \brief 会话头像路径（单聊为对方头像）。
         std::string avatar_path{};
+        /// \brief 当前用户在该会话中最后已读消息的 seq。
+        i64 last_read_seq{};
+        /// \brief 未读消息数量，计算值：max(0, last_seq - last_read_seq)。
+        i64 unread_count{};
     };
 
     /// \brief 会话成员信息。

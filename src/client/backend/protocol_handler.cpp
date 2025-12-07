@@ -95,6 +95,8 @@ void ProtocolHandler::handleCommand(QString command, QJsonObject payload)
         handleHistoryResponse(payload);
     } else if(command == QStringLiteral("CONV_LIST_RESP")) {
         handleConversationListResponse(payload);
+    } else if(command == QStringLiteral("MARK_READ_RESP")) {
+        handleMarkReadResponse(payload);
     } else if(command == QStringLiteral("PROFILE_UPDATE_RESP")) {
         handleProfileUpdateResponse(payload);
     } else if(command == QStringLiteral("AVATAR_UPDATE_RESP")) {
@@ -344,14 +346,16 @@ void ProtocolHandler::handleConversationListResponse(QJsonObject const& obj)
         map.insert(QStringLiteral("conversationType"), type);
         map.insert(QStringLiteral("title"), title);
         map.insert(QStringLiteral("lastSeq"), last_seq);
-        map.insert(QStringLiteral("title"), title);
-        map.insert(QStringLiteral("lastSeq"), last_seq);
         map.insert(QStringLiteral("lastServerTimeMs"), last_time_ms);
         map.insert(QStringLiteral("avatarPath"), conv.value(QStringLiteral("avatarPath")).toString());
 
+        auto const last_read_seq = static_cast<qint64>(conv.value(QStringLiteral("lastReadSeq")).toDouble(0.0));
+        auto const unread_count = static_cast<int>(conv.value(QStringLiteral("unreadCount")).toDouble(0.0));
+        
         map.insert(QStringLiteral("preview"), conv.value(QStringLiteral("preview")).toString());
         map.insert(QStringLiteral("time"), conv.value(QStringLiteral("time")).toString());
-        map.insert(QStringLiteral("unreadCount"), conv.value(QStringLiteral("unreadCount")).toInt());
+        map.insert(QStringLiteral("lastReadSeq"), last_read_seq);
+        map.insert(QStringLiteral("unreadCount"), unread_count);
 
         QString initials;
         if(!title.isEmpty()) {
@@ -771,4 +775,35 @@ void ProtocolHandler::handleRenameGroupResponse(QJsonObject const& obj)
         return;
     }
     // 成功后，会话列表会由服务器推送刷新
+}
+
+auto ProtocolHandler::markConversationAsRead(QString const& conversationId, qint64 seq) -> void
+{
+    if(conversationId.isEmpty()) {
+        return;
+    }
+
+    QJsonObject obj;
+    obj.insert(QStringLiteral("conversationId"), conversationId);
+    obj.insert(QStringLiteral("seq"), seq);
+
+    network_manager_->sendCommand(QStringLiteral("MARK_READ_REQ"), obj);
+}
+
+void ProtocolHandler::handleMarkReadResponse(QJsonObject const& obj)
+{
+    auto const ok = obj.value(QStringLiteral("ok")).toBool(false);
+    if(!ok) {
+        auto const msg = obj.value(QStringLiteral("errorMsg")).toString();
+        if(!msg.isEmpty()) {
+            emit errorOccurred(msg);
+        }
+        return;
+    }
+
+    // 标记已读成功，发出信号通知本地更新未读数
+    auto const convId = obj.value(QStringLiteral("conversationId")).toString();
+    if(!convId.isEmpty()) {
+        emit conversationUnreadCleared(convId);
+    }
 }

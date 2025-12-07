@@ -73,6 +73,9 @@ SEND_MSG:{"conversationId":"grp-123","senderId":"u_001","clientMsgId":"cli-1","m
 - 会话列表：
   - `CONV_LIST_REQ` (C → S)
   - `CONV_LIST_RESP` (S → C)
+- 已读状态：
+  - `MARK_READ_REQ` (C → S)
+  - `MARK_READ_RESP` (S → C)
 - 会话成员 / 禁言：
   - `CONV_MEMBERS_REQ` (C → S)
   - `CONV_MEMBERS_RESP` (S → C)
@@ -489,11 +492,67 @@ HISTORY_RESP:{
 - `hasMore`：是否还有更早的消息可以继续拉取。
 - `nextBeforeSeq`：客户端下次请求时可作为 `beforeSeq` 使用。
 
-## 9. 心跳保活
+## 9. 已读状态管理
+
+### 9.1 MARK_READ_REQ（C → S）
+
+客户端标记指定会话中的消息为已读状态。
+
+格式：
+
+```text
+MARK_READ_REQ:{
+  "conversationId": "123",
+  "seq": 100
+}\n
+```
+
+字段：
+
+- `conversationId`：会话 ID。
+- `seq`：已读的最新消息序号，服务器将更新该用户在该会话中的 `last_read_seq` 为此值。
+
+### 9.2 MARK_READ_RESP（S → C）
+
+服务器返回标记已读结果。
+
+格式（成功）：
+
+```text
+MARK_READ_RESP:{
+  "ok": true,
+  "conversationId": "123",
+  "seq": 100
+}\n
+```
+
+格式（失败）：
+
+```text
+MARK_READ_RESP:{
+  "ok": false,
+  "errorCode": "NOT_AUTHENTICATED" | "NOT_MEMBER" | "INVALID_PARAM" | "SERVER_ERROR",
+  "errorMsg": "错误信息"
+}\n
+```
+
+字段：
+
+- `ok`：是否标记成功。
+- `conversationId`：成功时返回会话 ID。
+- `seq`：成功时返回已读序号。
+- `errorCode`：失败时错误码。
+  - `NOT_AUTHENTICATED`：未登录。
+  - `NOT_MEMBER`：不是该会话成员。
+  - `INVALID_PARAM`：参数无效。
+  - `SERVER_ERROR`：服务器错误。
+- `errorMsg`：失败时错误信息。
+
+## 10. 心跳保活
 
 为保持 TCP 长连接不被中间设备关闭，可以周期性发送心跳。
 
-### 9.1 PING（C ↔ S）
+### 10.1 PING（C ↔ S）
 
 格式：
 
@@ -501,7 +560,7 @@ HISTORY_RESP:{
 PING:{}\n
 ```
 
-### 9.2 PONG（C ↔ S）
+### 10.2 PONG（C ↔ S）
 
 格式：
 
@@ -511,7 +570,7 @@ PONG:{}\n
 
 客户端定期发送 `PING`，服务器收到后立即返回 `PONG`。双方都可以根据心跳超时时间判断对端是否存活。
 
-## 10. 错误处理（可选强化）
+## 11. 错误处理（可选强化）
 
 对于需要单独错误信息的场景，可以统一使用 `*_RESP` 中的 `ok / errorCode / errorMsg` 字段。  
 如需更加统一，也可以增加一个通用错误命令：
@@ -526,7 +585,7 @@ ERROR:{
 
 客户端在收到 `ERROR` 时，可根据 `inCommand` 和 `errorCode` 决定具体提示和恢复策略。
 
-## 11. 未来扩展方向
+## 12. 未来扩展方向
 
 本协议已满足：
 

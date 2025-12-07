@@ -47,6 +47,11 @@ public:
     /// \return 是否成功加载。
     auto loadConversationCache(QString const& conversationId) -> bool;
 
+    /// \brief 标记会话中的消息为已读。
+    /// \param conversationId 会话 ID。
+    /// \param seq 已读的最新消息序号。
+    auto markConversationAsRead(QString const& conversationId, qint64 seq) -> void;
+
 signals:
     /// \brief 登录成功。
     /// \param userId 用户 ID。
@@ -134,6 +139,10 @@ signals:
     /// \brief 需要请求入群申请列表。
     void needRequestGroupJoinRequestList();
 
+    /// \brief 会话已读状态更新（本地更新未读数）。
+    /// \param conversationId 会话 ID。
+    void conversationUnreadCleared(QString conversationId);
+
 private slots:
     void handleCommand(QString command, QJsonObject payload);
 
@@ -146,6 +155,7 @@ private:
     void handleMessagePush(QJsonObject const& obj);
     void handleHistoryResponse(QJsonObject const& obj);
     void handleConversationListResponse(QJsonObject const& obj);
+    void handleMarkReadResponse(QJsonObject const& obj);
     void handleConversationMembersResponse(QJsonObject const& obj);
     void handleLeaveConversationResponse(QJsonObject const& obj);
     void handleMuteMemberResponse(QJsonObject const& obj);

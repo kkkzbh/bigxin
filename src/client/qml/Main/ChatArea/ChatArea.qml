@@ -46,6 +46,15 @@ Rectangle {
     // 缓存最后发送的消息内容（用于失败消息显示）
     property string lastSentMessage: ""
 
+    // 未读消息相关
+    property int lastReadSeq: 0  // 当前会话的已读位置
+    property int unreadCount: 0  // 当前会话的未读数
+    property int firstUnreadIndex: -1  // 第一条未读消息在 messageModel 中的索引
+    property bool unreadButtonShown: false  // 未读按钮是否已经显示过（每个会话只显示一次）
+    
+    // 用于防止重复请求成员列表
+    property string lastRequestedMembersConvId: ""
+
     // 正常聊天界面，仅在有选中会话时显示
     property int currentTab: 0
     // 联系人详情（用于通讯录 Tab）
@@ -168,9 +177,16 @@ Rectangle {
         if (conversationId === "" || !root.hasSelection) {
             return
         }
+        
+        // 避免对同一会话重复请求
+        if (conversationId === lastRequestedMembersConvId) {
+            return
+        }
+        
         // GROUP 和 SINGLE 都需要请求成员列表
         // GROUP 用于显示成员，SINGLE 用于获取 peerUserId
         if (conversationType === "GROUP" || conversationType === "SINGLE") {
+            lastRequestedMembersConvId = conversationId
             loginBackend.requestConversationMembers(conversationId)
         } else {
             memberMap = ({})
@@ -245,13 +261,11 @@ Rectangle {
             for (const userId in map) {
                 if (userId !== selfId) {
                     root.peerUserId = userId
-                    console.log("[updateMembers] 单聊对端用户 ID:", userId)
                     break
                 }
             }
         } else {
             root.peerUserId = ""
-            console.log("[updateMembers] 非单聊或成员数不为2，清空 peerUserId. conversationType:", root.conversationType, "成员数:", Object.keys(map).length)
         }
     }
 
@@ -584,6 +598,55 @@ Rectangle {
                         }
                     }
                 }
+                
+                // 跳转到未读消息的悬浮按钮
+                Rectangle {
+                    id: unreadButton
+                    // 使用独立的显示标志，避免绑定循环
+                    visible: false
+                    anchors.right: parent.right
+                    anchors.top: parent.top
+                    anchors.rightMargin: 30
+                    anchors.topMargin: 20
+                    width: 120
+                    height: 36
+                    radius: 18
+                    color: "#07c160"
+                    z: 100
+
+                    Text {
+                        anchors.centerIn: parent
+                        text: unreadCount + " 条新消息"
+                        color: "#ffffff"
+                        font.pixelSize: 13
+                        font.bold: true
+                    }
+
+                    MouseArea {
+                        anchors.fill: parent
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: {
+                            if (firstUnreadIndex >= 0 && firstUnreadIndex < messageModel.count) {
+                                messageList.positionViewAtIndex(firstUnreadIndex, ListView.Beginning)
+                            }
+                            // 点击后隐藏按钮
+                            unreadButton.visible = false
+                        }
+                    }
+
+                    // 添加阴影效果
+                    layer.enabled: true
+                    layer.effect: Qt.createQmlObject('
+                        import QtQuick
+                        import Qt5Compat.GraphicalEffects
+                        DropShadow {
+                            radius: 8
+                            samples: 17
+                            color: "#80000000"
+                            verticalOffset: 2
+                        }
+                    ', unreadButton, "shadowEffect")
+                }
             }
 
             // 底部输入区域
@@ -704,6 +767,10 @@ Rectangle {
                                 root.lastSentMessage = inputArea.text.trim()
                                 loginBackend.sendMessage(root.conversationId, inputArea.text)
                                 inputArea.text = ""
+                                // 发送消息后隐藏未读按钮
+                                if (unreadButton.visible) {
+                                    unreadButton.visible = false
+                                }
                             }
                         }
                     }
@@ -767,9 +834,15 @@ Rectangle {
         peerUserId = ""  // 重置 peerUserId，防止旧值残留
         detailPanelVisible = false
         detailPanelExpanded = false
+        firstUnreadIndex = -1  // 重置第一条未读消息索引
+        unreadButtonShown = false  // 重置未读按钮显示状态
+        unreadButton.visible = false  // 隐藏未读按钮
+        lastRequestedMembersConvId = ""  // 重置成员请求记录
         if (conversationId !== "") {
             loginBackend.openConversation(conversationId)
             refreshConversationMembers()
+            // 延迟标记已读，等消息加载完成
+            markReadTimer.restart()
         }
         // 启动定时器，确保即使没有消息（或消息加载完后）也能触发显示
         scrollTimer.restart()
@@ -791,6 +864,33 @@ Rectangle {
         }
     }
 
+    // 用于标记已读的计时器，避免频繁请求
+    Timer {
+        id: markReadTimer
+        interval: 500
+        repeat: false
+        onTriggered: {
+            if (conversationId !== "" && messageModel.count > 0) {
+                // 获取最后一条消息的 seq
+                var lastItem = messageModel.get(messageModel.count - 1)
+                if (lastItem && lastItem.seq > 0) {
+                    loginBackend.markConversationAsRead(conversationId, lastItem.seq)
+                }
+            }
+            // 标记已读后，检查是否需要显示未读按钮
+            checkAndShowUnreadButton()
+        }
+    }
+    
+    // 检查并显示未读按钮
+    function checkAndShowUnreadButton() {
+        // 只有在未读数>=10且未显示过且有第一条未读消息时才显示
+        if (unreadCount >= 10 && !unreadButtonShown && firstUnreadIndex >= 0) {
+            unreadButton.visible = true
+            unreadButtonShown = true
+        }
+    }
+
     Connections {
         target: loginBackend
 
@@ -801,6 +901,7 @@ Rectangle {
                                    msgType,
                                    serverTimeMs,
                                    seq) {
+            // 如果收到的消息不是当前会话，不处理显示，但不阻止执行（后续可能需要更新未读数）
             if (conversationId !== root.conversationId)
                 return
             const mine = senderId === loginBackend.userId
@@ -816,8 +917,25 @@ Rectangle {
                 senderName: senderDisplayName,
                 senderId: senderId,
                 content: trimmed,
-                isFailed: isFailedMsg  // 只有 FAILED_TEXT 设置为 true
+                isFailed: isFailedMsg,  // 只有 FAILED_TEXT 设置为 true
+                seq: seq  // 保存消息序号
             })
+            
+            // 更新第一条未读消息的索引（只记录别人发送的未读消息）
+            if (firstUnreadIndex === -1 && seq > lastReadSeq && !mine) {
+                firstUnreadIndex = messageModel.count - 1
+            }
+            
+            // 如果用户正在当前会话且收到新消息（不是自己发的），立即标记为已读
+            if (!mine && messageList.visible) {
+                // 延迟标记已读，确保消息已添加到模型
+                Qt.callLater(function() {
+                    if (conversationId === root.conversationId) {
+                        loginBackend.markConversationAsRead(conversationId, seq)
+                    }
+                })
+            }
+            
             // 如果列表已显示，直接滚动；否则重置显示定时器
             if (messageList.visible) {
                 messageList.positionViewAtEnd()

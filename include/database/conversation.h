@@ -95,5 +95,12 @@ namespace database
     /// \return 是否更新成功。
     auto update_group_avatar(i64 conversation_id, std::string const& avatar_path)
         -> boost::asio::awaitable<bool>;
+
+    /// \brief 更新用户在指定会话中的已读位置。
+    /// \param user_id 用户 ID。
+    /// \param conversation_id 会话 ID。
+    /// \param seq 已读的最新消息序号。
+    auto update_last_read_seq(i64 user_id, i64 conversation_id, i64 seq)
+        -> boost::asio::awaitable<void>;
 } // namespace database
 

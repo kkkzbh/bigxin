@@ -45,6 +45,7 @@ LoginBackend::LoginBackend(QObject* parent)
     connect(protocol_handler_, &ProtocolHandler::singleConversationReady, this, &LoginBackend::singleConversationReady);
     connect(protocol_handler_, &ProtocolHandler::groupCreated, this, &LoginBackend::groupCreated);
     connect(protocol_handler_, &ProtocolHandler::messageSendFailed, this, &LoginBackend::messageSendFailed);
+    connect(protocol_handler_, &ProtocolHandler::conversationUnreadCleared, this, &LoginBackend::conversationUnreadCleared);
 
     // 协议处理器请求的操作
     connect(protocol_handler_, &ProtocolHandler::needRequestConversationList, this, &LoginBackend::requestConversationList);
@@ -796,4 +797,16 @@ void LoginBackend::renameGroup(QString const& conversationId, QString const& new
     obj.insert(QStringLiteral("conversationId"), conversationId);
     obj.insert(QStringLiteral("newName"), trimmedName);
     network_manager_->sendCommand(QStringLiteral("RENAME_GROUP_REQ"), obj);
+}
+
+void LoginBackend::markConversationAsRead(QString const& conversationId, qint64 seq)
+{
+    if(conversationId.isEmpty()) {
+        return;
+    }
+    if(!network_manager_->isConnected()) {
+        return;
+    }
+
+    protocol_handler_->markConversationAsRead(conversationId, seq);
 }

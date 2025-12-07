@@ -72,13 +72,53 @@ auto Session::handle_conv_list_req(std::string const& payload) -> asio::awaitabl
             c["conversationType"] = conv.type;
             c["title"] = conv.title;
             c["lastSeq"] = conv.last_seq;
-            c["lastSeq"] = conv.last_seq;
             c["lastServerTimeMs"] = conv.last_server_time_ms;
             c["avatarPath"] = conv.avatar_path;
+            c["lastReadSeq"] = conv.last_read_seq;
+            c["unreadCount"] = conv.unread_count;
             items.push_back(std::move(c));
         }
 
         resp["conversations"] = std::move(items);
+        co_return resp.dump();
+    } catch(json::parse_error const&) {
+        co_return make_error_payload("INVALID_JSON", "请求 JSON 解析失败");
+    } catch(std::exception const& ex) {
+        co_return make_error_payload("SERVER_ERROR", ex.what());
+    }
+}
+
+auto Session::handle_mark_read_req(std::string const& payload) -> asio::awaitable<std::string>
+{
+    if(!authenticated_) {
+        co_return make_error_payload("NOT_AUTHENTICATED", "请先登录");
+    }
+
+    try {
+        auto j = json::parse(payload);
+
+        if(!j.contains("conversationId") || !j.contains("seq")) {
+            co_return make_error_payload("INVALID_PARAM", "缺少 conversationId 或 seq 字段");
+        }
+
+        auto conv_id_str = j.at("conversationId").get<std::string>();
+        auto seq = j.at("seq").get<i64>();
+
+        i64 conv_id = std::stoll(conv_id_str);
+
+        // 验证用户是否是该会话成员
+        auto member = co_await database::get_conversation_member(conv_id, user_id_);
+        if(!member) {
+            co_return make_error_payload("NOT_MEMBER", "您不是该会话成员");
+        }
+
+        // 更新已读位置
+        co_await database::update_last_read_seq(user_id_, conv_id, seq);
+
+        json resp;
+        resp["ok"] = true;
+        resp["conversationId"] = conv_id_str;
+        resp["seq"] = seq;
         co_return resp.dump();
     } catch(json::parse_error const&) {
         co_return make_error_payload("INVALID_JSON", "请求 JSON 解析失败");

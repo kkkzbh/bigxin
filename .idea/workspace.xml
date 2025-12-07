@@ -98,12 +98,11 @@
     </configurations>
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="2dc32154-be48-467c-9695-c2dd10df8b29" name="更改" comment="v0.46 删除好友">
-      <change beforePath="$PROJECT_DIR$/.idea/dataSources/49af4bf5-0153-42ec-8169-5ca8fa71848f.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/dataSources/49af4bf5-0153-42ec-8169-5ca8fa71848f.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/sqldialects.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/sqldialects.xml" afterDir="false" />
+    <list default="true" id="2dc32154-be48-467c-9695-c2dd10df8b29" name="更改" comment="v0.47 修改群头像">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/doc/protocol.md" beforeDir="false" afterPath="$PROJECT_DIR$/doc/protocol.md" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/include/database/conversation.h" beforeDir="false" afterPath="$PROJECT_DIR$/include/database/conversation.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/include/database/types.h" beforeDir="false" afterPath="$PROJECT_DIR$/include/database/types.h" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/include/login.backend.h" beforeDir="false" afterPath="$PROJECT_DIR$/include/login.backend.h" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/include/protocol_handler.h" beforeDir="false" afterPath="$PROJECT_DIR$/include/protocol_handler.h" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/include/session.h" beforeDir="false" afterPath="$PROJECT_DIR$/include/session.h" afterDir="false" />
@@ -113,7 +112,7 @@
       <change beforePath="$PROJECT_DIR$/src/client/qml/Main/ChatList/ChatList.qml" beforeDir="false" afterPath="$PROJECT_DIR$/src/client/qml/Main/ChatList/ChatList.qml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/client/qml/Main/Main.qml" beforeDir="false" afterPath="$PROJECT_DIR$/src/client/qml/Main/Main.qml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/database/conversation.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/database/conversation.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/database/sql/conversations.sql" beforeDir="false" afterPath="$PROJECT_DIR$/src/database/sql/conversations.sql" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/server/server.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/server/server.cpp" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/server/session/conversation.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/server/session/conversation.cpp" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -258,14 +257,14 @@
       <window_info anchor="bottom" id="PythonProcessOutput" />
       <window_info anchor="bottom" id="Find" />
       <window_info anchor="bottom" id="clangd" />
-      <window_info anchor="bottom" id="Version Control" order="0" weight="0.4180991" />
+      <window_info anchor="bottom" id="Version Control" order="0" weight="0.33720928" />
       <window_info anchor="bottom" id="Problems" order="1" />
       <window_info anchor="bottom" id="Problems View" order="2" weight="0.029640429" />
       <window_info anchor="bottom" x="647" y="605" width="1401" height="499" id="CMake" order="3" weight="0.49292213" />
-      <window_info anchor="bottom" id="Terminal" order="4" weight="0.3709514" />
+      <window_info anchor="bottom" id="Terminal" order="4" weight="0.4180991" />
       <window_info anchor="bottom" id="Services" order="5" weight="0.03083923" />
-      <window_info active="true" anchor="bottom" id="Run" order="6" visible="true" weight="0.4180991" />
-      <window_info anchor="bottom" id="Messages" order="7" weight="0.4180991" />
+      <window_info active="true" anchor="bottom" id="Run" order="6" visible="true" weight="0.33720928" />
+      <window_info anchor="bottom" id="Messages" order="7" weight="0.33720928" />
       <window_info anchor="bottom" id="Vcpkg" order="8" weight="0.3369159" />
       <window_info anchor="bottom" id="TODO" order="9" weight="0.3770243" />
       <window_info anchor="bottom" id="Python Packages" order="10" weight="0.42535883" />
@@ -538,7 +537,7 @@
       <workItem from="1764510643599" duration="3105000" />
       <workItem from="1764514101146" duration="983000" />
       <workItem from="1764735676133" duration="3999000" />
-      <workItem from="1764944899347" duration="26481000" />
+      <workItem from="1764944899347" duration="30135000" />
     </task>
     <task id="LOCAL-00001" summary="基础CMAKE，示例程序">
       <option name="closed" value="true" />
@@ -756,7 +755,15 @@
       <option name="project" value="LOCAL" />
       <updated>1765126083450</updated>
     </task>
-    <option name="localTasksCounter" value="28" />
+    <task id="LOCAL-00028" summary="v0.47 修改群头像">
+      <option name="closed" value="true" />
+      <created>1765127417512</created>
+      <option name="number" value="00028" />
+      <option name="presentableId" value="LOCAL-00028" />
+      <option name="project" value="LOCAL" />
+      <updated>1765127417512</updated>
+    </task>
+    <option name="localTasksCounter" value="29" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -791,7 +798,6 @@
     </option>
   </component>
   <component name="VcsManagerConfiguration">
-    <MESSAGE value="v0.02 仿微信GUI，同步于TUI" />
     <MESSAGE value="v0.10 完全重构，微信GUI前端，注册登录逻辑" />
     <MESSAGE value="v0.12 群聊单聊，本地缓冲，若干生命周期问题修复，添加好友UI的设计" />
     <MESSAGE value="v0.13 通讯录UI" />
@@ -816,7 +822,8 @@
     <MESSAGE value="v0.44 群名可修改" />
     <MESSAGE value="v0.45 搜索功能实现" />
     <MESSAGE value="v0.46 删除好友" />
-    <option name="LAST_COMMIT_MESSAGE" value="v0.46 删除好友" />
+    <MESSAGE value="v0.47 修改群头像" />
+    <option name="LAST_COMMIT_MESSAGE" value="v0.47 修改群头像" />
   </component>
   <component name="XSLT-Support.FileAssociations.UIState">
     <expand />

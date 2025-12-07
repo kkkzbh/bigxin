@@ -125,6 +125,10 @@ struct Session : std::enable_shared_from_this<Session>
                     auto payload = co_await handle_conv_list_req(frame.payload);
                     auto msg = protocol::make_line("CONV_LIST_RESP", payload);
                     send_text(std::move(msg));
+                } else if(frame.command == "MARK_READ_REQ") {
+                    auto payload = co_await handle_mark_read_req(frame.payload);
+                    auto msg = protocol::make_line("MARK_READ_RESP", payload);
+                    send_text(std::move(msg));
                 } else if(frame.command == "PROFILE_UPDATE") {
                     auto payload = co_await handle_profile_update(frame.payload);
                     auto msg = protocol::make_line("PROFILE_UPDATE_RESP", payload);
@@ -275,6 +279,10 @@ private:
     /// \brief 处理会话列表请求，返回 CONV_LIST_RESP 的 JSON 串。
     /// \param payload CONV_LIST_REQ 的 JSON 文本。
     auto handle_conv_list_req(std::string const& payload) -> asio::awaitable<std::string>;
+
+    /// \brief 处理标记会话已读请求，返回 MARK_READ_RESP 的 JSON 串。
+    /// \param payload MARK_READ_REQ 的 JSON 文本。
+    auto handle_mark_read_req(std::string const& payload) -> asio::awaitable<std::string>;
 
     /// \brief 处理资料更新请求，返回 PROFILE_UPDATE_RESP 的 JSON 串。
     /// \param payload PROFILE_UPDATE 的 JSON 文本。

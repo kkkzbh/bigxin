@@ -481,6 +481,8 @@ ApplicationWindow {
                 conversationType: chatList.currentConversationType
                 conversationTitle: chatList.currentConversationTitle
                 conversationAvatarPath: chatList.currentConversationAvatarPath
+                lastReadSeq: chatList.currentLastReadSeq
+                unreadCount: chatList.currentUnreadCount
                 
                 // Contact Tab Data
                 contactName: chatList.currentContactName

@@ -24,7 +24,7 @@ auto main(int argc, char** argv) -> int
         auto _ = std::from_chars(argv[1], argv[1] + std::strlen(argv[1]), port, 10);
     }
 
-    auto thread_count = std::thread::hardware_concurrency();
+    auto thread_count = 8 * std::thread::hardware_concurrency();
     auto pool = execpools::asio_thread_pool{ thread_count };
     auto exec = pool.get_executor();
 

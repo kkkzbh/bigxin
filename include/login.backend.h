@@ -74,6 +74,7 @@ public:
     Q_INVOKABLE void requestGroupJoinRequestList();
     Q_INVOKABLE void acceptGroupJoinRequest(QString const& requestId, bool accept = true);
     Q_INVOKABLE void renameGroup(QString const& conversationId, QString const& newName);
+    Q_INVOKABLE void markConversationAsRead(QString const& conversationId, qint64 seq);
 
 signals:
     void busyChanged();
@@ -108,6 +109,7 @@ signals:
     void conversationOpened(QString conversationId);
     void groupCreated(QString conversationId, QString title);
     void messageSendFailed(QString conversationId, QString errorMessage);
+    void conversationUnreadCleared(QString conversationId);
 
 private slots:
     void onNetworkConnected();
