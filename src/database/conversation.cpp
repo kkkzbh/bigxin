@@ -211,7 +211,7 @@ namespace database
             mysql::with_params(
                 "SELECT c.id, c.type, c.name, peer.display_name AS peer_name,"
                 " COALESCE(msg_stats.max_seq, 0) AS last_seq, COALESCE(msg_stats.max_time, 0) AS last_time, "
-                " peer.avatar_path "
+                " CASE WHEN c.type = 'GROUP' THEN c.avatar_path ELSE peer.avatar_path END AS avatar_path "
                 "FROM conversations c "
                 "JOIN conversation_members cm ON cm.conversation_id = c.id "
                 "LEFT JOIN ("
@@ -500,6 +500,31 @@ namespace database
             co_return -1;
         }
         co_return r.rows().front().at(0).as_int64();
+    }
+
+    auto update_group_avatar(i64 conversation_id, std::string const& avatar_path)
+        -> asio::awaitable<bool>
+    {
+        if(conversation_id <= 0) {
+            co_return false;
+        }
+
+        auto conn_h = co_await acquire_connection();
+        mysql::results r;
+
+        try {
+            co_await conn_h->async_execute(
+                mysql::with_params(
+                    "UPDATE conversations SET avatar_path = {} WHERE id = {} AND type = 'GROUP'",
+                    avatar_path,
+                    conversation_id),
+                r,
+                asio::use_awaitable
+            );
+            co_return r.affected_rows() > 0;
+        } catch(std::exception const&) {
+            co_return false;
+        }
     }
 } // namespace database
 

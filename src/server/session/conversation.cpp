@@ -278,6 +278,98 @@ auto Session::handle_avatar_update(std::string const& payload) -> asio::awaitabl
     }
 }
 
+auto Session::handle_group_avatar_update(std::string const& payload) -> asio::awaitable<std::string>
+{
+    if(!authenticated_) {
+        co_return make_error_payload("NOT_AUTHENTICATED", "请先登录");
+    }
+
+    try {
+        auto j = json::parse(payload);
+
+        if(!j.contains("conversationId") || !j.contains("avatarData")) {
+            co_return make_error_payload("INVALID_PARAM", "缺少必要字段");
+        }
+
+        auto const conv_id = j.at("conversationId").get<i64>();
+        auto const base64_data = j.at("avatarData").get<std::string>();
+        auto extension = std::string{"jpg"};
+        if(j.contains("extension")) {
+            extension = j.at("extension").get<std::string>();
+            // 简单安全检查：仅允许字母数字
+            if(extension.find_first_not_of("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789") != std::string::npos) {
+                extension = "jpg";
+            }
+        }
+
+        // 验证权限：检查用户是否为群主或管理员
+        auto member = co_await database::get_conversation_member(conv_id, user_id_);
+        if(!member.has_value()) {
+            co_return make_error_payload("NOT_MEMBER", "您不是该群成员");
+        }
+        if(member->role != "OWNER" && member->role != "ADMIN") {
+            co_return make_error_payload("PERMISSION_DENIED", "只有群主和管理员可以更换群头像");
+        }
+
+        // 解码数据
+        auto const data = base64_decode(base64_data);
+        if(data.empty()) {
+            co_return make_error_payload("INVALID_PARAM", "无效的头像数据");
+        }
+        if(data.size() > 5 * 1024 * 1024) {
+            co_return make_error_payload("INVALID_PARAM", "头像文件过大");
+        }
+
+        // 确保目录存在
+        auto const server_root = fs::current_path();
+        auto const avatar_dir = server_root / "server_data" / "avatars";
+        
+        std::error_code ec;
+        if(!fs::exists(avatar_dir, ec)) {
+            fs::create_directories(avatar_dir, ec);
+        }
+        if(ec) {
+            std::println("Create directory failed: {}", ec.message());
+            co_return make_error_payload("SERVER_ERROR", "服务器存储错误");
+        }
+
+        // 构造文件名: group_conversationId.ext
+        auto const filename = "group_" + std::to_string(conv_id) + "." + extension;
+        auto const filepath = avatar_dir / filename;
+
+        // 写入文件
+        std::ofstream ofs(filepath, std::ios::binary | std::ios::trunc);
+        if(!ofs.is_open()) {
+            std::println("Open file failed: {}", filepath.string());
+            co_return make_error_payload("SERVER_ERROR", "无法保存头像文件");
+        }
+        ofs.write(reinterpret_cast<char const*>(data.data()), data.size());
+        ofs.close();
+
+        // 存储相对路径
+        auto const relative_path = "server_data/avatars/" + filename;
+        
+        // 更新数据库
+        auto const success = co_await database::update_group_avatar(conv_id, relative_path);
+        if(!success) {
+            co_return make_error_payload("SERVER_ERROR", "更新数据库失败");
+        }
+
+        // 注意: 群头像更新后，客户端收到响应会自动调用 needRequestConversationList 刷新会话列表
+        // 因此不需要服务器主动推送更新通知
+
+        json resp;
+        resp["ok"] = true;
+        resp["conversationId"] = conv_id;
+        resp["avatarPath"] = relative_path;
+        co_return resp.dump();
+    } catch(json::parse_error const&) {
+        co_return make_error_payload("INVALID_JSON", "请求 JSON 解析失败");
+    } catch(std::exception const& ex) {
+        co_return make_error_payload("SERVER_ERROR", ex.what());
+    }
+}
+
 auto Session::handle_create_group_req(std::string const& payload) -> asio::awaitable<std::string>
 {
     if(!authenticated_) {

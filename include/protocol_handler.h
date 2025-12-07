@@ -142,6 +142,7 @@ private:
     void handleRegisterResponse(QJsonObject const& obj);
     void handleProfileUpdateResponse(QJsonObject const& obj);
     void handleAvatarUpdateResponse(QJsonObject const& obj);
+    void handleGroupAvatarUpdateResponse(QJsonObject const& obj);
     void handleMessagePush(QJsonObject const& obj);
     void handleHistoryResponse(QJsonObject const& obj);
     void handleConversationListResponse(QJsonObject const& obj);

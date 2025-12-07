@@ -1093,7 +1093,7 @@ conversation_id</ColNames>
       <UnderlyingIndexName>PRIMARY</UnderlyingIndexName>
     </key>
     <column id="329" parent="306" name="id">
-      <AutoIncrement>1</AutoIncrement>
+      <AutoIncrement>499</AutoIncrement>
       <NotNull>1</NotNull>
       <Position>1</Position>
       <StoredType>bigint|0s</StoredType>
@@ -1118,420 +1118,424 @@ conversation_id</ColNames>
       <Position>5</Position>
       <StoredType>timestamp|0s</StoredType>
     </column>
-    <index id="334" parent="306" name="PRIMARY">
+    <column id="334" parent="306" name="avatar_path">
+      <Position>6</Position>
+      <StoredType>varchar(512)|0s</StoredType>
+    </column>
+    <index id="335" parent="306" name="PRIMARY">
       <ColNames>id</ColNames>
       <Type>btree</Type>
       <Unique>1</Unique>
     </index>
-    <index id="335" parent="306" name="idx_conversations_owner">
+    <index id="336" parent="306" name="idx_conversations_owner">
       <ColNames>owner_user_id</ColNames>
       <Type>btree</Type>
     </index>
-    <key id="336" parent="306" name="PRIMARY">
+    <key id="337" parent="306" name="PRIMARY">
       <NameSurrogate>1</NameSurrogate>
       <Primary>1</Primary>
       <UnderlyingIndexName>PRIMARY</UnderlyingIndexName>
     </key>
-    <column id="337" parent="307" name="id">
+    <column id="338" parent="307" name="id">
       <AutoIncrement>1</AutoIncrement>
       <NotNull>1</NotNull>
       <Position>1</Position>
       <StoredType>bigint|0s</StoredType>
     </column>
-    <column id="338" parent="307" name="from_user_id">
+    <column id="339" parent="307" name="from_user_id">
       <NotNull>1</NotNull>
       <Position>2</Position>
       <StoredType>bigint|0s</StoredType>
     </column>
-    <column id="339" parent="307" name="to_user_id">
+    <column id="340" parent="307" name="to_user_id">
       <NotNull>1</NotNull>
       <Position>3</Position>
       <StoredType>bigint|0s</StoredType>
     </column>
-    <column id="340" parent="307" name="status">
+    <column id="341" parent="307" name="status">
       <DefaultExpression>&apos;PENDING&apos;</DefaultExpression>
       <NotNull>1</NotNull>
       <Position>4</Position>
       <StoredType>varchar(16)|0s</StoredType>
     </column>
-    <column id="341" parent="307" name="source">
+    <column id="342" parent="307" name="source">
       <Position>5</Position>
       <StoredType>varchar(64)|0s</StoredType>
     </column>
-    <column id="342" parent="307" name="hello_msg">
+    <column id="343" parent="307" name="hello_msg">
       <Position>6</Position>
       <StoredType>text|0s</StoredType>
     </column>
-    <column id="343" parent="307" name="created_at">
+    <column id="344" parent="307" name="created_at">
       <DefaultExpression>CURRENT_TIMESTAMP</DefaultExpression>
       <NotNull>1</NotNull>
       <Position>7</Position>
       <StoredType>timestamp|0s</StoredType>
     </column>
-    <column id="344" parent="307" name="handled_at">
+    <column id="345" parent="307" name="handled_at">
       <Position>8</Position>
       <StoredType>timestamp|0s</StoredType>
     </column>
-    <foreign-key id="345" parent="307" name="fk_fr_from">
+    <foreign-key id="346" parent="307" name="fk_fr_from">
       <ColNames>from_user_id</ColNames>
       <OnDelete>cascade</OnDelete>
       <RefColNames>id</RefColNames>
       <RefTableName>users</RefTableName>
     </foreign-key>
-    <foreign-key id="346" parent="307" name="fk_fr_to">
+    <foreign-key id="347" parent="307" name="fk_fr_to">
       <ColNames>to_user_id</ColNames>
       <OnDelete>cascade</OnDelete>
       <RefColNames>id</RefColNames>
       <RefTableName>users</RefTableName>
     </foreign-key>
-    <index id="347" parent="307" name="PRIMARY">
+    <index id="348" parent="307" name="PRIMARY">
       <ColNames>id</ColNames>
       <Type>btree</Type>
       <Unique>1</Unique>
     </index>
-    <index id="348" parent="307" name="idx_friend_requests_pending_from_to">
+    <index id="349" parent="307" name="idx_friend_requests_pending_from_to">
       <ColNames>from_user_id
 to_user_id</ColNames>
       <Type>btree</Type>
     </index>
-    <index id="349" parent="307" name="idx_friend_requests_from_status">
+    <index id="350" parent="307" name="idx_friend_requests_from_status">
       <ColNames>from_user_id
 status</ColNames>
       <Type>btree</Type>
     </index>
-    <index id="350" parent="307" name="idx_friend_requests_pending_to_from">
+    <index id="351" parent="307" name="idx_friend_requests_pending_to_from">
       <ColNames>to_user_id
 from_user_id</ColNames>
       <Type>btree</Type>
     </index>
-    <index id="351" parent="307" name="idx_friend_requests_to_status">
+    <index id="352" parent="307" name="idx_friend_requests_to_status">
       <ColNames>to_user_id
 status
 created_at</ColNames>
       <ReverseColNames>created_at</ReverseColNames>
       <Type>btree</Type>
     </index>
-    <key id="352" parent="307" name="PRIMARY">
+    <key id="353" parent="307" name="PRIMARY">
       <NameSurrogate>1</NameSurrogate>
       <Primary>1</Primary>
       <UnderlyingIndexName>PRIMARY</UnderlyingIndexName>
     </key>
-    <column id="353" parent="308" name="user_id">
+    <column id="354" parent="308" name="user_id">
       <NotNull>1</NotNull>
       <Position>1</Position>
       <StoredType>bigint|0s</StoredType>
     </column>
-    <column id="354" parent="308" name="friend_user_id">
+    <column id="355" parent="308" name="friend_user_id">
       <NotNull>1</NotNull>
       <Position>2</Position>
       <StoredType>bigint|0s</StoredType>
     </column>
-    <column id="355" parent="308" name="created_at">
+    <column id="356" parent="308" name="created_at">
       <DefaultExpression>CURRENT_TIMESTAMP</DefaultExpression>
       <NotNull>1</NotNull>
       <Position>3</Position>
       <StoredType>timestamp|0s</StoredType>
     </column>
-    <foreign-key id="356" parent="308" name="fk_friends_user">
+    <foreign-key id="357" parent="308" name="fk_friends_user">
       <ColNames>user_id</ColNames>
       <OnDelete>cascade</OnDelete>
       <RefColNames>id</RefColNames>
       <RefTableName>users</RefTableName>
     </foreign-key>
-    <foreign-key id="357" parent="308" name="fk_friends_friend">
+    <foreign-key id="358" parent="308" name="fk_friends_friend">
       <ColNames>friend_user_id</ColNames>
       <OnDelete>cascade</OnDelete>
       <RefColNames>id</RefColNames>
       <RefTableName>users</RefTableName>
     </foreign-key>
-    <index id="358" parent="308" name="PRIMARY">
+    <index id="359" parent="308" name="PRIMARY">
       <ColNames>user_id
 friend_user_id</ColNames>
       <Type>btree</Type>
       <Unique>1</Unique>
     </index>
-    <index id="359" parent="308" name="fk_friends_friend">
+    <index id="360" parent="308" name="fk_friends_friend">
       <ColNames>friend_user_id</ColNames>
       <Type>btree</Type>
     </index>
-    <key id="360" parent="308" name="PRIMARY">
+    <key id="361" parent="308" name="PRIMARY">
       <NameSurrogate>1</NameSurrogate>
       <Primary>1</Primary>
       <UnderlyingIndexName>PRIMARY</UnderlyingIndexName>
     </key>
-    <column id="361" parent="309" name="id">
+    <column id="362" parent="309" name="id">
       <AutoIncrement>1</AutoIncrement>
       <NotNull>1</NotNull>
       <Position>1</Position>
       <StoredType>bigint|0s</StoredType>
     </column>
-    <column id="362" parent="309" name="from_user_id">
+    <column id="363" parent="309" name="from_user_id">
       <NotNull>1</NotNull>
       <Position>2</Position>
       <StoredType>bigint|0s</StoredType>
     </column>
-    <column id="363" parent="309" name="group_id">
+    <column id="364" parent="309" name="group_id">
       <NotNull>1</NotNull>
       <Position>3</Position>
       <StoredType>bigint|0s</StoredType>
     </column>
-    <column id="364" parent="309" name="status">
+    <column id="365" parent="309" name="status">
       <DefaultExpression>&apos;PENDING&apos;</DefaultExpression>
       <NotNull>1</NotNull>
       <Position>4</Position>
       <StoredType>varchar(16)|0s</StoredType>
     </column>
-    <column id="365" parent="309" name="hello_msg">
+    <column id="366" parent="309" name="hello_msg">
       <Position>5</Position>
       <StoredType>text|0s</StoredType>
     </column>
-    <column id="366" parent="309" name="handler_user_id">
+    <column id="367" parent="309" name="handler_user_id">
       <Position>6</Position>
       <StoredType>bigint|0s</StoredType>
     </column>
-    <column id="367" parent="309" name="created_at">
+    <column id="368" parent="309" name="created_at">
       <DefaultExpression>CURRENT_TIMESTAMP</DefaultExpression>
       <NotNull>1</NotNull>
       <Position>7</Position>
       <StoredType>timestamp|0s</StoredType>
     </column>
-    <column id="368" parent="309" name="handled_at">
+    <column id="369" parent="309" name="handled_at">
       <Position>8</Position>
       <StoredType>timestamp|0s</StoredType>
     </column>
-    <foreign-key id="369" parent="309" name="fk_gjr_from">
+    <foreign-key id="370" parent="309" name="fk_gjr_from">
       <ColNames>from_user_id</ColNames>
       <OnDelete>cascade</OnDelete>
       <RefColNames>id</RefColNames>
       <RefTableName>users</RefTableName>
     </foreign-key>
-    <foreign-key id="370" parent="309" name="fk_gjr_group">
+    <foreign-key id="371" parent="309" name="fk_gjr_group">
       <ColNames>group_id</ColNames>
       <OnDelete>cascade</OnDelete>
       <RefColNames>id</RefColNames>
       <RefTableName>conversations</RefTableName>
     </foreign-key>
-    <foreign-key id="371" parent="309" name="fk_gjr_handler">
+    <foreign-key id="372" parent="309" name="fk_gjr_handler">
       <ColNames>handler_user_id</ColNames>
       <OnDelete>set-null</OnDelete>
       <RefColNames>id</RefColNames>
       <RefTableName>users</RefTableName>
     </foreign-key>
-    <index id="372" parent="309" name="PRIMARY">
+    <index id="373" parent="309" name="PRIMARY">
       <ColNames>id</ColNames>
       <Type>btree</Type>
       <Unique>1</Unique>
     </index>
-    <index id="373" parent="309" name="idx_gjr_from_status">
+    <index id="374" parent="309" name="idx_gjr_from_status">
       <ColNames>from_user_id
 status</ColNames>
       <Type>btree</Type>
     </index>
-    <index id="374" parent="309" name="idx_gjr_pending">
+    <index id="375" parent="309" name="idx_gjr_pending">
       <ColNames>group_id
 from_user_id
 status</ColNames>
       <Type>btree</Type>
     </index>
-    <index id="375" parent="309" name="idx_gjr_group_status">
+    <index id="376" parent="309" name="idx_gjr_group_status">
       <ColNames>group_id
 status
 created_at</ColNames>
       <ReverseColNames>created_at</ReverseColNames>
       <Type>btree</Type>
     </index>
-    <index id="376" parent="309" name="fk_gjr_handler">
+    <index id="377" parent="309" name="fk_gjr_handler">
       <ColNames>handler_user_id</ColNames>
       <Type>btree</Type>
     </index>
-    <key id="377" parent="309" name="PRIMARY">
+    <key id="378" parent="309" name="PRIMARY">
       <NameSurrogate>1</NameSurrogate>
       <Primary>1</Primary>
       <UnderlyingIndexName>PRIMARY</UnderlyingIndexName>
     </key>
-    <column id="378" parent="310" name="id">
+    <column id="379" parent="310" name="id">
       <AutoIncrement>1</AutoIncrement>
       <NotNull>1</NotNull>
       <Position>1</Position>
       <StoredType>bigint|0s</StoredType>
     </column>
-    <column id="379" parent="310" name="conversation_id">
+    <column id="380" parent="310" name="conversation_id">
       <NotNull>1</NotNull>
       <Position>2</Position>
       <StoredType>bigint|0s</StoredType>
     </column>
-    <column id="380" parent="310" name="sender_id">
+    <column id="381" parent="310" name="sender_id">
       <NotNull>1</NotNull>
       <Position>3</Position>
       <StoredType>bigint|0s</StoredType>
     </column>
-    <column id="381" parent="310" name="seq">
+    <column id="382" parent="310" name="seq">
       <NotNull>1</NotNull>
       <Position>4</Position>
       <StoredType>bigint|0s</StoredType>
     </column>
-    <column id="382" parent="310" name="msg_type">
+    <column id="383" parent="310" name="msg_type">
       <NotNull>1</NotNull>
       <Position>5</Position>
       <StoredType>varchar(32)|0s</StoredType>
     </column>
-    <column id="383" parent="310" name="content">
+    <column id="384" parent="310" name="content">
       <NotNull>1</NotNull>
       <Position>6</Position>
       <StoredType>longtext|0s</StoredType>
     </column>
-    <column id="384" parent="310" name="server_time_ms">
+    <column id="385" parent="310" name="server_time_ms">
       <NotNull>1</NotNull>
       <Position>7</Position>
       <StoredType>bigint|0s</StoredType>
     </column>
-    <column id="385" parent="310" name="created_at">
+    <column id="386" parent="310" name="created_at">
       <DefaultExpression>CURRENT_TIMESTAMP</DefaultExpression>
       <NotNull>1</NotNull>
       <Position>8</Position>
       <StoredType>timestamp|0s</StoredType>
     </column>
-    <foreign-key id="386" parent="310" name="fk_msg_conv">
+    <foreign-key id="387" parent="310" name="fk_msg_conv">
       <ColNames>conversation_id</ColNames>
       <OnDelete>cascade</OnDelete>
       <RefColNames>id</RefColNames>
       <RefTableName>conversations</RefTableName>
     </foreign-key>
-    <foreign-key id="387" parent="310" name="fk_msg_sender">
+    <foreign-key id="388" parent="310" name="fk_msg_sender">
       <ColNames>sender_id</ColNames>
       <OnDelete>cascade</OnDelete>
       <RefColNames>id</RefColNames>
       <RefTableName>users</RefTableName>
     </foreign-key>
-    <index id="388" parent="310" name="PRIMARY">
+    <index id="389" parent="310" name="PRIMARY">
       <ColNames>id</ColNames>
       <Type>btree</Type>
       <Unique>1</Unique>
     </index>
-    <index id="389" parent="310" name="uk_messages_conv_seq">
+    <index id="390" parent="310" name="uk_messages_conv_seq">
       <ColNames>conversation_id
 seq</ColNames>
       <Type>btree</Type>
       <Unique>1</Unique>
     </index>
-    <index id="390" parent="310" name="idx_messages_conv_time">
+    <index id="391" parent="310" name="idx_messages_conv_time">
       <ColNames>conversation_id
 id</ColNames>
       <Type>btree</Type>
     </index>
-    <index id="391" parent="310" name="fk_msg_sender">
+    <index id="392" parent="310" name="fk_msg_sender">
       <ColNames>sender_id</ColNames>
       <Type>btree</Type>
     </index>
-    <key id="392" parent="310" name="PRIMARY">
+    <key id="393" parent="310" name="PRIMARY">
       <NameSurrogate>1</NameSurrogate>
       <Primary>1</Primary>
       <UnderlyingIndexName>PRIMARY</UnderlyingIndexName>
     </key>
-    <key id="393" parent="310" name="uk_messages_conv_seq">
+    <key id="394" parent="310" name="uk_messages_conv_seq">
       <UnderlyingIndexName>uk_messages_conv_seq</UnderlyingIndexName>
     </key>
-    <column id="394" parent="311" name="user1_id">
+    <column id="395" parent="311" name="user1_id">
       <NotNull>1</NotNull>
       <Position>1</Position>
       <StoredType>bigint|0s</StoredType>
     </column>
-    <column id="395" parent="311" name="user2_id">
+    <column id="396" parent="311" name="user2_id">
       <NotNull>1</NotNull>
       <Position>2</Position>
       <StoredType>bigint|0s</StoredType>
     </column>
-    <column id="396" parent="311" name="conversation_id">
+    <column id="397" parent="311" name="conversation_id">
       <NotNull>1</NotNull>
       <Position>3</Position>
       <StoredType>bigint|0s</StoredType>
     </column>
-    <foreign-key id="397" parent="311" name="fk_sc_user1">
+    <foreign-key id="398" parent="311" name="fk_sc_user1">
       <ColNames>user1_id</ColNames>
       <OnDelete>cascade</OnDelete>
       <RefColNames>id</RefColNames>
       <RefTableName>users</RefTableName>
     </foreign-key>
-    <foreign-key id="398" parent="311" name="fk_sc_user2">
+    <foreign-key id="399" parent="311" name="fk_sc_user2">
       <ColNames>user2_id</ColNames>
       <OnDelete>cascade</OnDelete>
       <RefColNames>id</RefColNames>
       <RefTableName>users</RefTableName>
     </foreign-key>
-    <foreign-key id="399" parent="311" name="fk_sc_conv">
+    <foreign-key id="400" parent="311" name="fk_sc_conv">
       <ColNames>conversation_id</ColNames>
       <OnDelete>cascade</OnDelete>
       <RefColNames>id</RefColNames>
       <RefTableName>conversations</RefTableName>
     </foreign-key>
-    <index id="400" parent="311" name="uk_single_pair">
+    <index id="401" parent="311" name="uk_single_pair">
       <ColNames>user1_id
 user2_id</ColNames>
       <Type>btree</Type>
       <Unique>1</Unique>
     </index>
-    <index id="401" parent="311" name="fk_sc_user2">
+    <index id="402" parent="311" name="fk_sc_user2">
       <ColNames>user2_id</ColNames>
       <Type>btree</Type>
     </index>
-    <index id="402" parent="311" name="fk_sc_conv">
+    <index id="403" parent="311" name="fk_sc_conv">
       <ColNames>conversation_id</ColNames>
       <Type>btree</Type>
     </index>
-    <key id="403" parent="311" name="uk_single_pair">
+    <key id="404" parent="311" name="uk_single_pair">
       <UnderlyingIndexName>uk_single_pair</UnderlyingIndexName>
     </key>
-    <column id="404" parent="312" name="id">
+    <column id="405" parent="312" name="id">
       <AutoIncrement>29299</AutoIncrement>
       <NotNull>1</NotNull>
       <Position>1</Position>
       <StoredType>bigint|0s</StoredType>
     </column>
-    <column id="405" parent="312" name="account">
+    <column id="406" parent="312" name="account">
       <NotNull>1</NotNull>
       <Position>2</Position>
       <StoredType>varchar(255)|0s</StoredType>
     </column>
-    <column id="406" parent="312" name="password_hash">
+    <column id="407" parent="312" name="password_hash">
       <NotNull>1</NotNull>
       <Position>3</Position>
       <StoredType>varchar(255)|0s</StoredType>
     </column>
-    <column id="407" parent="312" name="display_name">
+    <column id="408" parent="312" name="display_name">
       <NotNull>1</NotNull>
       <Position>4</Position>
       <StoredType>varchar(255)|0s</StoredType>
     </column>
-    <column id="408" parent="312" name="created_at">
+    <column id="409" parent="312" name="created_at">
       <DefaultExpression>CURRENT_TIMESTAMP</DefaultExpression>
       <NotNull>1</NotNull>
       <Position>5</Position>
       <StoredType>timestamp|0s</StoredType>
     </column>
-    <column id="409" parent="312" name="last_login_at">
+    <column id="410" parent="312" name="last_login_at">
       <Position>6</Position>
       <StoredType>timestamp|0s</StoredType>
     </column>
-    <column id="410" parent="312" name="avatar_path">
+    <column id="411" parent="312" name="avatar_path">
       <Position>7</Position>
       <StoredType>varchar(512)|0s</StoredType>
     </column>
-    <index id="411" parent="312" name="PRIMARY">
+    <index id="412" parent="312" name="PRIMARY">
       <ColNames>id</ColNames>
       <Type>btree</Type>
       <Unique>1</Unique>
     </index>
-    <index id="412" parent="312" name="account">
+    <index id="413" parent="312" name="account">
       <ColNames>account</ColNames>
       <Type>btree</Type>
       <Unique>1</Unique>
     </index>
-    <key id="413" parent="312" name="PRIMARY">
+    <key id="414" parent="312" name="PRIMARY">
       <NameSurrogate>1</NameSurrogate>
       <Primary>1</Primary>
       <UnderlyingIndexName>PRIMARY</UnderlyingIndexName>
     </key>
-    <key id="414" parent="312" name="account">
+    <key id="415" parent="312" name="account">
       <UnderlyingIndexName>account</UnderlyingIndexName>
     </key>
   </database-model>

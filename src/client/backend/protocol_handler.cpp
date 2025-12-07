@@ -99,6 +99,8 @@ void ProtocolHandler::handleCommand(QString command, QJsonObject payload)
         handleProfileUpdateResponse(payload);
     } else if(command == QStringLiteral("AVATAR_UPDATE_RESP")) {
         handleAvatarUpdateResponse(payload);
+    } else if(command == QStringLiteral("GROUP_AVATAR_UPDATE_RESP")) {
+        handleGroupAvatarUpdateResponse(payload);
     } else if(command == QStringLiteral("FRIEND_LIST_RESP")) {
         handleFriendListResponse(payload);
     } else if(command == QStringLiteral("FRIEND_REQ_LIST_RESP")) {
@@ -236,6 +238,19 @@ void ProtocolHandler::handleAvatarUpdateResponse(QJsonObject const& obj)
     auto const avatar = obj.value(QStringLiteral("avatarPath")).toString();
     avatar_path_ = avatar;
     emit avatarUpdated(avatar);
+}
+
+void ProtocolHandler::handleGroupAvatarUpdateResponse(QJsonObject const& obj)
+{
+    auto const ok = obj.value(QStringLiteral("ok")).toBool(false);
+    if(!ok) {
+        auto const msg = obj.value(QStringLiteral("errorMsg")).toString(QStringLiteral("修改群头像失败"));
+        emit errorOccurred(msg);
+        return;
+    }
+
+    // 群头像更新成功，需要刷新会话列表以显示新头像
+    emit needRequestConversationList();
 }
 
 void ProtocolHandler::handleMessagePush(QJsonObject const& obj)

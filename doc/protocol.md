@@ -83,6 +83,8 @@ SEND_MSG:{"conversationId":"grp-123","senderId":"u_001","clientMsgId":"cli-1","m
 - 用户资料：
   - `PROFILE_UPDATE` (C → S)
   - `PROFILE_UPDATE_RESP` (S → C)
+  - `GROUP_AVATAR_UPDATE` (C → S)
+  - `GROUP_AVATAR_UPDATE_RESP` (S → C)
 - 好友 / 通讯录：
   - `FRIEND_LIST_REQ` / `FRIEND_LIST_RESP`
   - `FRIEND_SEARCH_REQ` / `FRIEND_SEARCH_RESP`
@@ -252,6 +254,62 @@ PROFILE_UPDATE_RESP:{
 - `ok`：是否更新成功。
 - `displayName`：成功时返回最新昵称。
 - `errorCode`：失败时错误码。
+- `errorMsg`：失败时错误信息。
+
+### 5.7 GROUP_AVATAR_UPDATE（C → S）
+
+客户端更新群聊头像（仅群主和管理员有权限）。
+
+格式：
+
+```text
+GROUP_AVATAR_UPDATE:{
+  "conversationId": "123",
+  "avatarData": "base64编码的图片数据",
+  "extension": "jpg"
+}\n
+```
+
+字段：
+
+- `conversationId`：群聊会话 ID。
+- `avatarData`：图片文件的 Base64 编码数据。
+- `extension`：文件扩展名（jpg/png/jpeg/bmp），用于保存文件。
+
+### 5.8 GROUP_AVATAR_UPDATE_RESP（S → C）
+
+服务器返回群聊头像更新结果。
+
+格式（成功）：
+
+```text
+GROUP_AVATAR_UPDATE_RESP:{
+  "ok": true,
+  "conversationId": "123",
+  "avatarPath": "server_data/avatars/group_123.jpg"
+}\n
+```
+
+格式（失败）：
+
+```text
+GROUP_AVATAR_UPDATE_RESP:{
+  "ok": false,
+  "errorCode": "NOT_AUTHENTICATED" | "PERMISSION_DENIED" | "INVALID_PARAM" | "SERVER_ERROR",
+  "errorMsg": "错误信息"
+}\n
+```
+
+字段：
+
+- `ok`：是否更新成功。
+- `conversationId`：成功时返回会话 ID。
+- `avatarPath`：成功时返回服务器保存的头像路径。
+- `errorCode`：失败时错误码。
+  - `NOT_AUTHENTICATED`：未登录。
+  - `PERMISSION_DENIED`：权限不足（非群主或管理员）。
+  - `INVALID_PARAM`：参数无效。
+  - `SERVER_ERROR`：服务器错误。
 - `errorMsg`：失败时错误信息。
 
 ## 6. 消息发送与确认

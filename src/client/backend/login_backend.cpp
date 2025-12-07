@@ -226,6 +226,47 @@ void LoginBackend::updateAvatar(QString const& avatarPath)
     network_manager_->sendCommand(QStringLiteral("AVATAR_UPDATE"), obj);
 }
 
+void LoginBackend::updateGroupAvatar(QString const& conversationId, QString const& avatarPath)
+{
+    if(user_id_.isEmpty()) {
+        setErrorMessage(QStringLiteral("请先登录后再修改群头像"));
+        return;
+    }
+    if(!network_manager_->isConnected()) {
+        setErrorMessage(QStringLiteral("与服务器的连接已断开"));
+        return;
+    }
+
+    QFile file(avatarPath);
+    if(!file.exists()) {
+        setErrorMessage(QStringLiteral("找不到头像文件"));
+        return;
+    }
+    if(!file.open(QIODevice::ReadOnly)) {
+        setErrorMessage(QStringLiteral("无法读取头像文件"));
+        return;
+    }
+
+    // 限制文件大小（例如 2MB）
+    if(file.size() > 2 * 1024 * 1024) {
+        setErrorMessage(QStringLiteral("头像文件过大（最大 2MB）"));
+        return;
+    }
+
+    auto const data = file.readAll();
+    file.close();
+
+    auto const base64 = QString::fromLatin1(data.toBase64());
+    auto const extension = QFileInfo(avatarPath).suffix();
+
+    QJsonObject obj;
+    obj.insert(QStringLiteral("conversationId"), conversationId.toLongLong());
+    obj.insert(QStringLiteral("avatarData"), base64);
+    obj.insert(QStringLiteral("extension"), extension.isEmpty() ? QStringLiteral("jpg") : extension);
+    
+    network_manager_->sendCommand(QStringLiteral("GROUP_AVATAR_UPDATE"), obj);
+}
+
 void LoginBackend::clearError()
 {
     setErrorMessage(QString{});

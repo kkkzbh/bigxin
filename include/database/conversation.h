@@ -88,5 +88,12 @@ namespace database
     /// \return 对端用户 ID，若不存在则返回 -1。
     auto get_single_peer_user_id(i64 conversation_id, i64 current_user_id)
         -> boost::asio::awaitable<i64>;
+
+    /// \brief 更新群聊头像路径。
+    /// \param conversation_id 会话 ID。
+    /// \param avatar_path 头像文件路径。
+    /// \return 是否更新成功。
+    auto update_group_avatar(i64 conversation_id, std::string const& avatar_path)
+        -> boost::asio::awaitable<bool>;
 } // namespace database
 

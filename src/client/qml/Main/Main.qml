@@ -480,6 +480,7 @@ ApplicationWindow {
                 conversationId: chatList.currentConversationId
                 conversationType: chatList.currentConversationType
                 conversationTitle: chatList.currentConversationTitle
+                conversationAvatarPath: chatList.currentConversationAvatarPath
                 
                 // Contact Tab Data
                 contactName: chatList.currentContactName

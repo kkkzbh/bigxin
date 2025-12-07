@@ -4,6 +4,7 @@ CREATE TABLE IF NOT EXISTS conversations (
     type VARCHAR(16) NOT NULL,
     name VARCHAR(255) NOT NULL,
     owner_user_id BIGINT NULL,
+    avatar_path VARCHAR(512) DEFAULT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     INDEX idx_conversations_owner(owner_user_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

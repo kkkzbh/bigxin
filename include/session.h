@@ -133,6 +133,10 @@ struct Session : std::enable_shared_from_this<Session>
                     auto payload = co_await handle_avatar_update(frame.payload);
                     auto msg = protocol::make_line("AVATAR_UPDATE_RESP", payload);
                     send_text(std::move(msg));
+                } else if(frame.command == "GROUP_AVATAR_UPDATE") {
+                    auto payload = co_await handle_group_avatar_update(frame.payload);
+                    auto msg = protocol::make_line("GROUP_AVATAR_UPDATE_RESP", payload);
+                    send_text(std::move(msg));
                 } else if(frame.command == "FRIEND_LIST_REQ") {
                     auto payload = co_await handle_friend_list_req(frame.payload);
                     auto msg = protocol::make_line("FRIEND_LIST_RESP", payload);
@@ -279,6 +283,10 @@ private:
     /// \brief 处理头像更新请求，返回 AVATAR_UPDATE_RESP 的 JSON 串。
     /// \param payload AVATAR_UPDATE 的 JSON 文本。
     auto handle_avatar_update(std::string const& payload) -> asio::awaitable<std::string>;
+
+    /// \brief 处理群聊头像更新请求，返回 GROUP_AVATAR_UPDATE_RESP 的 JSON 串。
+    /// \param payload GROUP_AVATAR_UPDATE 的 JSON 文本。
+    auto handle_group_avatar_update(std::string const& payload) -> asio::awaitable<std::string>;
 
     /// \brief 处理好友列表请求，返回 FRIEND_LIST_RESP 的 JSON 串。
     /// \param payload FRIEND_LIST_REQ 的 JSON 文本。

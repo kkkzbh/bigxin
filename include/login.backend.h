@@ -46,6 +46,7 @@ public:
     Q_INVOKABLE void registerAccount(QString const& account, QString const& password, QString const& confirmPassword);
     Q_INVOKABLE void updateDisplayName(QString const& newName);
     Q_INVOKABLE void updateAvatar(QString const& avatarPath);
+    Q_INVOKABLE void updateGroupAvatar(QString const& conversationId, QString const& avatarPath);
     Q_INVOKABLE void clearError();
 
     Q_INVOKABLE void sendWorldTextMessage(QString const& text);

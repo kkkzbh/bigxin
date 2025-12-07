@@ -20,6 +20,7 @@ Rectangle {
     property string currentConversationId: ""
     property string currentConversationType: ""
     property string currentConversationTitle: ""
+    property string currentConversationAvatarPath: ""
     
     // 监听 currentIndex 变化，更新当前会话信息
     onCurrentIndexChanged: {
@@ -27,11 +28,13 @@ Rectangle {
             currentConversationId = ""
             currentConversationType = ""
             currentConversationTitle = ""
+            currentConversationAvatarPath = ""
         } else {
             const item = chatModel.get(currentIndex)
             currentConversationId = String(item.conversationId || "")
             currentConversationType = item.conversationType
             currentConversationTitle = item.title
+            currentConversationAvatarPath = item.avatarPath || ""
         }
     }
 
@@ -261,8 +264,9 @@ Rectangle {
                 }
                 if (restoreIndex >= 0) {
                     listView.currentIndex = restoreIndex
-                    // 同时更新标题（可能已改名）
+                    // 同时更新标题和头像（可能已改名或换头像）
                     root.currentConversationTitle = chatModel.get(restoreIndex).title
+                    root.currentConversationAvatarPath = chatModel.get(restoreIndex).avatarPath || ""
                 } else if (chatModel.count > 0) {
                     // 之前的会话已不存在，选中第一个
                     listView.currentIndex = 0

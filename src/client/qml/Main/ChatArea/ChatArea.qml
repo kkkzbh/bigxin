@@ -2,6 +2,7 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 import QtQuick.Window
+import QtQuick.Dialogs
 
 import WeChatClient as AppTheme
 import "../Dialogs"
@@ -22,6 +23,8 @@ Rectangle {
     property string conversationType: ""
     // 当前会话标题 / 昵称，用于标题栏显示。
     property string conversationTitle: ""
+    // 当前会话头像路径（用于群聊头像显示）。
+    property string conversationAvatarPath: ""
     // 单聊对端用户 ID（仅 SINGLE 类型会话时有效）。
     property string peerUserId: ""
 
@@ -923,19 +926,66 @@ Rectangle {
                             visible: root.conversationType === "GROUP"
 
                             // 群头像
-                            Rectangle {
+                            Item {
                                 Layout.alignment: Qt.AlignHCenter
                                 width: 64
                                 height: 64
-                                radius: 8
-                                color: "#4fbf73"
 
-                                Text {
-                                    anchors.centerIn: parent
-                                    text: (root.conversationTitle || "").slice(0, 1)
-                                    color: "#ffffff"
-                                    font.pixelSize: 28
-                                    font.bold: true
+                                Rectangle {
+                                    id: groupAvatarRect
+                                    anchors.fill: parent
+                                    radius: 8
+                                    color: "#4fbf73"
+                                    clip: true
+
+                                    // 头像文本
+                                    Text {
+                                        anchors.centerIn: parent
+                                        text: (root.conversationTitle || "").slice(0, 1)
+                                        color: "#ffffff"
+                                        font.pixelSize: 28
+                                        font.bold: true
+                                        visible: groupAvatarImg.status !== Image.Ready
+                                    }
+
+                                    // 头像图片（如果有）
+                                    Image {
+                                        id: groupAvatarImg
+                                        anchors.fill: parent
+                                        source: loginBackend.resolveAvatarUrl(root.conversationAvatarPath || "")
+                                        fillMode: Image.PreserveAspectCrop
+                                        visible: status === Image.Ready
+                                        asynchronous: true
+                                    }
+
+                                    // 悬停时显示的半透明遮罩（仅群主和管理员可见）
+                                    Rectangle {
+                                        anchors.fill: parent
+                                        color: "#80000000"
+                                        radius: 8
+                                        visible: groupAvatarMouseArea.containsMouse 
+                                                 && (root.myRole === "OWNER" || root.myRole === "ADMIN")
+
+                                        // 编辑图标
+                                        Text {
+                                            anchors.centerIn: parent
+                                            text: "✎"
+                                            color: "#ffffff"
+                                            font.pixelSize: 24
+                                        }
+                                    }
+
+                                    MouseArea {
+                                        id: groupAvatarMouseArea
+                                        anchors.fill: parent
+                                        hoverEnabled: true
+                                        cursorShape: (root.myRole === "OWNER" || root.myRole === "ADMIN") 
+                                                     ? Qt.PointingHandCursor : Qt.ArrowCursor
+                                        enabled: root.myRole === "OWNER" || root.myRole === "ADMIN"
+                                        onClicked: {
+                                            groupAvatarPicker.open()
+                                        }
+                                    }
                                 }
                             }
 
@@ -1172,6 +1222,27 @@ Rectangle {
                     }
                 }
             }
+        }
+    }
+
+    // 群聊头像选择器
+    FileDialog {
+        id: groupAvatarPicker
+        title: qsTr("选择群头像")
+        nameFilters: [qsTr("图片文件 (*.jpg *.png *.jpeg *.bmp)")]
+        onAccepted: {
+            var path = groupAvatarPicker.selectedFile.toString()
+            // 简单的 URL 转本地路径处理
+            if (Qt.platform.os === "windows") {
+                // file:///C:/... -> C:/...
+                path = path.replace(/^(file:\/{3})/, "")
+            } else {
+                // file:///home/... -> /home/...
+                path = path.replace(/^(file:\/\/)/, "")
+            }
+            // 解码 URL 编码字符（如中文文件名）
+            path = decodeURIComponent(path)
+            loginBackend.updateGroupAvatar(root.conversationId, path)
         }
     }
 }
