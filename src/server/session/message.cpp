@@ -2,6 +2,7 @@
 #include <server.h>
 
 #include <database.h>
+#include <database/friend.h>
 
 #include <chrono>
 #include <ctime>
@@ -82,6 +83,27 @@ auto Session::handle_send_msg(std::string payload) -> asio::awaitable<void>
                 auto msg = protocol::make_line("ERROR", err);
                 send_text(std::move(msg));
                 co_return;
+            }
+        }
+
+        // 单聊需要检查好友关系
+        auto const conv_type = co_await database::get_conversation_type(conversation_id);
+        if(conv_type == "SINGLE") {
+            auto const peer_id = co_await database::get_single_peer_user_id(conversation_id, user_id_);
+            if(peer_id > 0) {
+                auto const is_friend = co_await database::is_friend(user_id_, peer_id);
+                if(!is_friend) {
+                    json err_obj;
+                    err_obj["errorCode"] = "NOT_FRIEND";
+                    err_obj["errorMsg"] = "请添加对方为好友";
+                    err_obj["conversationId"] = std::to_string(conversation_id);
+                    if(j.contains("content")) err_obj["content"] = j["content"];
+                    err_obj["type"] = j.value("type", "TEXT");
+
+                    auto msg = protocol::make_line("SEND_FAILED", err_obj.dump());
+                    send_text(std::move(msg));
+                    co_return;
+                }
             }
         }
     }

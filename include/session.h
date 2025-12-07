@@ -157,6 +157,10 @@ struct Session : std::enable_shared_from_this<Session>
                     auto payload = co_await handle_friend_reject_req(frame.payload);
                     auto msg = protocol::make_line("FRIEND_REJECT_RESP", payload);
                     send_text(std::move(msg));
+                } else if(frame.command == "FRIEND_DELETE_REQ") {
+                    auto payload = co_await handle_friend_delete_req(frame.payload);
+                    auto msg = protocol::make_line("FRIEND_DELETE_RESP", payload);
+                    send_text(std::move(msg));
                 } else if(frame.command == "CREATE_GROUP_REQ") {
                     auto payload = co_await handle_create_group_req(frame.payload);
                     auto msg = protocol::make_line("CREATE_GROUP_RESP", payload);
@@ -299,6 +303,10 @@ private:
     /// \brief 处理拒绝好友申请的请求，返回 FRIEND_REJECT_RESP 的 JSON 串。
     /// \param payload FRIEND_REJECT_REQ 的 JSON 文本。
     auto handle_friend_reject_req(std::string const& payload) -> asio::awaitable<std::string>;
+
+    /// \brief 处理删除好友的请求，返回 FRIEND_DELETE_RESP 的 JSON 串。
+    /// \param payload FRIEND_DELETE_REQ 的 JSON 文本。
+    auto handle_friend_delete_req(std::string const& payload) -> asio::awaitable<std::string>;
 
     /// \brief 处理创建群聊的请求，返回 CREATE_GROUP_RESP 的 JSON 串。
     /// \param payload CREATE_GROUP_REQ 的 JSON 文本。

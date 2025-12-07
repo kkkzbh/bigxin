@@ -28,6 +28,7 @@ Rectangle {
     // 根据当前选中联系人 ID / 用户 ID / 请求 ID
     // 在最新的模型中同步右侧详情面板的数据。
     function refreshCurrentSelection() {
+        console.log("[refreshCurrentSelection] 开始刷新 - currentContactId:", currentContactId, "currentContactUserId:", currentContactUserId, "currentRequestId:", currentRequestId)
         if (!currentContactId && !currentContactUserId && !currentRequestId) {
             return
         }
@@ -37,6 +38,7 @@ Rectangle {
             var c = contactsModel.get(i)
             if ((currentContactUserId && c.userId === currentContactUserId)
                     || (currentContactId && c.wechatId === currentContactId)) {
+                console.log("[refreshCurrentSelection] 在好友列表中找到, 清空requestStatus")
                 currentContactId = c.wechatId
                 currentContactName = c.name
                 currentContactWeChatId = c.wechatId
@@ -55,6 +57,7 @@ Rectangle {
             if ((currentRequestId && r.requestId === currentRequestId)
                     || (currentContactUserId && r.userId === currentContactUserId)
                     || (currentContactId && r.wechatId === currentContactId)) {
+                console.log("[refreshCurrentSelection] 在新的朋友列表中找到, status:", r.status)
                 currentContactId = r.wechatId
                 currentContactName = r.name
                 currentContactWeChatId = r.wechatId
@@ -65,6 +68,7 @@ Rectangle {
                 return
             }
         }
+        console.log("[refreshCurrentSelection] 未找到匹配项")
     }
 
     ListModel {

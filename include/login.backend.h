@@ -61,6 +61,7 @@ public:
     Q_INVOKABLE void createGroupConversation(QStringList const& memberUserIds, QString const& name);
     Q_INVOKABLE void acceptFriendRequest(QString const& requestId);
     Q_INVOKABLE void rejectFriendRequest(QString const& requestId);
+    Q_INVOKABLE void deleteFriend(QString const& friendUserId);
     Q_INVOKABLE void openSingleConversation(QString const& peerUserId);
     Q_INVOKABLE void muteMember(QString const& conversationId, QString const& targetUserId, qint64 durationSeconds);
     Q_INVOKABLE void unmuteMember(QString const& conversationId, QString const& targetUserId);
@@ -105,6 +106,7 @@ signals:
     void singleConversationReady(QString conversationId, QString conversationType);
     void conversationOpened(QString conversationId);
     void groupCreated(QString conversationId, QString title);
+    void messageSendFailed(QString conversationId, QString errorMessage);
 
 private slots:
     void onNetworkConnected();

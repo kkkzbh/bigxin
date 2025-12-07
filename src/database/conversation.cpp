@@ -425,4 +425,81 @@ namespace database
 
         co_await conn_h->async_execute("COMMIT", r, asio::use_awaitable);
     }
+
+    auto find_single_conversation(i64 user1, i64 user2) -> asio::awaitable<std::optional<i64>>
+    {
+        if(user1 <= 0 || user2 <= 0 || user1 == user2) {
+            co_return std::nullopt;
+        }
+
+        auto a = std::min(user1, user2);
+        auto b = std::max(user1, user2);
+
+        auto conn_h = co_await acquire_connection();
+        mysql::results r;
+
+        co_await conn_h->async_execute(
+            mysql::with_params(
+                "SELECT conversation_id FROM single_conversations"
+                " WHERE user1_id={} AND user2_id={} LIMIT 1",
+                a,
+                b),
+            r,
+            asio::use_awaitable
+        );
+
+        if(r.rows().empty()) {
+            co_return std::nullopt;
+        }
+        co_return r.rows().front().at(0).as_int64();
+    }
+
+    auto get_conversation_type(i64 conversation_id) -> asio::awaitable<std::string>
+    {
+        if(conversation_id <= 0) {
+            co_return "";
+        }
+
+        auto conn_h = co_await acquire_connection();
+        mysql::results r;
+
+        co_await conn_h->async_execute(
+            mysql::with_params(
+                "SELECT type FROM conversations WHERE id={} LIMIT 1",
+                conversation_id),
+            r,
+            asio::use_awaitable
+        );
+
+        if(r.rows().empty()) {
+            co_return "";
+        }
+        co_return std::string(r.rows().front().at(0).as_string());
+    }
+
+    auto get_single_peer_user_id(i64 conversation_id, i64 current_user_id) -> asio::awaitable<i64>
+    {
+        if(conversation_id <= 0 || current_user_id <= 0) {
+            co_return -1;
+        }
+
+        auto conn_h = co_await acquire_connection();
+        mysql::results r;
+
+        co_await conn_h->async_execute(
+            mysql::with_params(
+                "SELECT user_id FROM conversation_members"
+                " WHERE conversation_id={} AND user_id<>{} LIMIT 1",
+                conversation_id,
+                current_user_id),
+            r,
+            asio::use_awaitable
+        );
+
+        if(r.rows().empty()) {
+            co_return -1;
+        }
+        co_return r.rows().front().at(0).as_int64();
+    }
 } // namespace database
+

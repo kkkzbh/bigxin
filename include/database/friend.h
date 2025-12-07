@@ -59,4 +59,11 @@ namespace database
     /// \return 操作结果。
     auto reject_friend_request(i64 request_id, i64 current_user_id)
         -> boost::asio::awaitable<RejectFriendRequestResult>;
+
+    /// \brief 删除好友关系（双向）。
+    /// \param user_id 当前用户 ID。
+    /// \param friend_id 要删除的好友 ID。
+    /// \return 操作是否成功。
+    auto delete_friend(i64 user_id, i64 friend_id)
+        -> boost::asio::awaitable<bool>;
 } // namespace database

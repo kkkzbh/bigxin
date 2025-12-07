@@ -22,6 +22,8 @@ Rectangle {
     property string conversationType: ""
     // 当前会话标题 / 昵称，用于标题栏显示。
     property string conversationTitle: ""
+    // 单聊对端用户 ID（仅 SINGLE 类型会话时有效）。
+    property string peerUserId: ""
 
     // 当前会话成员信息缓存：以 userId 为键。
     property var memberMap: ({})
@@ -37,6 +39,9 @@ Rectangle {
 
     // AI 生成状态
     property bool aiGenerating: false
+    
+    // 缓存最后发送的消息内容（用于失败消息显示）
+    property string lastSentMessage: ""
 
     // 正常聊天界面，仅在有选中会话时显示
     property int currentTab: 0
@@ -124,7 +129,7 @@ Rectangle {
         }
 
         var data = {
-            "model": "deepseek-chat",
+            "model": "deepseek-reasoner",
             "messages": apiMessages,
             "temperature": 0.7,
             "max_tokens": 500,
@@ -160,15 +165,18 @@ Rectangle {
         if (conversationId === "" || !root.hasSelection) {
             return
         }
-        if (conversationType !== "GROUP") {
+        // GROUP 和 SINGLE 都需要请求成员列表
+        // GROUP 用于显示成员，SINGLE 用于获取 peerUserId
+        if (conversationType === "GROUP" || conversationType === "SINGLE") {
+            loginBackend.requestConversationMembers(conversationId)
+        } else {
             memberMap = ({})
             memberListModel.clear()
             myRole = ""
             isMuted = false
             muteCountdown.running = false
-            return
+            peerUserId = ""
         }
-        loginBackend.requestConversationMembers(conversationId)
     }
 
     function updateMembers(members) {
@@ -227,6 +235,20 @@ Rectangle {
             root.mutedUntilMs = 0
             root.isMuted = false
             muteCountdown.running = false
+        }
+
+        // 对于单聊，提取对端用户 ID
+        if (root.conversationType === "SINGLE" && Object.keys(map).length === 2) {
+            for (const userId in map) {
+                if (userId !== selfId) {
+                    root.peerUserId = userId
+                    console.log("[updateMembers] 单聊对端用户 ID:", userId)
+                    break
+                }
+            }
+        } else {
+            root.peerUserId = ""
+            console.log("[updateMembers] 非单聊或成员数不为2，清空 peerUserId. conversationType:", root.conversationType, "成员数:", Object.keys(map).length)
         }
     }
 
@@ -482,9 +504,9 @@ Rectangle {
 
                             Rectangle {
                                 id: rightBubble
-                                color: theme.bubbleMine
+                                color: model.isFailed ? "#e74c3c" : theme.bubbleMine  // 失败消息显示红色
                                 radius: 6
-                                border.color: theme.bubbleMine
+                                border.color: model.isFailed ? "#e74c3c" : theme.bubbleMine
                                 implicitWidth: Math.min(messageList.width * 0.7, rightText.implicitWidth + 20)
                                 implicitHeight: rightText.implicitHeight + 14
 
@@ -635,6 +657,7 @@ Rectangle {
                                 inputArea.cursorPosition = inputArea.text.length
                             } else {
                                 if (inputArea.text.length > 0) {
+                                    root.lastSentMessage = inputArea.text.trim()
                                     loginBackend.sendMessage(root.conversationId, inputArea.text)
                                     inputArea.text = ""
                                 }
@@ -648,6 +671,7 @@ Rectangle {
                                 inputArea.cursorPosition = inputArea.text.length
                             } else {
                                 if (inputArea.text.length > 0) {
+                                    root.lastSentMessage = inputArea.text.trim()
                                     loginBackend.sendMessage(root.conversationId, inputArea.text)
                                     inputArea.text = ""
                                 }
@@ -674,6 +698,7 @@ Rectangle {
                                                 : theme.sendButtonDisabled
                             }
                             onClicked: {
+                                root.lastSentMessage = inputArea.text.trim()
                                 loginBackend.sendMessage(root.conversationId, inputArea.text)
                                 inputArea.text = ""
                             }
@@ -736,6 +761,7 @@ Rectangle {
         memberListModel.clear()
         myRole = ""
         isMuted = false
+        peerUserId = ""  // 重置 peerUserId，防止旧值残留
         detailPanelVisible = false
         detailPanelExpanded = false
         if (conversationId !== "") {
@@ -777,6 +803,7 @@ Rectangle {
             const mine = senderId === loginBackend.userId
             const type = (msgType || "").toString()
             const sys = type === "SYSTEM"
+            const isFailedMsg = type === "FAILED_TEXT"
             const trimmed = (content || "").trim()
             // 防御空字符串系统消息：不展示、不占位
             if (sys && trimmed.length === 0)
@@ -785,9 +812,36 @@ Rectangle {
                 sender: sys ? "system" : (mine ? "me" : "other"),
                 senderName: senderDisplayName,
                 senderId: senderId,
-                content: trimmed
+                content: trimmed,
+                isFailed: isFailedMsg  // 只有 FAILED_TEXT 设置为 true
             })
             // 如果列表已显示，直接滚动；否则重置显示定时器
+            if (messageList.visible) {
+                messageList.positionViewAtEnd()
+            } else {
+                scrollTimer.restart()
+            }
+        }
+
+        // 消息发送失败处理（例如非好友发送消息）
+        function onMessageSendFailed(conversationId, errorMessage) {
+            // 添加失败的消息气泡（红色）
+            messageModel.append({
+                sender: "me",
+                senderName: loginBackend.displayName,
+                senderId: loginBackend.userId,
+                content: root.lastSentMessage,
+                isFailed: true  // 标记为失败状态
+            })
+            // 添加系统提示消息
+            messageModel.append({
+                sender: "system",
+                senderName: "",
+                senderId: "",
+                content: errorMessage,  // "请添加对方为好友"
+                isFailed: false
+            })
+            // 滚动到底部
             if (messageList.visible) {
                 messageList.positionViewAtEnd()
             } else {
@@ -1080,6 +1134,41 @@ Rectangle {
                         if (!root.conversationId || root.conversationId === "")
                             return
                         loginBackend.leaveConversation(root.conversationId)
+                    }
+                }
+
+                // 底部"删除好友"按钮（仅单聊）
+                Button {
+                    visible: root.conversationType === "SINGLE"
+                    Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
+                    Layout.bottomMargin: 24
+                    implicitWidth: 120
+                    implicitHeight: 32
+                    text: qsTr("删除好友")
+                    background: Rectangle {
+                        color: "transparent"
+                        radius: 4
+                        border.color: theme.dangerRed
+                        border.width: 1
+                    }
+                    contentItem: Text {
+                        text: parent.text
+                        color: theme.dangerRed
+                        font.pixelSize: 13
+                        horizontalAlignment: Text.AlignHCenter
+                        verticalAlignment: Text.AlignVCenter
+                    }
+                    onClicked: {
+                        console.log("[删除好友] conversationType:", root.conversationType)
+                        console.log("[删除好友] peerUserId:", root.peerUserId)
+                        if (!root.peerUserId || root.peerUserId === "") {
+                            console.log("[删除好友] peerUserId 为空，无法删除")
+                            return
+                        }
+                        console.log("[删除好友] 调用 deleteFriend, peerUserId:", root.peerUserId)
+                        loginBackend.deleteFriend(root.peerUserId)
+                        // 删除好友后关闭详情面板
+                        root.detailPanelVisible = false
                     }
                 }
             }

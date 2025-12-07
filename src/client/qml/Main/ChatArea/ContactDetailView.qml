@@ -205,8 +205,12 @@ Rectangle {
                         verticalAlignment: Text.AlignVCenter
                     }
                     onClicked: {
+                        console.log("[同意好友申请] requestId:", root.requestId, "requestType:", root.requestType)
                         if (root.requestId && root.requestId !== "") {
+                            console.log("[同意好友申请] 调用 acceptFriendRequest")
                             loginBackend.acceptFriendRequest(root.requestId)
+                        } else {
+                            console.log("[同意好友申请] requestId 为空")
                         }
                     }
                 }
@@ -227,8 +231,12 @@ Rectangle {
                         verticalAlignment: Text.AlignVCenter
                     }
                     onClicked: {
+                        console.log("[拒绝好友申请] requestId:", root.requestId, "requestType:", root.requestType)
                         if (root.requestId && root.requestId !== "") {
+                            console.log("[拒绝好友申请] 调用 rejectFriendRequest")
                             loginBackend.rejectFriendRequest(root.requestId)
+                        } else {
+                            console.log("[拒绝好友申请] requestId 为空")
                         }
                     }
                 }

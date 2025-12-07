@@ -291,3 +291,58 @@ auto Session::handle_friend_reject_req(std::string const& payload) -> asio::awai
         co_return make_error_payload("SERVER_ERROR", ex.what());
     }
 }
+
+auto Session::handle_friend_delete_req(std::string const& payload) -> asio::awaitable<std::string>
+{
+    if(!authenticated_) {
+        co_return make_error_payload("NOT_AUTHENTICATED", "请先登录");
+    }
+
+    try {
+        auto j = payload.empty() ? json::object() : json::parse(payload);
+
+        if(!j.contains("friendUserId")) {
+            co_return make_error_payload("INVALID_PARAM", "缺少 friendUserId 字段");
+        }
+
+        auto const friend_str = j.at("friendUserId").get<std::string>();
+        auto friend_id = i64{};
+        try {
+            friend_id = std::stoll(friend_str);
+        } catch(std::exception const&) {
+            co_return make_error_payload("INVALID_PARAM", "friendUserId 非法");
+        }
+        if(friend_id <= 0) {
+            co_return make_error_payload("INVALID_PARAM", "friendUserId 非法");
+        }
+
+        // 调用数据库删除好友关系
+        auto const result = co_await database::delete_friend(user_id_, friend_id);
+        if(!result) {
+            co_return make_error_payload("SERVER_ERROR", "删除好友失败");
+        }
+
+        json resp;
+        resp["ok"] = true;
+
+        // 查找单聊会话并将删除方从会话中移除（使A的会话列表不再显示该单聊）
+        auto const conv_id_opt = co_await database::find_single_conversation(user_id_, friend_id);
+        if(conv_id_opt.has_value()) {
+            co_await database::remove_conversation_member(conv_id_opt.value(), user_id_);
+        }
+
+        // 通知双方刷新好友列表和会话列表
+        if(auto server = server_.lock()) {
+            server->send_friend_list_to(user_id_);
+            server->send_friend_list_to(friend_id);
+            // 刷新A的会话列表（B的会话列表不受影响）
+            server->send_conv_list_to(user_id_);
+        }
+
+        co_return resp.dump();
+    } catch(json::parse_error const&) {
+        co_return make_error_payload("INVALID_JSON", "请求 JSON 解析失败");
+    } catch(std::exception const& ex) {
+        co_return make_error_payload("SERVER_ERROR", ex.what());
+    }
+}

@@ -114,6 +114,11 @@ signals:
     /// \brief 处理失败，发出错误信息。
     void errorOccurred(QString errorMessage);
 
+    /// \brief 消息发送失败（例如非好友发送消息）。
+    /// \param conversationId 会话 ID。
+    /// \param errorMessage 错误消息。
+    void messageSendFailed(QString conversationId, QString errorMessage);
+
     /// \brief 需要请求会话列表。
     void needRequestConversationList();
 
@@ -152,6 +157,7 @@ private:
     void handleFriendAddResponse(QJsonObject const& obj);
     void handleFriendAcceptResponse(QJsonObject const& obj);
     void handleFriendRejectResponse(QJsonObject const& obj);
+    void handleFriendDeleteResponse(QJsonObject const& obj);
     void handleOpenSingleConvResponse(QJsonObject const& obj);
     void handleCreateGroupResponse(QJsonObject const& obj);
     void handleGroupSearchResponse(QJsonObject const& obj);

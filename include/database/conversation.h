@@ -68,4 +68,25 @@ namespace database
     /// \details 当前用于群聊解散逻辑，调用者负责业务校验。
     auto dissolve_conversation(i64 conversation_id)
         -> boost::asio::awaitable<void>;
+
+    /// \brief 查找两个用户之间的单聊会话 ID。
+    /// \param user1 第一个用户 ID。
+    /// \param user2 第二个用户 ID。
+    /// \return 单聊会话 ID，若不存在则返回 nullopt。
+    auto find_single_conversation(i64 user1, i64 user2)
+        -> boost::asio::awaitable<std::optional<i64>>;
+
+    /// \brief 获取会话类型（GROUP/SINGLE）。
+    /// \param conversation_id 会话 ID。
+    /// \return 会话类型字符串，若不存在则返回空字符串。
+    auto get_conversation_type(i64 conversation_id)
+        -> boost::asio::awaitable<std::string>;
+
+    /// \brief 获取单聊会话的对端用户 ID。
+    /// \param conversation_id 会话 ID。
+    /// \param current_user_id 当前用户 ID。
+    /// \return 对端用户 ID，若不存在则返回 -1。
+    auto get_single_peer_user_id(i64 conversation_id, i64 current_user_id)
+        -> boost::asio::awaitable<i64>;
 } // namespace database
+

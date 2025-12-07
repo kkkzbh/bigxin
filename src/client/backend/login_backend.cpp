@@ -44,6 +44,7 @@ LoginBackend::LoginBackend(QObject* parent)
     connect(protocol_handler_, &ProtocolHandler::groupJoinRequestSucceeded, this, &LoginBackend::groupJoinRequestSucceeded);
     connect(protocol_handler_, &ProtocolHandler::singleConversationReady, this, &LoginBackend::singleConversationReady);
     connect(protocol_handler_, &ProtocolHandler::groupCreated, this, &LoginBackend::groupCreated);
+    connect(protocol_handler_, &ProtocolHandler::messageSendFailed, this, &LoginBackend::messageSendFailed);
 
     // 协议处理器请求的操作
     connect(protocol_handler_, &ProtocolHandler::needRequestConversationList, this, &LoginBackend::requestConversationList);
@@ -426,6 +427,21 @@ void LoginBackend::rejectFriendRequest(QString const& requestId)
     QJsonObject obj;
     obj.insert(QStringLiteral("requestId"), requestId.trimmed());
     network_manager_->sendCommand(QStringLiteral("FRIEND_REJECT_REQ"), obj);
+}
+
+void LoginBackend::deleteFriend(QString const& friendUserId)
+{
+    if(friendUserId.trimmed().isEmpty()) {
+        return;
+    }
+    if(!network_manager_->isConnected()) {
+        setErrorMessage(QStringLiteral("与服务器的连接已断开"));
+        return;
+    }
+
+    QJsonObject obj;
+    obj.insert(QStringLiteral("friendUserId"), friendUserId.trimmed());
+    network_manager_->sendCommand(QStringLiteral("FRIEND_DELETE_REQ"), obj);
 }
 
 void LoginBackend::openSingleConversation(QString const& peerUserId)

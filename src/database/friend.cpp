@@ -320,8 +320,8 @@ namespace database
             co_return res;
         }
 
-        // 直接查 by id
-        {
+        // 直接查 by id - 单独的 try-catch 避免影响主流程
+        try {
             mysql::results r2;
             co_await conn_h->async_execute(
                 mysql::with_params(
@@ -333,14 +333,22 @@ namespace database
             if(!r2.rows().empty()) {
                 auto row = r2.rows().front();
                 res.friend_user.id = row.at(0).as_int64();
-                res.friend_user.account = row.at(1).as_string();
-                res.friend_user.display_name = row.at(2).as_string();
+                res.friend_user.account = std::string(row.at(1).as_string());
+                res.friend_user.display_name = std::string(row.at(2).as_string());
                 res.friend_user.avatar_path = row.at(3).is_null() ? "" : std::string(row.at(3).as_string());
             }
+        } catch(std::exception const& ex) {
+            // 用户信息查询失败不影响主流程，只是返回空的用户信息
+            res.friend_user.id = from_user_id;
         }
 
         // 确保单聊会话
-        res.conversation_id = co_await get_or_create_single_conversation(from_user_id, to_user_id);
+        try {
+            res.conversation_id = co_await get_or_create_single_conversation(from_user_id, to_user_id);
+        } catch(std::exception const& ex) {
+            // 会话创建失败不影响好友关系建立
+            res.conversation_id = 0;
+        }
         res.ok = true;
         co_return res;
     }
@@ -407,5 +415,29 @@ namespace database
         res.ok = true;
         res.from_user_id = from_user_id;
         co_return res;
+    }
+
+    auto delete_friend(i64 user_id, i64 friend_id) -> asio::awaitable<bool>
+    {
+        if(user_id <= 0 || friend_id <= 0 || user_id == friend_id) {
+            co_return false;
+        }
+
+        auto conn_h = co_await acquire_connection();
+        mysql::results r;
+
+        // 删除双向好友关系
+        co_await conn_h->async_execute(
+            mysql::with_params(
+                "DELETE FROM friends WHERE (user_id={} AND friend_user_id={}) OR (user_id={} AND friend_user_id={})",
+                user_id,
+                friend_id,
+                friend_id,
+                user_id),
+            r,
+            asio::use_awaitable
+        );
+
+        co_return true;
     }
 } // namespace database

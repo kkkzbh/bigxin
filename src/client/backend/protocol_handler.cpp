@@ -111,6 +111,8 @@ void ProtocolHandler::handleCommand(QString command, QJsonObject payload)
         handleFriendAcceptResponse(payload);
     } else if(command == QStringLiteral("FRIEND_REJECT_RESP")) {
         handleFriendRejectResponse(payload);
+    } else if(command == QStringLiteral("FRIEND_DELETE_RESP")) {
+        handleFriendDeleteResponse(payload);
     } else if(command == QStringLiteral("OPEN_SINGLE_CONV_RESP")) {
         handleOpenSingleConvResponse(payload);
     } else if(command == QStringLiteral("CREATE_GROUP_RESP")) {
@@ -135,6 +137,37 @@ void ProtocolHandler::handleCommand(QString command, QJsonObject payload)
         handleGroupJoinAcceptResponse(payload);
     } else if(command == QStringLiteral("RENAME_GROUP_RESP")) {
         handleRenameGroupResponse(payload);
+    } else if(command == QStringLiteral("SEND_FAILED")) {
+        // 消息发送失败（例如非好友）
+        auto const errorCode = payload.value(QStringLiteral("errorCode")).toString();
+        auto const errorMsg = payload.value(QStringLiteral("errorMsg")).toString();
+        
+        if(errorCode == QStringLiteral("NOT_FRIEND")) {
+            auto const conversationId = payload.value(QStringLiteral("conversationId")).toString();
+            auto const content = payload.value(QStringLiteral("content")).toString();
+            // 如果服务端没返回 type，默认 TEXT
+            auto const type = payload.value(QStringLiteral("type")).toString(QStringLiteral("TEXT"));
+
+            if(!conversationId.isEmpty() && !content.isEmpty()) {
+                auto const nowMs = QDateTime::currentMSecsSinceEpoch();
+                // 使用足够大的 seq 确保排在后面 (暂用时间戳，实际应处理冲突)
+                auto const localSeq = nowMs;
+
+                // 1. 存入本地缓存：原本的消息，但在前端用特殊状态显示
+                // 这里我们使用特殊的 type "FAILED_TEXT" 来标记，方便前端识别
+                message_cache_->appendMessage(conversationId, user_id_, display_name_, content, QStringLiteral("FAILED_TEXT"), nowMs, localSeq);
+                emit messageReceived(conversationId, user_id_, display_name_, content, QStringLiteral("FAILED_TEXT"), nowMs, localSeq);
+
+                // 2. 存入本地缓存：系统提示消息
+                message_cache_->appendMessage(conversationId, QStringLiteral("system"), QString(), errorMsg, QStringLiteral("SYSTEM"), nowMs, localSeq + 1);
+                emit messageReceived(conversationId, QStringLiteral("system"), QString(), errorMsg, QStringLiteral("SYSTEM"), nowMs, localSeq + 1);
+            } else {
+                // Fallback if server didn't send details (old version compatibility)
+                emit messageSendFailed(QString(), errorMsg);
+            }
+        } else {
+            emit errorOccurred(errorMsg);
+        }
     } else if(command == QStringLiteral("ERROR")) {
         handleErrorResponse(payload);
     }
@@ -539,15 +572,18 @@ void ProtocolHandler::handleFriendAddResponse(QJsonObject const& obj)
 
 void ProtocolHandler::handleFriendAcceptResponse(QJsonObject const& obj)
 {
+    qDebug() << "[handleFriendAcceptResponse] 收到响应:" << obj;
     auto const ok = obj.value(QStringLiteral("ok")).toBool(false);
     if(!ok) {
         auto const msg = obj.value(QStringLiteral("errorMsg")).toString(QStringLiteral("同意好友申请失败"));
+        qDebug() << "[handleFriendAcceptResponse] 失败:" << msg;
         if(!msg.isEmpty()) {
             emit errorOccurred(msg);
         }
         return;
     }
 
+    qDebug() << "[handleFriendAcceptResponse] 成功, 发送刷新信号";
     // 同意成功后，刷新"新的朋友"列表和好友列表。
     emit needRequestFriendRequestList();
     emit needRequestFriendList();
@@ -566,6 +602,21 @@ void ProtocolHandler::handleFriendRejectResponse(QJsonObject const& obj)
 
     // 拒绝成功后，刷新"新的朋友"列表。
     emit needRequestFriendRequestList();
+}
+
+void ProtocolHandler::handleFriendDeleteResponse(QJsonObject const& obj)
+{
+    auto const ok = obj.value(QStringLiteral("ok")).toBool(false);
+    if(!ok) {
+        auto const msg = obj.value(QStringLiteral("errorMsg")).toString(QStringLiteral("删除好友失败"));
+        if(!msg.isEmpty()) {
+            emit errorOccurred(msg);
+        }
+        return;
+    }
+
+    // 删除成功后，刷新好友列表。
+    emit needRequestFriendList();
 }
 
 void ProtocolHandler::handleOpenSingleConvResponse(QJsonObject const& obj)
