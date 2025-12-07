@@ -158,6 +158,7 @@ private:
     void handleGroupJoinResponse(QJsonObject const& obj);
     void handleGroupJoinRequestListResponse(QJsonObject const& obj);
     void handleGroupJoinAcceptResponse(QJsonObject const& obj);
+    void handleRenameGroupResponse(QJsonObject const& obj);
 
     NetworkManager* network_manager_;
     MessageCache* message_cache_;

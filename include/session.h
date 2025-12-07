@@ -201,6 +201,10 @@ struct Session : std::enable_shared_from_this<Session>
                     auto payload = co_await handle_group_join_accept_req(frame.payload);
                     auto msg = protocol::make_line("GROUP_JOIN_ACCEPT_RESP", payload);
                     send_text(std::move(msg));
+                } else if(frame.command == "RENAME_GROUP_REQ") {
+                    auto payload = co_await handle_rename_group_req(frame.payload);
+                    auto msg = protocol::make_line("RENAME_GROUP_RESP", payload);
+                    send_text(std::move(msg));
                 } else {
                     // 默认 echo，方便用 nc 观察未知命令。
                     auto payload = std::string{ "{\"command\":\"" + frame.command + "\"}" };
@@ -335,6 +339,10 @@ private:
     /// \brief 处理入群申请（同意/拒绝），返回 GROUP_JOIN_ACCEPT_RESP 的 JSON 串。
     /// \param payload GROUP_JOIN_ACCEPT_REQ 的 JSON 文本。
     auto handle_group_join_accept_req(std::string const& payload) -> asio::awaitable<std::string>;
+
+    /// \brief 处理群组重命名请求，返回 RENAME_GROUP_RESP 的 JSON 串。
+    /// \param payload RENAME_GROUP_REQ 的 JSON 文本。
+    auto handle_rename_group_req(std::string const& payload) -> asio::awaitable<std::string>;
 
     /// \brief 构造带错误码的通用错误响应 JSON 串。
     auto make_error_payload(std::string const& code, std::string const& msg) const -> std::string

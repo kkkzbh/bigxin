@@ -908,3 +908,118 @@ auto Session::handle_set_admin_req(std::string const& payload) -> asio::awaitabl
         co_return make_error_payload("SERVER_ERROR", ex.what());
     }
 }
+
+auto Session::handle_rename_group_req(std::string const& payload) -> asio::awaitable<std::string>
+{
+    if(!authenticated_) {
+        co_return make_error_payload("NOT_AUTHENTICATED", "请先登录");
+    }
+
+    try {
+        auto j = payload.empty() ? json::object() : json::parse(payload);
+
+        if(!j.contains("conversationId") || !j.contains("newName")) {
+            co_return make_error_payload("INVALID_PARAM", "缺少必要字段");
+        }
+
+        auto const conv_str = j.at("conversationId").get<std::string>();
+        auto conv_id = i64{};
+        try {
+            conv_id = std::stoll(conv_str);
+        } catch(std::exception const&) {
+            co_return make_error_payload("INVALID_PARAM", "conversationId 非法");
+        }
+        if(conv_id <= 0) {
+            co_return make_error_payload("INVALID_PARAM", "conversationId 非法");
+        }
+
+        auto new_name = j.at("newName").get<std::string>();
+        // 去掉首尾空白
+        auto const trim = [](std::string& s) {
+            auto const not_space = [](unsigned char ch) { return !std::isspace(ch); };
+            s.erase(s.begin(), std::find_if(s.begin(), s.end(), not_space));
+            s.erase(std::find_if(s.rbegin(), s.rend(), not_space).base(), s.end());
+        };
+        trim(new_name);
+
+        if(new_name.empty()) {
+            co_return make_error_payload("INVALID_PARAM", "群名称不能为空");
+        }
+        if(new_name.size() > 64) {
+            co_return make_error_payload("INVALID_PARAM", "群名称过长");
+        }
+
+        // 校验是群聊
+        std::string conv_type;
+        {
+            auto conn_h = co_await database::acquire_connection();
+            boost::mysql::results r;
+            co_await conn_h->async_execute(
+                mysql::with_params(
+                    "SELECT type FROM conversations WHERE id = {} LIMIT 1",
+                    conv_id),
+                r,
+                asio::use_awaitable
+            );
+            if(r.rows().empty()) {
+                co_return make_error_payload("NOT_FOUND", "会话不存在");
+            }
+            conv_type = r.rows().front().at(0).as_string();
+        }
+        if(conv_type != "GROUP") {
+            co_return make_error_payload("INVALID_PARAM", "仅支持群聊会话");
+        }
+
+        // 校验权限：仅群主和管理员可修改群名
+        auto const self_member = co_await database::get_conversation_member(conv_id, user_id_);
+        if(!self_member.has_value()) {
+            co_return make_error_payload("FORBIDDEN", "你不是该会话成员");
+        }
+        if(self_member->role != "OWNER" && self_member->role != "ADMIN") {
+            co_return make_error_payload("FORBIDDEN", "仅群主和管理员可修改群名");
+        }
+
+        // 更新群名
+        {
+            auto conn_h = co_await database::acquire_connection();
+            boost::mysql::results r;
+            co_await conn_h->async_execute(
+                mysql::with_params(
+                    "UPDATE conversations SET name = {} WHERE id = {}",
+                    new_name, conv_id),
+                r,
+                asio::use_awaitable
+            );
+        }
+
+        // 清除会话缓存
+        if(auto server = server_.lock()) {
+            server->invalidate_conversation_cache(conv_id);
+        }
+
+        // 系统消息通知
+        auto const operator_name = self_member->display_name;
+        auto const sys_content = operator_name + " 将群名修改为 \"" + new_name + "\"";
+        auto const stored = co_await database::append_text_message(conv_id, user_id_, sys_content, "SYSTEM");
+
+        // 广播系统消息并刷新所有成员的会话列表
+        if(auto server = server_.lock()) {
+            server->broadcast_system_message(conv_id, stored, sys_content);
+            // 刷新所有成员的会话列表以显示新群名
+            auto members = co_await database::load_conversation_members(conv_id);
+            for(auto const& m : members) {
+                server->send_conv_list_to(m.user_id);
+            }
+        }
+
+        json resp;
+        resp["ok"] = true;
+        resp["conversationId"] = std::to_string(conv_id);
+        resp["newName"] = new_name;
+        co_return resp.dump();
+    } catch(json::parse_error const&) {
+        co_return make_error_payload("INVALID_JSON", "请求 JSON 解析失败");
+    } catch(std::exception const& ex) {
+        co_return make_error_payload("SERVER_ERROR", ex.what());
+    }
+}

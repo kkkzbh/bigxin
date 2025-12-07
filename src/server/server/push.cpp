@@ -119,6 +119,7 @@ auto Server::send_conv_list_to(i64 target_user_id) -> void
                     c["title"] = conv.title;
                     c["lastSeq"] = conv.last_seq;
                     c["lastServerTimeMs"] = conv.last_server_time_ms;
+                    c["avatarPath"] = conv.avatar_path;
                     items.push_back(std::move(c));
                 }
 

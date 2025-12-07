@@ -71,6 +71,7 @@ public:
     Q_INVOKABLE void sendGroupJoinRequest(QString const& groupId, QString const& helloMsg);
     Q_INVOKABLE void requestGroupJoinRequestList();
     Q_INVOKABLE void acceptGroupJoinRequest(QString const& requestId, bool accept = true);
+    Q_INVOKABLE void renameGroup(QString const& conversationId, QString const& newName);
 
 signals:
     void busyChanged();

@@ -907,6 +907,56 @@ Rectangle {
                             }
                         }
 
+                        // 修改群名（仅群主和管理员可见）
+                        RowLayout {
+                            Layout.fillWidth: true
+                            Layout.topMargin: 8
+                            spacing: 8
+                            visible: root.conversationType === "GROUP" 
+                                     && (root.myRole === "OWNER" || root.myRole === "ADMIN")
+
+                            TextField {
+                                id: groupNameField
+                                Layout.fillWidth: true
+                                placeholderText: qsTr("输入新群名…")
+                                text: root.conversationTitle || ""
+                                color: theme.textPrimary
+                                placeholderTextColor: theme.textMuted
+                                font.pixelSize: 13
+                                background: Rectangle {
+                                    radius: 4
+                                    color: theme.chatListBackground
+                                    border.color: theme.cardBorder
+                                }
+                            }
+
+                            Button {
+                                text: qsTr("修改")
+                                implicitWidth: 60
+                                implicitHeight: 28
+                                enabled: groupNameField.text.trim().length > 0
+                                         && groupNameField.text.trim() !== root.conversationTitle
+                                background: Rectangle {
+                                    radius: 4
+                                    color: parent.enabled ? theme.primaryButton
+                                                         : theme.sendButtonDisabled
+                                }
+                                contentItem: Text {
+                                    text: parent.text
+                                    color: "#ffffff"
+                                    font.pixelSize: 12
+                                    horizontalAlignment: Text.AlignHCenter
+                                    verticalAlignment: Text.AlignVCenter
+                                }
+                                onClicked: {
+                                    var newName = groupNameField.text.trim()
+                                    if (newName.length > 0 && newName !== root.conversationTitle) {
+                                        loginBackend.renameGroup(root.conversationId, newName)
+                                    }
+                                }
+                            }
+                        }
+
                         // 分隔线
                         Rectangle {
                             Layout.fillWidth: true

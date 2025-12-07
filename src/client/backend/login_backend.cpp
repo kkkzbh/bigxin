@@ -722,3 +722,21 @@ void LoginBackend::acceptGroupJoinRequest(QString const& requestId, bool accept)
     obj.insert(QStringLiteral("accept"), accept);
     network_manager_->sendCommand(QStringLiteral("GROUP_JOIN_ACCEPT_REQ"), obj);
 }
+
+void LoginBackend::renameGroup(QString const& conversationId, QString const& newName)
+{
+    auto const trimmedName = newName.trimmed();
+    if(conversationId.isEmpty() || trimmedName.isEmpty()) {
+        setErrorMessage(QStringLiteral("群名称不能为空"));
+        return;
+    }
+    if(!network_manager_->isConnected()) {
+        setErrorMessage(QStringLiteral("与服务器的连接已断开"));
+        return;
+    }
+
+    QJsonObject obj;
+    obj.insert(QStringLiteral("conversationId"), conversationId);
+    obj.insert(QStringLiteral("newName"), trimmedName);
+    network_manager_->sendCommand(QStringLiteral("RENAME_GROUP_REQ"), obj);
+}

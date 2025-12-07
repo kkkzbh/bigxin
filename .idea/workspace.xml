@@ -98,18 +98,8 @@
     </configurations>
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="2dc32154-be48-467c-9695-c2dd10df8b29" name="更改" comment="v0.41 优化注册登录的一些UI">
-      <change beforePath="$PROJECT_DIR$/.idea/dataSources.local.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/dataSources.local.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/dataSources/49af4bf5-0153-42ec-8169-5ca8fa71848f.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/dataSources/49af4bf5-0153-42ec-8169-5ca8fa71848f.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/shelf/_2025_11_26_22_06____.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/shelf/_2025_11_26_23_12____.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/shelf/在进行签出之前于_2025_11_26_22_06_取消提交了更改_[更改]/shelved.patch" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/shelf/在进行签出之前于_2025_11_26_23_12_取消提交了更改_[更改]/shelved.patch" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/sqldialects.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/sqldialects.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/vcs.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
+    <list default="true" id="2dc32154-be48-467c-9695-c2dd10df8b29" name="更改" comment="v0.43 AI帮写，缓解不知道怎么回的尴尬">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/include/database/auth.h" beforeDir="false" afterPath="$PROJECT_DIR$/include/database/auth.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/include/database/types.h" beforeDir="false" afterPath="$PROJECT_DIR$/include/database/types.h" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/include/login.backend.h" beforeDir="false" afterPath="$PROJECT_DIR$/include/login.backend.h" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/include/protocol_handler.h" beforeDir="false" afterPath="$PROJECT_DIR$/include/protocol_handler.h" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/include/session.h" beforeDir="false" afterPath="$PROJECT_DIR$/include/session.h" afterDir="false" />
@@ -117,19 +107,7 @@
       <change beforePath="$PROJECT_DIR$/src/client/backend/protocol_handler.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/client/backend/protocol_handler.cpp" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/client/qml/Main/ChatArea/ChatArea.qml" beforeDir="false" afterPath="$PROJECT_DIR$/src/client/qml/Main/ChatArea/ChatArea.qml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/client/qml/Main/ChatList/ChatList.qml" beforeDir="false" afterPath="$PROJECT_DIR$/src/client/qml/Main/ChatList/ChatList.qml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/client/qml/Main/ChatList/ContactListView.qml" beforeDir="false" afterPath="$PROJECT_DIR$/src/client/qml/Main/ChatList/ContactListView.qml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/client/qml/Main/Dialogs/SettingsDialog.qml" beforeDir="false" afterPath="$PROJECT_DIR$/src/client/qml/Main/Dialogs/SettingsDialog.qml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/client/qml/Main/Main.qml" beforeDir="false" afterPath="$PROJECT_DIR$/src/client/qml/Main/Main.qml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/client/qml/Main/Sidebar/Sidebar.qml" beforeDir="false" afterPath="$PROJECT_DIR$/src/client/qml/Main/Sidebar/Sidebar.qml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/database/auth.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/database/auth.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/database/conversation.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/database/conversation.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/database/friend.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/database/friend.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/database/group.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/database/group.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/database/sql/users.sql" beforeDir="false" afterPath="$PROJECT_DIR$/src/database/sql/users.sql" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/server/session/auth.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/server/session/auth.cpp" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/server/session/conversation.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/server/session/conversation.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/server/session/friend.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/server/session/friend.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/server/session/group.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/server/session/group.cpp" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -207,55 +185,55 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent">{
-  &quot;keyToString&quot;: {
-    &quot;ASKED_SHARE_PROJECT_CONFIGURATION_FILES&quot;: &quot;true&quot;,
-    &quot;CMake 应用程序.MAN.executor&quot;: &quot;Run&quot;,
-    &quot;CMake 应用程序.asioexec_example.executor&quot;: &quot;Run&quot;,
-    &quot;CMake 应用程序.benchmark.executor&quot;: &quot;Run&quot;,
-    &quot;CMake 应用程序.client.executor&quot;: &quot;Run&quot;,
-    &quot;CMake 应用程序.client_gui.executor&quot;: &quot;Run&quot;,
-    &quot;CMake 应用程序.import_std_asio_repro.executor&quot;: &quot;Run&quot;,
-    &quot;CMake 应用程序.main.executor&quot;: &quot;Run&quot;,
-    &quot;CMake 应用程序.quick_test.executor&quot;: &quot;Run&quot;,
-    &quot;CMake 应用程序.register_accounts.executor&quot;: &quot;Run&quot;,
-    &quot;CMake 应用程序.server.executor&quot;: &quot;Run&quot;,
-    &quot;CMake 应用程序.stress_test.executor&quot;: &quot;Run&quot;,
-    &quot;CMake 应用程序.stu.executor&quot;: &quot;Run&quot;,
-    &quot;CMake 应用程序.test.executor&quot;: &quot;Run&quot;,
-    &quot;CMake 应用程序.ttest.executor&quot;: &quot;Run&quot;,
-    &quot;CMake 应用程序.world_message_test.executor&quot;: &quot;Run&quot;,
-    &quot;CMake 调试.Project.executor&quot;: &quot;Debug&quot;,
-    &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.RadMigrateCodeStyle&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.cidr.known.project.marker&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.readMode.enableVisualFormatting&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.typescript.service.memoryLimit.init&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.west.config.association.type.startup.service&quot;: &quot;true&quot;,
-    &quot;SHARE_PROJECT_CONFIGURATION_FILES&quot;: &quot;true&quot;,
-    &quot;cf.first.check.clang-format&quot;: &quot;false&quot;,
-    &quot;cidr.known.project.marker&quot;: &quot;true&quot;,
-    &quot;ctest.advertisement.all.test.configuration.is.created&quot;: &quot;true&quot;,
-    &quot;last_opened_file_path&quot;: &quot;/home/kkkzbh/code/chat/src/client/qml/resource/ChatArea&quot;,
-    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
-    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
-    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
-    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
-    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
-    &quot;org.rust.cargo.project.model.impl.CargoExternalSystemProjectAware.subscribe.first.balloon&quot;: &quot;&quot;,
-    &quot;settings.editor.selected.configurable&quot;: &quot;CMakeSettings&quot;,
-    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "ASKED_SHARE_PROJECT_CONFIGURATION_FILES": "true",
+    "CMake 应用程序.MAN.executor": "Run",
+    "CMake 应用程序.asioexec_example.executor": "Run",
+    "CMake 应用程序.benchmark.executor": "Run",
+    "CMake 应用程序.client.executor": "Run",
+    "CMake 应用程序.client_gui.executor": "Run",
+    "CMake 应用程序.import_std_asio_repro.executor": "Run",
+    "CMake 应用程序.main.executor": "Run",
+    "CMake 应用程序.quick_test.executor": "Run",
+    "CMake 应用程序.register_accounts.executor": "Run",
+    "CMake 应用程序.server.executor": "Run",
+    "CMake 应用程序.stress_test.executor": "Run",
+    "CMake 应用程序.stu.executor": "Run",
+    "CMake 应用程序.test.executor": "Run",
+    "CMake 应用程序.ttest.executor": "Run",
+    "CMake 应用程序.world_message_test.executor": "Run",
+    "CMake 调试.Project.executor": "Debug",
+    "ModuleVcsDetector.initialDetectionPerformed": "true",
+    "RunOnceActivity.RadMigrateCodeStyle": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
+    "RunOnceActivity.cidr.known.project.marker": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "RunOnceActivity.readMode.enableVisualFormatting": "true",
+    "RunOnceActivity.typescript.service.memoryLimit.init": "true",
+    "RunOnceActivity.west.config.association.type.startup.service": "true",
+    "SHARE_PROJECT_CONFIGURATION_FILES": "true",
+    "cf.first.check.clang-format": "false",
+    "cidr.known.project.marker": "true",
+    "ctest.advertisement.all.test.configuration.is.created": "true",
+    "last_opened_file_path": "/home/kkkzbh/code/chat",
+    "node.js.detected.package.eslint": "true",
+    "node.js.detected.package.tslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "node.js.selected.package.tslint": "(autodetect)",
+    "nodejs_package_manager_path": "npm",
+    "org.rust.cargo.project.model.impl.CargoExternalSystemProjectAware.subscribe.first.balloon": "",
+    "settings.editor.selected.configurable": "CMakeSettings",
+    "vue.rearranger.settings.migration": "true"
   },
-  &quot;keyToStringList&quot;: {
-    &quot;DatabaseDriversLRU&quot;: [
-      &quot;mysql&quot;,
-      &quot;postgresql&quot;
+  "keyToStringList": {
+    "DatabaseDriversLRU": [
+      "mysql",
+      "postgresql"
     ]
   }
-}</component>
+}]]></component>
   <component name="RdControllerToolWindowsLayoutState" isNewUi="true">
     <layout>
       <window_info id="Bookmarks" side_tool="true" />
@@ -264,32 +242,31 @@
       <window_info id="Commit_Guest" show_stripe_button="false" />
       <window_info id="Pull Requests" />
       <window_info id="Learn" show_stripe_button="false" />
-      <window_info active="true" content_ui="combo" id="Project" order="0" visible="true" weight="0.2331697" />
-      <window_info id="Commit" order="1" weight="0.2331697" />
+      <window_info active="true" content_ui="combo" id="Project" order="0" visible="true" weight="0.18544339" />
+      <window_info id="Commit" order="1" weight="0.2213715" />
       <window_info id="Structure" order="2" side_tool="true" weight="0.25" />
       <window_info anchor="bottom" id="TypeScript" />
       <window_info anchor="bottom" id="GitHub Copilot MCP Log" show_stripe_button="false" />
       <window_info anchor="bottom" id="File Transfer" />
       <window_info anchor="bottom" id="PythonProcessOutput" />
+      <window_info anchor="bottom" id="Find" />
       <window_info anchor="bottom" id="clangd" />
-      <window_info anchor="bottom" id="Version Control" order="0" weight="0.08451417" />
+      <window_info anchor="bottom" id="Version Control" order="0" weight="0.3709514" />
       <window_info anchor="bottom" id="Problems" order="1" />
       <window_info anchor="bottom" id="Problems View" order="2" weight="0.029640429" />
       <window_info anchor="bottom" x="647" y="605" width="1401" height="499" id="CMake" order="3" weight="0.35172066" />
-      <window_info anchor="bottom" id="Terminal" order="4" weight="0.22069317" />
+      <window_info anchor="bottom" id="Terminal" order="4" weight="0.37803644" />
       <window_info anchor="bottom" id="Services" order="5" weight="0.35149467" />
-      <window_info active="true" anchor="bottom" id="Run" order="6" visible="true" weight="0.4418016" />
-      <window_info anchor="bottom" id="Messages" order="7" weight="0.3507085" />
+      <window_info active="true" anchor="bottom" id="Run" order="6" visible="true" weight="0.3709514" />
+      <window_info anchor="bottom" id="Messages" order="7" weight="0.34261134" />
       <window_info anchor="bottom" id="Vcpkg" order="8" weight="0.3369159" />
-      <window_info anchor="bottom" id="TODO" order="9" weight="0.42712355" />
+      <window_info anchor="bottom" id="TODO" order="9" weight="0.3770243" />
       <window_info anchor="bottom" id="Python Packages" order="10" weight="0.42535883" />
       <window_info anchor="bottom" id="Database Changes" order="11" weight="0.41121033" />
       <window_info anchor="bottom" id="Debug" order="12" weight="0.027626812" />
       <window_info anchor="bottom" id="Serial Monitor" order="13" weight="0.30906463" />
-      <window_info anchor="bottom" id="Find" order="14" weight="0.33006912" />
       <window_info anchor="right" id="make" side_tool="true" />
       <window_info anchor="right" id="Coverage" side_tool="true" />
-      <window_info anchor="right" id="Python Console" />
       <window_info anchor="right" id="PlatformIO" />
       <window_info anchor="right" id="GitHub Coding Agent Jobs" show_stripe_button="false" />
       <window_info anchor="right" id="Meson" />
@@ -297,18 +274,19 @@
       <window_info anchor="right" id="AIAssistant" order="1" weight="0.25" />
       <window_info anchor="right" id="Gradle" order="2" weight="0.25" />
       <window_info anchor="right" id="Maven" order="3" weight="0.25" />
-      <window_info active="true" anchor="right" id="Database" order="4" visible="true" weight="0.21914446" />
+      <window_info active="true" anchor="right" id="Database" order="4" visible="true" weight="0.1742889" />
       <window_info anchor="right" id="github.copilotToolWindow" order="5" weight="0.34985352" />
+      <window_info anchor="right" id="Python Console" order="5" weight="0.20805593" />
       <window_info anchor="right" id="GitHub Copilot Chat" order="6" show_stripe_button="false" weight="0.34985352" />
     </layout>
   </component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$" />
       <recent name="$PROJECT_DIR$/src/client/qml/resource/ChatArea" />
       <recent name="$PROJECT_DIR$/img" />
       <recent name="$PROJECT_DIR$/src/client/qml/resource/input" />
       <recent name="$PROJECT_DIR$/src/client/qml/resource/sidebar" />
-      <recent name="$PROJECT_DIR$" />
     </key>
     <key name="MoveFile.RECENT_KEYS">
       <recent name="$PROJECT_DIR$/src/database/sql" />
@@ -553,7 +531,7 @@
       <workItem from="1764510643599" duration="3105000" />
       <workItem from="1764514101146" duration="983000" />
       <workItem from="1764735676133" duration="3999000" />
-      <workItem from="1764944899347" duration="3281000" />
+      <workItem from="1764944899347" duration="12167000" />
     </task>
     <task id="LOCAL-00001" summary="基础CMAKE，示例程序">
       <option name="closed" value="true" />
@@ -731,7 +709,23 @@
       <option name="project" value="LOCAL" />
       <updated>1764942785060</updated>
     </task>
-    <option name="localTasksCounter" value="23" />
+    <task id="LOCAL-00023" summary="v0.42 实现头像">
+      <option name="closed" value="true" />
+      <created>1764948426250</created>
+      <option name="number" value="00023" />
+      <option name="presentableId" value="LOCAL-00023" />
+      <option name="project" value="LOCAL" />
+      <updated>1764948426250</updated>
+    </task>
+    <task id="LOCAL-00024" summary="v0.43 AI帮写，缓解不知道怎么回的尴尬">
+      <option name="closed" value="true" />
+      <created>1765032998177</created>
+      <option name="number" value="00024" />
+      <option name="presentableId" value="LOCAL-00024" />
+      <option name="project" value="LOCAL" />
+      <updated>1765032998177</updated>
+    </task>
+    <option name="localTasksCounter" value="25" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -788,7 +782,9 @@
     <MESSAGE value="v0.38 添加管理员功能，群聊昵称优化，显示群主与管理员，群聊设置界面成员列表排序合理化。" />
     <MESSAGE value="v0.39 微信PC不存在的功能，加群" />
     <MESSAGE value="v0.41 优化注册登录的一些UI" />
-    <option name="LAST_COMMIT_MESSAGE" value="v0.41 优化注册登录的一些UI" />
+    <MESSAGE value="v0.42 实现头像" />
+    <MESSAGE value="v0.43 AI帮写，缓解不知道怎么回的尴尬" />
+    <option name="LAST_COMMIT_MESSAGE" value="v0.43 AI帮写，缓解不知道怎么回的尴尬" />
   </component>
   <component name="XSLT-Support.FileAssociations.UIState">
     <expand />

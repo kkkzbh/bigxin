@@ -133,6 +133,8 @@ void ProtocolHandler::handleCommand(QString command, QJsonObject payload)
         handleGroupJoinRequestListResponse(payload);
     } else if(command == QStringLiteral("GROUP_JOIN_ACCEPT_RESP")) {
         handleGroupJoinAcceptResponse(payload);
+    } else if(command == QStringLiteral("RENAME_GROUP_RESP")) {
+        handleRenameGroupResponse(payload);
     } else if(command == QStringLiteral("ERROR")) {
         handleErrorResponse(payload);
     }
@@ -690,4 +692,17 @@ void ProtocolHandler::handleGroupJoinAcceptResponse(QJsonObject const& obj)
 
     // 成功后，刷新入群申请列表
     emit needRequestGroupJoinRequestList();
+}
+
+void ProtocolHandler::handleRenameGroupResponse(QJsonObject const& obj)
+{
+    auto const ok = obj.value(QStringLiteral("ok")).toBool(false);
+    if(!ok) {
+        auto const msg = obj.value(QStringLiteral("errorMsg")).toString(QStringLiteral("修改群名失败"));
+        if(!msg.isEmpty()) {
+            emit errorOccurred(msg);
+        }
+        return;
+    }
+    // 成功后，会话列表会由服务器推送刷新
 }

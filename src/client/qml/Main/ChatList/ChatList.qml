@@ -15,23 +15,23 @@ Rectangle {
 
     // 导出当前选中下标，便于标题栏 / 对话区判断是否有选中会话
     property alias currentIndex: listView.currentIndex
-    // 当前选中会话的 ID（索引非法时返回空字符串，避免访问越界）。
-    property string currentConversationId: {
-        if (currentIndex < 0 || currentIndex >= chatModel.count)
-            return ""
-        return chatModel.get(currentIndex).conversationId
-    }
-    // 当前选中会话的类型（索引非法时返回空字符串，避免访问越界）。
-    property string currentConversationType: {
-        if (currentIndex < 0 || currentIndex >= chatModel.count)
-            return ""
-        return chatModel.get(currentIndex).conversationType
-    }
-    // 当前选中会话的标题 / 昵称（用于右侧 ChatArea 标题栏）。
-    property string currentConversationTitle: {
-        if (currentIndex < 0 || currentIndex >= chatModel.count)
-            return ""
-        return chatModel.get(currentIndex).title
+    
+    // 使用内部属性避免绑定循环，当currentIndex变化时更新
+    property string currentConversationId: ""
+    property string currentConversationType: ""
+    property string currentConversationTitle: ""
+    
+    // 监听 currentIndex 变化，更新当前会话信息
+    onCurrentIndexChanged: {
+        if (currentIndex < 0 || currentIndex >= chatModel.count) {
+            currentConversationId = ""
+            currentConversationType = ""
+            currentConversationTitle = ""
+        } else {
+            currentConversationId = chatModel.get(currentIndex).conversationId
+            currentConversationType = chatModel.get(currentIndex).conversationType
+            currentConversationTitle = chatModel.get(currentIndex).title
+        }
     }
 
     property int currentTab: 0
@@ -214,6 +214,9 @@ Rectangle {
         target: loginBackend
 
         function onConversationsReset(conversations) {
+            // 保存当前选中的会话ID，以便刷新后恢复
+            var previousConversationId = root.currentConversationId
+            
             chatModel.clear()
             for (var i = 0; i < conversations.length; ++i) {
                 var item = conversations[i]
@@ -221,7 +224,8 @@ Rectangle {
                 item.title = (item.title || "").trim()
                 chatModel.append(item)
             }
-            // 主动打开会话：尝试选中 pending 会话。
+            
+            // 优先级1: 主动打开会话（pendingSelectConversationId）
             if (pendingSelectConversationId && pendingSelectConversationId !== "") {
                 var targetIndex = -1
                 for (var j = 0; j < chatModel.count; ++j) {
@@ -234,7 +238,27 @@ Rectangle {
                     listView.currentIndex = targetIndex
                 }
                 pendingSelectConversationId = ""
-            } else if (chatModel.count > 0 && listView.currentIndex === -1) {
+            } 
+            // 优先级2: 恢复之前选中的会话
+            else if (previousConversationId && previousConversationId !== "") {
+                var restoreIndex = -1
+                for (var k = 0; k < chatModel.count; ++k) {
+                    if (chatModel.get(k).conversationId === previousConversationId) {
+                        restoreIndex = k
+                        break
+                    }
+                }
+                if (restoreIndex >= 0) {
+                    listView.currentIndex = restoreIndex
+                    // 同时更新标题（可能已改名）
+                    root.currentConversationTitle = chatModel.get(restoreIndex).title
+                } else if (chatModel.count > 0) {
+                    // 之前的会话已不存在，选中第一个
+                    listView.currentIndex = 0
+                }
+            }
+            // 优先级3: 首次加载，选中第一个
+            else if (chatModel.count > 0 && listView.currentIndex === -1) {
                 listView.currentIndex = 0
             }
         }
