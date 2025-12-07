@@ -120,6 +120,10 @@ auto Server::send_conv_list_to(i64 target_user_id) -> void
                     c["lastSeq"] = conv.last_seq;
                     c["lastServerTimeMs"] = conv.last_server_time_ms;
                     c["avatarPath"] = conv.avatar_path;
+                    c["lastReadSeq"] = conv.last_read_seq;
+                    c["unreadCount"] = conv.unread_count;
+                    c["preview"] = conv.last_message_preview;
+                    c["time"] = conv.last_message_time;
                     items.push_back(std::move(c));
                 }
 

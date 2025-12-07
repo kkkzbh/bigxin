@@ -9,12 +9,128 @@
 #include <stdexcept>
 #include <chrono>
 #include <tuple>
+#include <ctime>
+#include <iomanip>
+#include <sstream>
 
 namespace asio = boost::asio;
 namespace mysql = boost::mysql;
 
 namespace database
 {
+    // 辅助函数：格式化消息时间
+    static auto format_message_time(i64 timestamp_ms) -> std::string
+    {
+        if(timestamp_ms == 0) {
+            return "";
+        }
+
+        auto now = std::chrono::system_clock::now();
+        auto msg_time = std::chrono::system_clock::time_point{
+            std::chrono::milliseconds{timestamp_ms}
+        };
+
+        auto diff = std::chrono::duration_cast<std::chrono::seconds>(now - msg_time).count();
+
+        // 1分钟内：刚刚
+        if(diff < 60) {
+            return "刚刚";
+        }
+        // 1小时内：X分钟前
+        if(diff < 3600) {
+            return std::to_string(diff / 60) + "分钟前";
+        }
+
+        // 今天：HH:MM
+        auto now_t = std::chrono::system_clock::to_time_t(now);
+        auto msg_t = std::chrono::system_clock::to_time_t(msg_time);
+        std::tm now_tm{};
+        std::tm msg_tm{};
+        localtime_r(&now_t, &now_tm);
+        localtime_r(&msg_t, &msg_tm);
+
+        if(now_tm.tm_year == msg_tm.tm_year &&
+           now_tm.tm_mon == msg_tm.tm_mon &&
+           now_tm.tm_mday == msg_tm.tm_mday) {
+            std::ostringstream oss;
+            oss << std::setfill('0') << std::setw(2) << msg_tm.tm_hour
+                << ":" << std::setw(2) << msg_tm.tm_min;
+            return oss.str();
+        }
+
+        // 昨天：昨天
+        auto yesterday = now - std::chrono::hours{24};
+        auto yesterday_t = std::chrono::system_clock::to_time_t(yesterday);
+        std::tm yesterday_tm{};
+        localtime_r(&yesterday_t, &yesterday_tm);
+        if(yesterday_tm.tm_year == msg_tm.tm_year &&
+           yesterday_tm.tm_mon == msg_tm.tm_mon &&
+           yesterday_tm.tm_mday == msg_tm.tm_mday) {
+            return "昨天";
+        }
+
+        // 本周内：星期X
+        if(diff < 7 * 24 * 3600) {
+            static const char* weekdays[] = {"星期日", "星期一", "星期二", "星期三", "星期四", "星期五", "星期六"};
+            return weekdays[msg_tm.tm_wday];
+        }
+
+        // 本年内：MM/DD
+        if(now_tm.tm_year == msg_tm.tm_year) {
+            std::ostringstream oss;
+            oss << std::setfill('0') << std::setw(2) << (msg_tm.tm_mon + 1)
+                << "/" << std::setw(2) << msg_tm.tm_mday;
+            return oss.str();
+        }
+
+        // 其他：YYYY/MM/DD
+        std::ostringstream oss;
+        oss << (msg_tm.tm_year + 1900) << "/"
+            << std::setfill('0') << std::setw(2) << (msg_tm.tm_mon + 1)
+            << "/" << std::setw(2) << msg_tm.tm_mday;
+        return oss.str();
+    }
+
+    // 辅助函数：生成消息预览文本
+    static auto generate_message_preview(
+        std::string const& msg_type,
+        std::string const& content,
+        std::string const& sender_name,
+        std::string const& conversation_type,
+        i64 current_user_id,
+        i64 sender_id
+    ) -> std::string
+    {
+        std::string preview;
+
+        // 群聊时显示发送者名字
+        if(conversation_type == "GROUP" && sender_id != current_user_id) {
+            preview = sender_name + ": ";
+        }
+
+        // 根据消息类型生成预览
+        if(msg_type == "TEXT") {
+            // 文本消息，截取前30个字符
+            if(content.length() > 30) {
+                preview += content.substr(0, 30) + "...";
+            } else {
+                preview += content;
+            }
+        } else if(msg_type == "IMAGE") {
+            preview += "[图片]";
+        } else if(msg_type == "FILE") {
+            preview += "[文件]";
+        } else if(msg_type == "AUDIO") {
+            preview += "[语音]";
+        } else if(msg_type == "VIDEO") {
+            preview += "[视频]";
+        } else {
+            preview += "[消息]";
+        }
+
+        return preview;
+    }
+
     auto get_world_conversation_id() -> asio::awaitable<i64>
     {
         auto conn_h = co_await acquire_connection();
@@ -213,7 +329,8 @@ namespace database
                 " COALESCE(msg_stats.max_seq, 0) AS last_seq, COALESCE(msg_stats.max_time, 0) AS last_time, "
                 " CASE WHEN c.type = 'GROUP' THEN c.avatar_path ELSE peer.avatar_path END AS avatar_path, "
                 " cm.last_read_seq, "
-                " GREATEST(0, COALESCE(msg_stats.max_seq, 0) - cm.last_read_seq) AS unread_count "
+                " GREATEST(0, COALESCE(msg_stats.max_seq, 0) - cm.last_read_seq) AS unread_count, "
+                " last_msg.content, last_msg.msg_type, last_msg.sender_id, sender.display_name AS sender_name "
                 "FROM conversations c "
                 "JOIN conversation_members cm ON cm.conversation_id = c.id "
                 "LEFT JOIN ("
@@ -226,6 +343,8 @@ namespace database
                 "  SELECT conversation_id, MAX(seq) AS max_seq, MAX(server_time_ms) AS max_time "
                 "  FROM messages GROUP BY conversation_id"
                 ") msg_stats ON msg_stats.conversation_id = c.id "
+                "LEFT JOIN messages last_msg ON last_msg.conversation_id = c.id AND last_msg.seq = msg_stats.max_seq "
+                "LEFT JOIN users sender ON sender.id = last_msg.sender_id "
                 "WHERE cm.user_id = {} ORDER BY c.id ASC",
                 user_id,
                 user_id),
@@ -258,6 +377,22 @@ namespace database
             }
             info.last_read_seq = row.at(7).as_int64();
             info.unread_count = row.at(8).as_int64();
+
+            // 处理最新消息预览（索引 9-12）
+            if(!row.at(9).is_null() && !row.at(10).is_null()) {
+                auto content = std::string(row.at(9).as_string());
+                auto msg_type = std::string(row.at(10).as_string());
+                auto sender_id = row.at(11).as_int64();
+                auto sender_name = !row.at(12).is_null() ? std::string(row.at(12).as_string()) : "";
+
+                info.last_message_preview = generate_message_preview(
+                    msg_type, content, sender_name, info.type, user_id, sender_id
+                );
+            }
+
+            // 格式化时间
+            info.last_message_time = format_message_time(info.last_server_time_ms);
+
             result.push_back(std::move(info));
         }
         co_return result;

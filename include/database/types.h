@@ -169,6 +169,10 @@ namespace database
         i64 last_read_seq{};
         /// \brief 未读消息数量，计算值：max(0, last_seq - last_read_seq)。
         i64 unread_count{};
+        /// \brief 最新消息预览内容。
+        std::string last_message_preview{};
+        /// \brief 格式化的最新消息时间（如："刚刚"、"5分钟前"、"昨天"、"12/01"）。
+        std::string last_message_time{};
     };
 
     /// \brief 会话成员信息。

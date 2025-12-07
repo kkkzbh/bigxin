@@ -76,6 +76,8 @@ auto Session::handle_conv_list_req(std::string const& payload) -> asio::awaitabl
             c["avatarPath"] = conv.avatar_path;
             c["lastReadSeq"] = conv.last_read_seq;
             c["unreadCount"] = conv.unread_count;
+            c["preview"] = conv.last_message_preview;
+            c["time"] = conv.last_message_time;
             items.push_back(std::move(c));
         }
 

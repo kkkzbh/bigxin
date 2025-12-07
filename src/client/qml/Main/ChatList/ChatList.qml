@@ -50,6 +50,90 @@ Rectangle {
     // 导出数据模型供搜索功能使用
     property alias chatModel: chatModel
     
+    // 辅助函数：格式化消息时间
+    function formatMessageTime(timestampMs) {
+        if (timestampMs === 0) return ""
+        
+        var now = new Date()
+        var msgTime = new Date(timestampMs)
+        var diff = Math.floor((now - msgTime) / 1000) // 秒数差
+        
+        // 1分钟内：刚刚
+        if (diff < 60) return "刚刚"
+        
+        // 1小时内：X分钟前
+        if (diff < 3600) return Math.floor(diff / 60) + "分钟前"
+        
+        // 今天：HH:MM
+        if (now.getFullYear() === msgTime.getFullYear() &&
+            now.getMonth() === msgTime.getMonth() &&
+            now.getDate() === msgTime.getDate()) {
+            var hours = msgTime.getHours().toString().padStart(2, '0')
+            var minutes = msgTime.getMinutes().toString().padStart(2, '0')
+            return hours + ":" + minutes
+        }
+        
+        // 昨天：昨天
+        var yesterday = new Date(now)
+        yesterday.setDate(yesterday.getDate() - 1)
+        if (yesterday.getFullYear() === msgTime.getFullYear() &&
+            yesterday.getMonth() === msgTime.getMonth() &&
+            yesterday.getDate() === msgTime.getDate()) {
+            return "昨天"
+        }
+        
+        // 本周内：星期X
+        if (diff < 7 * 24 * 3600) {
+            var weekdays = ["星期日", "星期一", "星期二", "星期三", "星期四", "星期五", "星期六"]
+            return weekdays[msgTime.getDay()]
+        }
+        
+        // 本年内：MM/DD
+        if (now.getFullYear() === msgTime.getFullYear()) {
+            var month = (msgTime.getMonth() + 1).toString().padStart(2, '0')
+            var day = msgTime.getDate().toString().padStart(2, '0')
+            return month + "/" + day
+        }
+        
+        // 其他：YYYY/MM/DD
+        var year = msgTime.getFullYear()
+        var month2 = (msgTime.getMonth() + 1).toString().padStart(2, '0')
+        var day2 = msgTime.getDate().toString().padStart(2, '0')
+        return year + "/" + month2 + "/" + day2
+    }
+    
+    // 辅助函数：生成消息预览文本
+    function generateMessagePreview(msgType, content, senderName, conversationType, senderId) {
+        var preview = ""
+        
+        // 群聊时显示发送者名字（不包括自己）
+        if (conversationType === "GROUP" && senderId !== loginBackend.userId) {
+            preview = senderName + ": "
+        }
+        
+        // 根据消息类型生成预览
+        if (msgType === "TEXT") {
+            // 文本消息，截取前30个字符
+            if (content.length > 30) {
+                preview += content.substring(0, 30) + "..."
+            } else {
+                preview += content
+            }
+        } else if (msgType === "IMAGE") {
+            preview += "[图片]"
+        } else if (msgType === "FILE") {
+            preview += "[文件]"
+        } else if (msgType === "AUDIO") {
+            preview += "[语音]"
+        } else if (msgType === "VIDEO") {
+            preview += "[视频]"
+        } else {
+            preview += "[消息]"
+        }
+        
+        return preview
+    }
+    
     property string currentContactName: contactList.currentContactName
     property string currentContactWeChatId: contactList.currentContactWeChatId
     property string currentContactSignature: contactList.currentContactSignature
@@ -339,9 +423,13 @@ Rectangle {
             // 判断是否是新消息（seq 大于已知的最大 seq）
             var isNewMessage = seq > lastKnownSeq
             
-            // 更新最后一条消息、时间和 lastSeq
-            chatModel.setProperty(targetIndex, "lastMessage", content)
-            chatModel.setProperty(targetIndex, "timestamp", serverTimeMs)
+            // 生成预览文本和格式化时间
+            var preview = root.generateMessagePreview(msgType, content, senderDisplayName, currentItem.conversationType, senderId)
+            var formattedTime = root.formatMessageTime(serverTimeMs)
+            
+            // 更新预览消息、时间和 lastSeq
+            chatModel.setProperty(targetIndex, "preview", preview)
+            chatModel.setProperty(targetIndex, "time", formattedTime)
             if (isNewMessage) {
                 chatModel.setProperty(targetIndex, "lastSeq", seq)
             }

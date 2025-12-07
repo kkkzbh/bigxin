@@ -45,6 +45,7 @@ ApplicationWindow {
         target: loginBackend
         function onSingleConversationReady(conversationId, conversationType) {
             // 用户主动打开单聊时切回聊天页签，立即尝试选中会话。
+            console.log("[Main] onSingleConversationReady 收到信号, conversationId:", conversationId, "conversationType:", conversationType)
             window.currentTab = 0
             chatList.selectConversation(conversationId)
         }
