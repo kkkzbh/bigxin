@@ -21,6 +21,10 @@ Rectangle {
     property string currentGroupName: ""
     property string currentGroupId: ""
 
+    // 导出数据模型供搜索功能使用
+    property alias contactsModel: contactsModel
+    property alias groupsModel: groupsModel
+
     // 根据当前选中联系人 ID / 用户 ID / 请求 ID
     // 在最新的模型中同步右侧详情面板的数据。
     function refreshCurrentSelection() {

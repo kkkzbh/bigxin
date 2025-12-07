@@ -178,6 +178,21 @@ ApplicationWindow {
                                 color: theme.searchText
                                 placeholderTextColor: theme.searchPlaceholder
                                 font.pixelSize: 13
+                                
+                                onTextChanged: {
+                                    searchResultPanel.searchText = text
+                                    var hasText = text.trim().length > 0
+                                    if (hasText) {
+                                        // 延迟到下一帧再打开，确保搜索结果和布局已完成，避免首次打开高度未定导致点击命中异常
+                                        Qt.callLater(function() {
+                                            if (searchField.text.trim().length > 0) {
+                                                searchResultPanel.open()
+                                            }
+                                        })
+                                    } else {
+                                        searchResultPanel.close()
+                                    }
+                                }
                             }
 
                             ToolButton {
@@ -193,6 +208,60 @@ ApplicationWindow {
                                     addMenu.popup(addButton, addButton.width / 2 - addMenu.implicitWidth / 2, addButton.height - 6)
                                 }
                             }
+                        }
+                    }
+                    
+                    // 搜索结果面板
+                    SearchResultPanel {
+                        id: searchResultPanel
+                        parent: window.contentItem
+
+                        chatModel: chatList.chatModel
+                        contactsModel: chatList.contactsModel
+                        groupsModel: chatList.groupsModel
+                        
+                        // 提供给 SearchResultPanel 的位置刷新函数
+                        function updatePosition() {
+                            if (searchBox && window.contentItem) {
+                                var pos = searchBox.mapToItem(window.contentItem, 0, 0)
+                                searchResultPanel.x = pos.x
+                                searchResultPanel.y = pos.y + searchBox.height + 2
+                                searchResultPanel.width = searchBox.width
+                            }
+                        }
+                        
+                        onConversationClicked: function(conversationId) {
+                            window.currentTab = 0
+                            chatList.selectConversation(conversationId)
+                            searchField.text = ""
+                        }
+                        
+                        onFriendClicked: function(friendUserId) {
+                            window.currentTab = 0
+                            loginBackend.openSingleConversation(friendUserId)
+                            searchField.text = ""
+                        }
+                        
+                        onGroupClicked: function(conversationId) {
+                            window.currentTab = 0
+                            chatList.selectConversation(conversationId)
+                            searchField.text = ""
+                        }
+                        
+                        onAddFriendClicked: function(query) {
+                            addFriendDialog.query = query
+                            addFriendDialog.visible = true
+                            addFriendDialog.raise()
+                            addFriendDialog.requestActivate()
+                            searchField.text = ""
+                        }
+                        
+                        onAddGroupClicked: function(query) {
+                            joinGroupDialog.query = query
+                            joinGroupDialog.visible = true
+                            joinGroupDialog.raise()
+                            joinGroupDialog.requestActivate()
+                            searchField.text = ""
                         }
                     }
                 }

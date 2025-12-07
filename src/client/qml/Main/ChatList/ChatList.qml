@@ -28,14 +28,19 @@ Rectangle {
             currentConversationType = ""
             currentConversationTitle = ""
         } else {
-            currentConversationId = chatModel.get(currentIndex).conversationId
-            currentConversationType = chatModel.get(currentIndex).conversationType
-            currentConversationTitle = chatModel.get(currentIndex).title
+            const item = chatModel.get(currentIndex)
+            currentConversationId = String(item.conversationId || "")
+            currentConversationType = item.conversationType
+            currentConversationTitle = item.title
         }
     }
 
     property int currentTab: 0
     property bool hasContactSelection: contactList.currentIndex >= 0
+    
+    // 导出数据模型供搜索功能使用
+    property alias chatModel: chatModel
+    
     property string currentContactName: contactList.currentContactName
     property string currentContactWeChatId: contactList.currentContactWeChatId
     property string currentContactSignature: contactList.currentContactSignature
@@ -45,22 +50,28 @@ Rectangle {
     property string currentRequestType: contactList.currentRequestType
     property string currentGroupName: contactList.currentGroupName
     property string currentGroupId: contactList.currentGroupId
+    
+    // 导出通讯录模型供搜索功能使用
+    property alias contactsModel: contactList.contactsModel
+    property alias groupsModel: contactList.groupsModel
 
-    // 用户主动打开单聊后等待选中的会话 ID（仅主动操作使用，不影响被动消息）。
+    // 用户主动打开单聊后等待选中的会话 ID（仅主动操作使用,不影响被动消息）。
     property string pendingSelectConversationId: ""
 
     // 尝试立即选中指定会话，如果找不到则设置 pending 等待刷新后选中
     function selectConversation(conversationId) {
-        // 先尝试在当前列表中查找
+        var targetId = String(conversationId || "")
+        // 先尝试在当前列表中查找（统一字符串对比，避免数字/字符串类型不一致导致无法选中）
         for (var j = 0; j < chatModel.count; ++j) {
-            if (chatModel.get(j).conversationId === conversationId) {
+            var item = chatModel.get(j)
+            if (String(item.conversationId || "") === targetId) {
                 listView.currentIndex = j
                 pendingSelectConversationId = ""
                 return
             }
         }
         // 找不到，设置 pending 等待列表刷新
-        pendingSelectConversationId = conversationId
+        pendingSelectConversationId = targetId
     }
 
     ColumnLayout {
@@ -215,7 +226,7 @@ Rectangle {
 
         function onConversationsReset(conversations) {
             // 保存当前选中的会话ID，以便刷新后恢复
-            var previousConversationId = root.currentConversationId
+            var previousConversationId = String(root.currentConversationId || "")
             
             chatModel.clear()
             for (var i = 0; i < conversations.length; ++i) {
@@ -229,7 +240,7 @@ Rectangle {
             if (pendingSelectConversationId && pendingSelectConversationId !== "") {
                 var targetIndex = -1
                 for (var j = 0; j < chatModel.count; ++j) {
-                    if (chatModel.get(j).conversationId === pendingSelectConversationId) {
+                    if (String(chatModel.get(j).conversationId || "") === String(pendingSelectConversationId)) {
                         targetIndex = j
                         break
                     }
@@ -243,7 +254,7 @@ Rectangle {
             else if (previousConversationId && previousConversationId !== "") {
                 var restoreIndex = -1
                 for (var k = 0; k < chatModel.count; ++k) {
-                    if (chatModel.get(k).conversationId === previousConversationId) {
+                    if (String(chatModel.get(k).conversationId || "") === String(previousConversationId)) {
                         restoreIndex = k
                         break
                     }

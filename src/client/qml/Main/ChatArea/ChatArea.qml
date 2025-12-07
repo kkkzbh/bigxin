@@ -124,7 +124,7 @@ Rectangle {
         }
 
         var data = {
-            "model": "deepseek-reasoner",
+            "model": "deepseek-chat",
             "messages": apiMessages,
             "temperature": 0.7,
             "max_tokens": 500,

@@ -67,6 +67,7 @@ set_source_files_properties(client/qml/Theme.qml
          client/qml/Login/Login.qml
          client/qml/Login/RegisterWindow.qml
          client/qml/Main/Main.qml
+         client/qml/Main/SearchResultPanel.qml
          client/qml/Main/Sidebar/Sidebar.qml
          client/qml/Main/ChatList/ChatList.qml
          client/qml/Main/ChatList/ContactListView.qml
