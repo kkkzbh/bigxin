@@ -517,7 +517,9 @@ auto Session::handle_create_group_req(std::string const& payload) -> asio::await
 
 auto Session::handle_open_single_conv_req(std::string const& payload) -> asio::awaitable<std::string>
 {
+    std::println("[handle_open_single_conv_req] 收到请求, payload: {}", payload);
     if(!authenticated_) {
+        std::println("[handle_open_single_conv_req] 用户未认证");
         co_return make_error_payload("NOT_AUTHENTICATED", "请先登录");
     }
 
@@ -525,28 +527,37 @@ auto Session::handle_open_single_conv_req(std::string const& payload) -> asio::a
         auto j = payload.empty() ? json::object() : json::parse(payload);
 
         if(!j.contains("peerUserId")) {
+            std::println("[handle_open_single_conv_req] 缺少 peerUserId");
             co_return make_error_payload("INVALID_PARAM", "缺少 peerUserId 字段");
         }
 
         auto const peer_str = j.at("peerUserId").get<std::string>();
+        std::println("[handle_open_single_conv_req] peerUserId: {}", peer_str);
         auto peer_id = i64{};
         try {
             peer_id = std::stoll(peer_str);
         } catch(std::exception const&) {
+            std::println("[handle_open_single_conv_req] peerUserId 解析失败");
             co_return make_error_payload("INVALID_PARAM", "peerUserId 非法");
         }
         if(peer_id <= 0) {
+            std::println("[handle_open_single_conv_req] peerUserId <= 0");
             co_return make_error_payload("INVALID_PARAM", "peerUserId 非法");
         }
         if(peer_id == user_id_) {
+            std::println("[handle_open_single_conv_req] peerUserId == 自己");
             co_return make_error_payload("INVALID_PARAM", "不能与自己建立单聊");
         }
 
+        std::println("[handle_open_single_conv_req] 检查是否为好友, user_id: {}, peer_id: {}", user_id_, peer_id);
         if(!co_await database::is_friend(user_id_, peer_id)) {
+            std::println("[handle_open_single_conv_req] 不是好友");
             co_return make_error_payload("NOT_FRIEND", "对方还不是你的好友");
         }
 
+        std::println("[handle_open_single_conv_req] 是好友，获取或创建会话");
         auto const conv_id = co_await database::get_or_create_single_conversation(user_id_, peer_id);
+        std::println("[handle_open_single_conv_req] 会话 ID: {}", conv_id);
 
         // 清除单聊会话缓存(可能是新创建的)
         if(auto server = server_.lock()) {
@@ -558,10 +569,13 @@ auto Session::handle_open_single_conv_req(std::string const& payload) -> asio::a
         resp["ok"] = true;
         resp["conversationId"] = std::to_string(conv_id);
         resp["conversationType"] = "SINGLE";
+        std::println("[handle_open_single_conv_req] 成功，返回 conv_id: {}", conv_id);
         co_return resp.dump();
     } catch(json::parse_error const&) {
+        std::println("[handle_open_single_conv_req] JSON 解析失败");
         co_return make_error_payload("INVALID_JSON", "请求 JSON 解析失败");
     } catch(std::exception const& ex) {
+        std::println("[handle_open_single_conv_req] 异常: {}", ex.what());
         co_return make_error_payload("SERVER_ERROR", ex.what());
     }
 }

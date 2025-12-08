@@ -239,6 +239,21 @@ auto Session::handle_history_req(std::string const& payload) -> asio::awaitable<
             m["serverTimeMs"] = msg.server_time_ms;
             m["seq"] = msg.seq;
             m["content"] = msg.content;
+            
+            // 构造 reactions 对象 {LIKE: [{userId, displayName}, ...], DISLIKE: [...]}
+            json reactions_obj = json::object();
+            reactions_obj["LIKE"] = json::array();
+            reactions_obj["DISLIKE"] = json::array();
+            
+            for(auto const& reaction : msg.reactions) {
+                json user_obj;
+                user_obj["userId"] = std::to_string(reaction.user_id);
+                user_obj["displayName"] = reaction.display_name;
+                reactions_obj[reaction.reaction_type].push_back(user_obj);
+            }
+            
+            m["reactions"] = reactions_obj;
+            
             items.push_back(std::move(m));
         }
 

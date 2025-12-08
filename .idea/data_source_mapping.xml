@@ -9,6 +9,7 @@
     <file url="file://$PROJECT_DIR$/src/database/sql/group_join_requests.sql" value="49af4bf5-0153-42ec-8169-5ca8fa71848f" />
     <file url="file://$PROJECT_DIR$/src/database/sql/messages.sql" value="49af4bf5-0153-42ec-8169-5ca8fa71848f" />
     <file url="file://$PROJECT_DIR$/src/database/sql/migration_001_sequence.sql" value="49af4bf5-0153-42ec-8169-5ca8fa71848f" />
+    <file url="file://$PROJECT_DIR$/src/database/sql/migration_002_message_reactions.sql" value="49af4bf5-0153-42ec-8169-5ca8fa71848f" />
     <file url="file://$PROJECT_DIR$/src/database/sql/single_conversations.sql" value="49af4bf5-0153-42ec-8169-5ca8fa71848f" />
     <file url="file://$PROJECT_DIR$/src/database/sql/users.sql" value="49af4bf5-0153-42ec-8169-5ca8fa71848f" />
   </component>

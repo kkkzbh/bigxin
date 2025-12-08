@@ -3,6 +3,7 @@ import QtQuick.Controls
 import QtQuick.Layouts
 import QtQuick.Window
 import QtQuick.Dialogs
+import QtQuick.Effects
 
 import WeChatClient as AppTheme
 import "../Dialogs"
@@ -36,9 +37,15 @@ Rectangle {
     property bool isMuted: false
     property real mutedUntilMs: 0
 
-    // 右键菜单上下文
+    // 右键菜单上下文（用户）
     property string contextTargetUserId: ""
     property string contextTargetName: ""
+
+    // 右键菜单上下文（消息）
+    property string contextMessageId: ""
+    property string contextMessageContent: ""
+    property bool contextIsMyMessage: false
+    property var contextMessageReactions: ({})
 
     // AI 生成状态
     property bool aiGenerating: false
@@ -362,6 +369,68 @@ Rectangle {
         }
     }
 
+    MessageContextMenu {
+        id: messageMenu
+        parent: Overlay.overlay
+        conversationId: root.conversationId
+        serverMsgId: root.contextMessageId
+        messageContent: root.contextMessageContent
+        isMyMessage: root.contextIsMyMessage
+        isGroupChat: root.conversationType === "GROUP"
+        myRole: root.myRole
+
+        onAboutToShow: {
+            console.log("[MessageMenu] About to show menu:")
+            console.log("  - serverMsgId:", serverMsgId)
+            console.log("  - isMyMessage:", isMyMessage)
+            console.log("  - isGroupChat:", isGroupChat)
+            console.log("  - myRole:", myRole)
+        }
+
+        onCopyRequested: {
+            console.log("[MessageMenu] Copy requested - content:", root.contextMessageContent)
+            // 复制到剪贴板
+            var textEdit = Qt.createQmlObject('import QtQuick; TextEdit { visible: false }', root)
+            textEdit.text = root.contextMessageContent
+            textEdit.selectAll()
+            textEdit.copy()
+            textEdit.destroy()
+        }
+
+        onRecallRequested: {
+            console.log("[MessageMenu] Recall requested - conversationId:", root.conversationId, "serverMsgId:", root.contextMessageId)
+            loginBackend.recallMessage(root.conversationId, root.contextMessageId)
+        }
+
+        onLikeRequested: {
+            console.log("[MessageMenu] Like requested - conversationId:", root.conversationId, "serverMsgId:", root.contextMessageId)
+            loginBackend.reactToMessage(root.conversationId, root.contextMessageId, "LIKE")
+        }
+
+        onDislikeRequested: {
+            console.log("[MessageMenu] Dislike requested - conversationId:", root.conversationId, "serverMsgId:", root.contextMessageId)
+            loginBackend.reactToMessage(root.conversationId, root.contextMessageId, "DISLIKE")
+        }
+
+        onUnlikeRequested: {
+            console.log("[MessageMenu] Unlike requested - conversationId:", root.conversationId, "serverMsgId:", root.contextMessageId)
+            loginBackend.unreactToMessage(root.conversationId, root.contextMessageId, "LIKE")
+        }
+
+        onUndislikeRequested: {
+            console.log("[MessageMenu] Undislike requested - conversationId:", root.conversationId, "serverMsgId:", root.contextMessageId)
+            loginBackend.unreactToMessage(root.conversationId, root.contextMessageId, "DISLIKE")
+        }
+    }
+
+    property var reactionDialog: null
+
+    Component {
+        id: reactionDialogComponent
+        ReactionDetailsDialog {
+        }
+    }
+
     StackLayout {
         anchors.fill: parent
         currentIndex: root.currentTab
@@ -416,6 +485,45 @@ Rectangle {
                         )
 
                         height: contentHeight
+
+                        function hasReactions() {
+                            return getLikeCount() > 0 || getDislikeCount() > 0
+                        }
+
+                        function getLikeCount() {
+                            if (!reactions || !reactions.LIKE) {
+                                // console.log("[MessageDelegate] getLikeCount: no reactions or LIKE for", serverMsgId)
+                                return 0
+                            }
+                            var count = reactions.LIKE.length || 0
+                            if (count > 0) {
+                                console.log("[MessageDelegate] getLikeCount for", serverMsgId, "=", count, "reactions:", JSON.stringify(reactions))
+                            }
+                            return count
+                        }
+
+                        function getDislikeCount() {
+                            if (!reactions || !reactions.DISLIKE) {
+                                // console.log("[MessageDelegate] getDislikeCount: no reactions or DISLIKE for", serverMsgId)
+                                return 0
+                            }
+                            var count = reactions.DISLIKE.length || 0
+                            if (count > 0) {
+                                console.log("[MessageDelegate] getDislikeCount for", serverMsgId, "=", count)
+                            }
+                            return count
+                        }
+
+                        function checkHasMyReaction(reactionType) {
+                            if (!reactions || !reactions[reactionType]) return false
+                            var list = reactions[reactionType]
+                            for (var i = 0; i < list.length; i++) {
+                                if (list[i].userId === loginBackend.userId) {
+                                    return true
+                                }
+                            }
+                            return false
+                        }
 
                         // 其他人消息：头像在左，气泡在右，整体靠左
                         Row {
@@ -492,11 +600,15 @@ Rectangle {
 
                                 Rectangle {
                                     id: leftBubble
-                                    color: theme.bubbleOther
+                                    color: leftBubbleMouseArea.containsMouse ? Qt.lighter(theme.bubbleOther, 1.05) : theme.bubbleOther
                                     radius: 6
                                     border.color: theme.bubbleOther
                                     implicitWidth: Math.min(messageList.width * 0.7, leftText.implicitWidth + 20)
                                     implicitHeight: leftText.implicitHeight + 14
+                                    
+                                    Behavior on color {
+                                        ColorAnimation { duration: 150 }
+                                    }
 
                                     Text {
                                         id: leftText
@@ -506,6 +618,116 @@ Rectangle {
                                         color: theme.bubbleOtherText
                                         font.pixelSize: 16
                                         wrapMode: Text.Wrap
+                                    }
+
+                                    MouseArea {
+                                        id: leftBubbleMouseArea
+                                        anchors.fill: parent
+                                        acceptedButtons: Qt.LeftButton | Qt.RightButton
+                                        hoverEnabled: true
+                                        cursorShape: Qt.PointingHandCursor
+                                        onClicked: function(mouse) {
+                                            if (mouse.button === Qt.RightButton) {
+                                                console.log("[MessageMenu] Right-click on other's message, serverMsgId:", serverMsgId)
+                                                root.contextMessageId = serverMsgId || ""
+                                                root.contextMessageContent = content
+                                                root.contextIsMyMessage = false
+                                                root.contextMessageReactions = reactions || ({})
+                                                messageMenu.hasMyLike = checkHasMyReaction("LIKE")
+                                                messageMenu.hasMyDislike = checkHasMyReaction("DISLIKE")
+                                                messageMenu.popup(leftBubble, mouse.x, mouse.y)
+                                            }
+                                        }
+                                    }
+                                }
+
+                                // 反应统计显示
+                                Row {
+                                    spacing: 8
+                                    visible: hasReactions()
+
+                                    // 点赞
+                                    Rectangle {
+                                        visible: getLikeCount() > 0
+                                        width: likeRow.implicitWidth + 12
+                                        height: 24
+                                        radius: 12
+                                        color: theme.chatListItemSelected
+                                        border.color: theme.cardBorder
+                                        border.width: 1
+
+                                        Row {
+                                            id: likeRow
+                                            anchors.centerIn: parent
+                                            spacing: 4
+
+                                            Text {
+                                                text: "👍"
+                                                font.pixelSize: 14
+                                            }
+
+                                            Text {
+                                                text: getLikeCount()
+                                                color: theme.textPrimary
+                                                font.pixelSize: 12
+                                            }
+                                        }
+
+                                        MouseArea {
+                                            anchors.fill: parent
+                                            cursorShape: Qt.PointingHandCursor
+                                            onClicked: {
+                                                if (!root.reactionDialog) {
+                                                    root.reactionDialog = reactionDialogComponent.createObject(root)
+                                                }
+                                                root.reactionDialog.serverMsgId = serverMsgId
+                                                root.reactionDialog.reactions = reactions
+                                                root.reactionDialog.currentTab = 0
+                                                root.reactionDialog.show()
+                                            }
+                                        }
+                                    }
+
+                                    // 点踩
+                                    Rectangle {
+                                        visible: getDislikeCount() > 0
+                                        width: dislikeRow.implicitWidth + 12
+                                        height: 24
+                                        radius: 12
+                                        color: theme.chatListItemSelected
+                                        border.color: theme.cardBorder
+                                        border.width: 1
+
+                                        Row {
+                                            id: dislikeRow
+                                            anchors.centerIn: parent
+                                            spacing: 4
+
+                                            Text {
+                                                text: "👎"
+                                                font.pixelSize: 14
+                                            }
+
+                                            Text {
+                                                text: getDislikeCount()
+                                                color: theme.textPrimary
+                                                font.pixelSize: 12
+                                            }
+                                        }
+
+                                        MouseArea {
+                                            anchors.fill: parent
+                                            cursorShape: Qt.PointingHandCursor
+                                            onClicked: {
+                                                if (!root.reactionDialog) {
+                                                    root.reactionDialog = reactionDialogComponent.createObject(root)
+                                                }
+                                                root.reactionDialog.serverMsgId = serverMsgId
+                                                root.reactionDialog.reactions = reactions
+                                                root.reactionDialog.currentTab = 1
+                                                root.reactionDialog.show()
+                                            }
+                                        }
                                     }
                                 }
                             }
@@ -518,25 +740,7 @@ Rectangle {
                             anchors.top: parent.top
                             anchors.right: parent.right
                             spacing: 6
-
-                            Rectangle {
-                                id: rightBubble
-                                color: model.isFailed ? "#e74c3c" : theme.bubbleMine  // 失败消息显示红色
-                                radius: 6
-                                border.color: model.isFailed ? "#e74c3c" : theme.bubbleMine
-                                implicitWidth: Math.min(messageList.width * 0.7, rightText.implicitWidth + 20)
-                                implicitHeight: rightText.implicitHeight + 14
-
-                                Text {
-                                    id: rightText
-                                    anchors.margins: 8
-                                    anchors.fill: parent
-                                    text: content
-                                    color: theme.bubbleMineText
-                                    font.pixelSize: 16
-                                    wrapMode: Text.Wrap
-                                }
-                            }
+                            layoutDirection: Qt.RightToLeft
 
                             Rectangle {
                                 width: 42
@@ -561,6 +765,148 @@ Rectangle {
                                     fillMode: Image.PreserveAspectCrop
                                     visible: status === Image.Ready
                                     asynchronous: true
+                                }
+                            }
+
+                            Column {
+                                spacing: 4
+                                anchors.verticalCenter: parent.verticalCenter
+
+                                Rectangle {
+                                    id: rightBubble
+                                    color: {
+                                        if (model.isFailed) return "#e74c3c"
+                                        return rightBubbleMouseArea.containsMouse ? Qt.darker(theme.bubbleMine, 1.05) : theme.bubbleMine
+                                    }
+                                    radius: 6
+                                    border.color: model.isFailed ? "#e74c3c" : theme.bubbleMine
+                                    implicitWidth: Math.min(messageList.width * 0.7, rightText.implicitWidth + 20)
+                                    implicitHeight: rightText.implicitHeight + 14
+                                    
+                                    Behavior on color {
+                                        ColorAnimation { duration: 150 }
+                                    }
+
+                                    Text {
+                                        id: rightText
+                                        anchors.margins: 8
+                                        anchors.fill: parent
+                                        text: content
+                                        color: theme.bubbleMineText
+                                        font.pixelSize: 16
+                                        wrapMode: Text.Wrap
+                                    }
+
+                                    MouseArea {
+                                        id: rightBubbleMouseArea
+                                        anchors.fill: parent
+                                        acceptedButtons: Qt.LeftButton | Qt.RightButton
+                                        hoverEnabled: true
+                                        cursorShape: Qt.PointingHandCursor
+                                        onClicked: function(mouse) {
+                                            if (mouse.button === Qt.RightButton) {
+                                                console.log("[MessageMenu] Right-click on my message, serverMsgId:", serverMsgId)
+                                                root.contextMessageId = serverMsgId || ""
+                                                root.contextMessageContent = content
+                                                root.contextIsMyMessage = true
+                                                root.contextMessageReactions = reactions || ({})
+                                                messageMenu.hasMyLike = false
+                                                messageMenu.hasMyDislike = false
+                                                messageMenu.popup(rightBubble, mouse.x, mouse.y)
+                                            }
+                                        }
+                                    }
+                                }
+
+                                // 反应统计显示
+                                Row {
+                                    spacing: 8
+                                    visible: hasReactions()
+                                    layoutDirection: Qt.RightToLeft
+
+                                    // 点踩
+                                    Rectangle {
+                                        visible: getDislikeCount() > 0
+                                        width: dislikeRowRight.implicitWidth + 12
+                                        height: 24
+                                        radius: 12
+                                        color: theme.chatListItemSelected
+                                        border.color: theme.cardBorder
+                                        border.width: 1
+
+                                        Row {
+                                            id: dislikeRowRight
+                                            anchors.centerIn: parent
+                                            spacing: 4
+
+                                            Text {
+                                                text: "👎"
+                                                font.pixelSize: 14
+                                            }
+
+                                            Text {
+                                                text: getDislikeCount()
+                                                color: theme.textPrimary
+                                                font.pixelSize: 12
+                                            }
+                                        }
+
+                                        MouseArea {
+                                            anchors.fill: parent
+                                            cursorShape: Qt.PointingHandCursor
+                                            onClicked: {
+                                                if (!root.reactionDialog) {
+                                                    root.reactionDialog = reactionDialogComponent.createObject(root)
+                                                }
+                                                root.reactionDialog.serverMsgId = serverMsgId
+                                                root.reactionDialog.reactions = reactions
+                                                root.reactionDialog.currentTab = 1
+                                                root.reactionDialog.show()
+                                            }
+                                        }
+                                    }
+
+                                    // 点赞
+                                    Rectangle {
+                                        visible: getLikeCount() > 0
+                                        width: likeRowRight.implicitWidth + 12
+                                        height: 24
+                                        radius: 12
+                                        color: theme.chatListItemSelected
+                                        border.color: theme.cardBorder
+                                        border.width: 1
+
+                                        Row {
+                                            id: likeRowRight
+                                            anchors.centerIn: parent
+                                            spacing: 4
+
+                                            Text {
+                                                text: "👍"
+                                                font.pixelSize: 14
+                                            }
+
+                                            Text {
+                                                text: getLikeCount()
+                                                color: theme.textPrimary
+                                                font.pixelSize: 12
+                                            }
+                                        }
+
+                                        MouseArea {
+                                            anchors.fill: parent
+                                            cursorShape: Qt.PointingHandCursor
+                                            onClicked: {
+                                                if (!root.reactionDialog) {
+                                                    root.reactionDialog = reactionDialogComponent.createObject(root)
+                                                }
+                                                root.reactionDialog.serverMsgId = serverMsgId
+                                                root.reactionDialog.reactions = reactions
+                                                root.reactionDialog.currentTab = 0
+                                                root.reactionDialog.show()
+                                            }
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -614,6 +960,15 @@ Rectangle {
                     color: "#07c160"
                     z: 100
 
+                    layer.enabled: true
+                    layer.effect: MultiEffect {
+                        shadowEnabled: true
+                        shadowColor: "#40000000"
+                        shadowBlur: 0.5
+                        shadowHorizontalOffset: 0
+                        shadowVerticalOffset: 2
+                    }
+
                     Text {
                         anchors.centerIn: parent
                         text: unreadCount + " 条新消息"
@@ -633,19 +988,6 @@ Rectangle {
                             unreadButton.visible = false
                         }
                     }
-
-                    // 添加阴影效果
-                    layer.enabled: true
-                    layer.effect: Qt.createQmlObject('
-                        import QtQuick
-                        import Qt5Compat.GraphicalEffects
-                        DropShadow {
-                            radius: 8
-                            samples: 17
-                            color: "#80000000"
-                            verticalOffset: 2
-                        }
-                    ', unreadButton, "shadowEffect")
                 }
             }
 
@@ -900,7 +1242,9 @@ Rectangle {
                                    content,
                                    msgType,
                                    serverTimeMs,
-                                   seq) {
+                                   seq,
+                                   serverMsgId,
+                                   reactions) {
             // 如果收到的消息不是当前会话，不处理显示，但不阻止执行（后续可能需要更新未读数）
             if (conversationId !== root.conversationId)
                 return
@@ -912,13 +1256,20 @@ Rectangle {
             // 防御空字符串系统消息：不展示、不占位
             if (sys && trimmed.length === 0)
                 return
+            // 临时方案：如果服务器没返回 serverMsgId，使用 seq 作为替代
+            var msgId = serverMsgId || String(seq)
+            console.log("[ChatArea] Received message - seq:", seq, "serverMsgId:", serverMsgId, "using:", msgId, "reactions:", JSON.stringify(reactions))
+            
             messageModel.append({
                 sender: sys ? "system" : (mine ? "me" : "other"),
                 senderName: senderDisplayName,
                 senderId: senderId,
                 content: trimmed,
                 isFailed: isFailedMsg,  // 只有 FAILED_TEXT 设置为 true
-                seq: seq  // 保存消息序号
+                seq: seq,  // 保存消息序号
+                serverMsgId: msgId,  // 服务器消息 ID（或使用 seq 作为临时替代）
+                reactions: reactions || ({}),  // 反应统计
+                isRecalled: false  // 是否已撤回
             })
             
             // 更新第一条未读消息的索引（只记录别人发送的未读消息）
@@ -977,6 +1328,75 @@ Rectangle {
             if (conversationId !== root.conversationId)
                 return
             updateMembers(members)
+        }
+
+        function onMessageRecalled(conversationId, serverMsgId, recallerId, recallerName) {
+            if (conversationId !== root.conversationId)
+                return
+            
+            // 查找并更新消息
+            for (var i = 0; i < messageModel.count; i++) {
+                var msg = messageModel.get(i)
+                if (msg.serverMsgId === serverMsgId) {
+                    // 将消息改为系统消息
+                    messageModel.set(i, {
+                        sender: "system",
+                        senderName: "",
+                        senderId: "",
+                        content: recallerName + " 撤回了一条消息",
+                        isFailed: false,
+                        seq: msg.seq,
+                        serverMsgId: msg.serverMsgId,
+                        reactions: ({}),
+                        isRecalled: true
+                    })
+                    break
+                }
+            }
+        }
+
+        function onMessageReactionUpdated(conversationId, serverMsgId, reactions) {
+            console.log("[ChatArea] onMessageReactionUpdated called - conversationId:", conversationId, "serverMsgId:", serverMsgId, "reactions:", JSON.stringify(reactions))
+            
+            if (conversationId !== root.conversationId) {
+                console.log("[ChatArea] Conversation mismatch, ignoring")
+                return
+            }
+            
+            // 查找并更新消息的反应
+            var found = false
+            for (var i = 0; i < messageModel.count; i++) {
+                var msg = messageModel.get(i)
+                
+                // 使用字符串比较，确保类型一致
+                if (String(msg.serverMsgId) === String(serverMsgId)) {
+                    console.log("[ChatArea] Found matching message at index", i, "- updating reactions")
+                    
+                    // QML ListModel 的对象属性更新需要完整替换才能触发绑定
+                    // 先保存其他属性，然后重新设置整个 item
+                    var updatedMsg = {
+                        sender: msg.sender,
+                        senderName: msg.senderName,
+                        senderId: msg.senderId,
+                        content: msg.content,
+                        isFailed: msg.isFailed,
+                        seq: msg.seq,
+                        serverMsgId: msg.serverMsgId,
+                        reactions: reactions,  // 新的 reactions
+                        isRecalled: msg.isRecalled || false
+                    }
+                    
+                    messageModel.set(i, updatedMsg)
+                    console.log("[ChatArea] Message reactions updated successfully")
+                    found = true
+                    break
+                }
+            }
+            
+            if (!found) {
+                console.log("[ChatArea] WARNING: Message with serverMsgId", serverMsgId, "not found in messageModel")
+                console.log("[ChatArea] Total messages in model:", messageModel.count)
+            }
         }
     }
 

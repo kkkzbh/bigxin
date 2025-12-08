@@ -2,6 +2,7 @@
 
 #include <QString>
 #include <QJsonArray>
+#include <QJsonObject>
 #include <QHash>
 
 /// \brief 消息缓存管理器，负责本地历史消息的读写。
@@ -32,6 +33,8 @@ public:
     /// \param msgType 消息类型（TEXT / SYSTEM 等）。
     /// \param serverTimeMs 服务器时间戳（毫秒）。
     /// \param seq 会话内序号。
+    /// \param serverMsgId 服务器消息 ID（可选）。
+    /// \param reactions 消息反应 JSON 对象（可选）。
     auto appendMessage(
         QString const& conversationId,
         QString const& senderId,
@@ -39,13 +42,22 @@ public:
         QString const& content,
         QString const& msgType,
         qint64 serverTimeMs,
-        qint64 seq
+        qint64 seq,
+        QString const& serverMsgId = QString(),
+        QJsonObject const& reactions = QJsonObject()
     ) -> void;
 
     /// \brief 从本地缓存加载指定会话的消息。
     /// \param conversationId 会话 ID。
     /// \return 消息数组和最大 seq 的 pair，失败时返回空数组和 0。
     auto loadMessages(QString const& conversationId) -> QPair<QJsonArray, qint64>;
+
+    /// \brief 更新缓存中指定消息的 reactions 字段。
+    /// \param conversationId 会话 ID。
+    /// \param serverMsgId 服务器消息 ID。
+    /// \param reactions 新的 reactions JSON 对象。
+    /// \return 是否更新成功。
+    auto updateMessageReactions(QString const& conversationId, QString const& serverMsgId, QJsonObject const& reactions) -> bool;
 
 private:
     auto cacheBasePath() const -> QString;

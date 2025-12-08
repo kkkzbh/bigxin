@@ -52,6 +52,23 @@ public:
     /// \param seq 已读的最新消息序号。
     auto markConversationAsRead(QString const& conversationId, qint64 seq) -> void;
 
+    /// \brief 撤回消息。
+    /// \param conversationId 会话 ID。
+    /// \param serverMsgId 服务器消息 ID。
+    auto recallMessage(QString const& conversationId, QString const& serverMsgId) -> void;
+
+    /// \brief 为消息添加反应。
+    /// \param conversationId 会话 ID。
+    /// \param serverMsgId 服务器消息 ID。
+    /// \param reactionType 反应类型（LIKE/DISLIKE）。
+    auto reactToMessage(QString const& conversationId, QString const& serverMsgId, QString const& reactionType) -> void;
+
+    /// \brief 取消消息反应。
+    /// \param conversationId 会话 ID。
+    /// \param serverMsgId 服务器消息 ID。
+    /// \param reactionType 反应类型（LIKE/DISLIKE）。
+    auto unreactToMessage(QString const& conversationId, QString const& serverMsgId, QString const& reactionType) -> void;
+
 signals:
     /// \brief 登录成功。
     /// \param userId 用户 ID。
@@ -80,7 +97,9 @@ signals:
         QString content,
         QString msgType,
         qint64 serverTimeMs,
-        qint64 seq
+        qint64 seq,
+        QString serverMsgId,
+        QVariantMap reactions
     );
 
     /// \brief 会话列表就绪。
@@ -143,6 +162,19 @@ signals:
     /// \param conversationId 会话 ID。
     void conversationUnreadCleared(QString conversationId);
 
+    /// \brief 消息被撤回。
+    /// \param conversationId 会话 ID。
+    /// \param serverMsgId 服务器消息 ID。
+    /// \param recallerId 撤回者用户 ID。
+    /// \param recallerName 撤回者昵称。
+    void messageRecalled(QString conversationId, QString serverMsgId, QString recallerId, QString recallerName);
+
+    /// \brief 消息反应更新。
+    /// \param conversationId 会话 ID。
+    /// \param serverMsgId 服务器消息 ID。
+    /// \param reactions 反应统计（LIKE/DISLIKE -> 用户列表）。
+    void messageReactionUpdated(QString conversationId, QString serverMsgId, QVariantMap reactions);
+
 private slots:
     void handleCommand(QString command, QJsonObject payload);
 
@@ -176,6 +208,11 @@ private:
     void handleGroupJoinRequestListResponse(QJsonObject const& obj);
     void handleGroupJoinAcceptResponse(QJsonObject const& obj);
     void handleRenameGroupResponse(QJsonObject const& obj);
+    void handleRecallMessageResponse(QJsonObject const& obj);
+    void handleRecallMessagePush(QJsonObject const& obj);
+    void handleReactionResponse(QJsonObject const& obj);
+    void handleUnreactionResponse(QJsonObject const& obj);
+    void handleReactionPush(QJsonObject const& obj);
 
     NetworkManager* network_manager_;
     MessageCache* message_cache_;

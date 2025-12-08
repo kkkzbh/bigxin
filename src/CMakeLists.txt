@@ -19,6 +19,7 @@ add_executable(server
         server/session/friend.cpp
         server/session/conversation.cpp
         server/session/group.cpp
+        server/session/reaction.cpp
         server/server/broadcast.cpp
         server/server/push.cpp
         server/server/cache.cpp
@@ -64,6 +65,8 @@ set_source_files_properties(client/qml/Theme.qml
          client/qml/Main/Dialogs/UserContextMenu.qml
          client/qml/Main/Dialogs/MuteMemberDialog.qml
          client/qml/Main/Dialogs/StartGroupDialog.qml
+         client/qml/Main/Dialogs/MessageContextMenu.qml
+         client/qml/Main/Dialogs/ReactionDetailsDialog.qml
          client/qml/Login/Login.qml
          client/qml/Login/RegisterWindow.qml
          client/qml/Main/Main.qml

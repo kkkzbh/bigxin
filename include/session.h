@@ -217,6 +217,18 @@ struct Session : std::enable_shared_from_this<Session>
                     auto payload = co_await handle_rename_group_req(frame.payload);
                     auto msg = protocol::make_line("RENAME_GROUP_RESP", payload);
                     send_text(std::move(msg));
+                } else if(frame.command == "RECALL_MSG_REQ") {
+                    auto payload = co_await handle_recall_msg_req(frame.payload);
+                    auto msg = protocol::make_line("RECALL_MSG_RESP", payload);
+                    send_text(std::move(msg));
+                } else if(frame.command == "MSG_REACTION_REQ") {
+                    auto payload = co_await handle_msg_reaction_req(frame.payload);
+                    auto msg = protocol::make_line("MSG_REACTION_RESP", payload);
+                    send_text(std::move(msg));
+                } else if(frame.command == "MSG_UNREACTION_REQ") {
+                    auto payload = co_await handle_msg_unreaction_req(frame.payload);
+                    auto msg = protocol::make_line("MSG_UNREACTION_RESP", payload);
+                    send_text(std::move(msg));
                 } else {
                     // 默认 echo，方便用 nc 观察未知命令。
                     auto payload = std::string{ "{\"command\":\"" + frame.command + "\"}" };
@@ -367,6 +379,18 @@ private:
     /// \brief 处理群组重命名请求，返回 RENAME_GROUP_RESP 的 JSON 串。
     /// \param payload RENAME_GROUP_REQ 的 JSON 文本。
     auto handle_rename_group_req(std::string const& payload) -> asio::awaitable<std::string>;
+
+    /// \brief 处理消息撤回请求，返回 RECALL_MSG_RESP 的 JSON 串。
+    /// \param payload RECALL_MSG_REQ 的 JSON 文本。
+    auto handle_recall_msg_req(std::string const& payload) -> asio::awaitable<std::string>;
+
+    /// \brief 处理消息反应(点赞/踩)请求，返回 MSG_REACTION_RESP 的 JSON 串。
+    /// \param payload MSG_REACTION_REQ 的 JSON 文本。
+    auto handle_msg_reaction_req(std::string const& payload) -> asio::awaitable<std::string>;
+
+    /// \brief 处理取消消息反应请求，返回 MSG_UNREACTION_RESP 的 JSON 串。
+    /// \param payload MSG_UNREACTION_REQ 的 JSON 文本。
+    auto handle_msg_unreaction_req(std::string const& payload) -> asio::awaitable<std::string>;
 
     /// \brief 构造带错误码的通用错误响应 JSON 串。
     auto make_error_payload(std::string const& code, std::string const& msg) const -> std::string

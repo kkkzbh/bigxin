@@ -9,11 +9,13 @@
 #include <QFile>
 #include <QFileInfo>
 
-LoginBackend::LoginBackend(QObject* parent)
+LoginBackend::LoginBackend(QString const& host, quint16 port, QObject* parent)
     : QObject(parent)
     , network_manager_(new NetworkManager(this))
     , message_cache_(new MessageCache())
     , protocol_handler_(new ProtocolHandler(network_manager_, message_cache_, this))
+    , host_(host)
+    , port_(port)
 {
     // 连接网络管理器信号
     connect(network_manager_, &NetworkManager::connected, this, &LoginBackend::onNetworkConnected);
@@ -46,6 +48,8 @@ LoginBackend::LoginBackend(QObject* parent)
     connect(protocol_handler_, &ProtocolHandler::groupCreated, this, &LoginBackend::groupCreated);
     connect(protocol_handler_, &ProtocolHandler::messageSendFailed, this, &LoginBackend::messageSendFailed);
     connect(protocol_handler_, &ProtocolHandler::conversationUnreadCleared, this, &LoginBackend::conversationUnreadCleared);
+    connect(protocol_handler_, &ProtocolHandler::messageRecalled, this, &LoginBackend::messageRecalled);
+    connect(protocol_handler_, &ProtocolHandler::messageReactionUpdated, this, &LoginBackend::messageReactionUpdated);
 
     // 协议处理器请求的操作
     connect(protocol_handler_, &ProtocolHandler::needRequestConversationList, this, &LoginBackend::requestConversationList);
@@ -53,6 +57,11 @@ LoginBackend::LoginBackend(QObject* parent)
     connect(protocol_handler_, &ProtocolHandler::needRequestFriendRequestList, this, &LoginBackend::requestFriendRequestList);
     connect(protocol_handler_, &ProtocolHandler::needRequestFriendList, this, &LoginBackend::requestFriendList);
     connect(protocol_handler_, &ProtocolHandler::needRequestGroupJoinRequestList, this, &LoginBackend::requestGroupJoinRequestList);
+}
+
+LoginBackend::LoginBackend(QObject* parent)
+    : LoginBackend(QStringLiteral("127.0.0.1"), 5555, parent)
+{
 }
 
 LoginBackend::~LoginBackend()
@@ -488,20 +497,16 @@ void LoginBackend::deleteFriend(QString const& friendUserId)
 
 void LoginBackend::openSingleConversation(QString const& peerUserId)
 {
-    qDebug() << "[openSingleConversation] 收到调用, peerUserId:" << peerUserId;
     if(peerUserId.trimmed().isEmpty()) {
-        qDebug() << "[openSingleConversation] peerUserId 为空，返回";
         return;
     }
     if(!network_manager_->isConnected()) {
-        qDebug() << "[openSingleConversation] 网络未连接，返回";
         setErrorMessage(QStringLiteral("与服务器的连接已断开"));
         return;
     }
 
     QJsonObject obj;
     obj.insert(QStringLiteral("peerUserId"), peerUserId.trimmed());
-    qDebug() << "[openSingleConversation] 发送命令 OPEN_SINGLE_CONV_REQ, obj:" << obj;
     network_manager_->sendCommand(QStringLiteral("OPEN_SINGLE_CONV_REQ"), obj);
 }
 

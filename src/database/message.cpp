@@ -133,6 +133,10 @@ namespace database
             msg.msg_type = row.at(5).as_string();
             msg.content = row.at(6).as_string();
             msg.server_time_ms = row.at(7).as_int64();
+            
+            // 加载该消息的反应
+            msg.reactions = co_await get_message_reactions(msg.id);
+            
             messages.push_back(std::move(msg));
         }
 
@@ -190,6 +194,10 @@ namespace database
             msg.msg_type = row.at(5).as_string();
             msg.content = row.at(6).as_string();
             msg.server_time_ms = row.at(7).as_int64();
+            
+            // 加载该消息的反应
+            msg.reactions = co_await get_message_reactions(msg.id);
+            
             messages.push_back(std::move(msg));
         }
         co_return messages;
@@ -199,5 +207,192 @@ namespace database
     {
         auto conversation_id = co_await get_world_conversation_id();
         co_return co_await load_user_conversation_history(conversation_id, before_seq, limit);
+    }
+
+    auto recall_message(i64 message_id, i64 recaller_id) -> asio::awaitable<RecallMessageResult>
+    {
+        auto conn_h = co_await acquire_connection();
+        
+        // 1. 查询消息是否存在及所属会话
+        mysql::results r_msg;
+        co_await conn_h->async_execute(
+            mysql::with_params(
+                "SELECT conversation_id, sender_id FROM messages WHERE id = {}",
+                message_id),
+            r_msg,
+            asio::use_awaitable
+        );
+
+        if(r_msg.rows().empty()) {
+            RecallMessageResult result{};
+            result.ok = false;
+            result.error_code = "MESSAGE_NOT_FOUND";
+            result.error_msg = "消息不存在";
+            co_return result;
+        }
+
+        auto row = r_msg.rows().at(0);
+        auto conversation_id = row.at(0).as_int64();
+        auto sender_id = row.at(1).as_int64();
+
+        // 2. 查询撤回者昵称
+        mysql::results r_user;
+        co_await conn_h->async_execute(
+            mysql::with_params(
+                "SELECT display_name FROM users WHERE id = {}",
+                recaller_id),
+            r_user,
+            asio::use_awaitable
+        );
+
+        std::string recaller_name = r_user.rows().empty() ? "" : r_user.rows().at(0).at(0).as_string();
+
+        // 3. 设置消息的 is_recalled 标记
+        mysql::results r_update;
+        co_await conn_h->async_execute(
+            mysql::with_params(
+                "UPDATE messages SET is_recalled = TRUE WHERE id = {}",
+                message_id),
+            r_update,
+            asio::use_awaitable
+        );
+
+        RecallMessageResult result{};
+        result.ok = true;
+        result.conversation_id = conversation_id;
+        result.message_id = message_id;
+        result.recaller_id = recaller_id;
+        result.recaller_name = recaller_name;
+        co_return result;
+    }
+
+    auto add_message_reaction(i64 message_id, i64 user_id, std::string const& reaction_type)
+        -> asio::awaitable<MessageReactionResult>
+    {
+        auto conn_h = co_await acquire_connection();
+
+        // 1. 查询消息所属会话
+        mysql::results r_msg;
+        co_await conn_h->async_execute(
+            mysql::with_params(
+                "SELECT conversation_id FROM messages WHERE id = {}",
+                message_id),
+            r_msg,
+            asio::use_awaitable
+        );
+
+        if(r_msg.rows().empty()) {
+            MessageReactionResult result{};
+            result.ok = false;
+            result.error_code = "MESSAGE_NOT_FOUND";
+            result.error_msg = "消息不存在";
+            co_return result;
+        }
+
+        auto conversation_id = r_msg.rows().at(0).at(0).as_int64();
+
+        // 2. 插入或更新反应 (使用 INSERT ... ON DUPLICATE KEY UPDATE)
+        mysql::results r_insert;
+        co_await conn_h->async_execute(
+            mysql::with_params(
+                "INSERT INTO message_reactions (message_id, user_id, reaction_type) "
+                "VALUES ({}, {}, {}) "
+                "ON DUPLICATE KEY UPDATE reaction_type = {}",
+                message_id,
+                user_id,
+                reaction_type,
+                reaction_type),
+            r_insert,
+            asio::use_awaitable
+        );
+
+        // 3. 查询该消息的所有反应
+        auto reactions = co_await get_message_reactions(message_id);
+
+        MessageReactionResult result{};
+        result.ok = true;
+        result.conversation_id = conversation_id;
+        result.message_id = message_id;
+        result.reactions = std::move(reactions);
+        co_return result;
+    }
+
+    auto remove_message_reaction(i64 message_id, i64 user_id, std::string const& reaction_type)
+        -> asio::awaitable<MessageReactionResult>
+    {
+        auto conn_h = co_await acquire_connection();
+
+        // 1. 查询消息所属会话
+        mysql::results r_msg;
+        co_await conn_h->async_execute(
+            mysql::with_params(
+                "SELECT conversation_id FROM messages WHERE id = {}",
+                message_id),
+            r_msg,
+            asio::use_awaitable
+        );
+
+        if(r_msg.rows().empty()) {
+            MessageReactionResult result{};
+            result.ok = false;
+            result.error_code = "MESSAGE_NOT_FOUND";
+            result.error_msg = "消息不存在";
+            co_return result;
+        }
+
+        auto conversation_id = r_msg.rows().at(0).at(0).as_int64();
+
+        // 2. 删除反应
+        mysql::results r_delete;
+        co_await conn_h->async_execute(
+            mysql::with_params(
+                "DELETE FROM message_reactions WHERE message_id = {} AND user_id = {} AND reaction_type = {}",
+                message_id,
+                user_id,
+                reaction_type),
+            r_delete,
+            asio::use_awaitable
+        );
+
+        // 3. 查询该消息的所有反应
+        auto reactions = co_await get_message_reactions(message_id);
+
+        MessageReactionResult result{};
+        result.ok = true;
+        result.conversation_id = conversation_id;
+        result.message_id = message_id;
+        result.reactions = std::move(reactions);
+        co_return result;
+    }
+
+    auto get_message_reactions(i64 message_id) -> asio::awaitable<std::vector<MessageReaction>>
+    {
+        auto conn_h = co_await acquire_connection();
+
+        mysql::results r;
+        co_await conn_h->async_execute(
+            mysql::with_params(
+                "SELECT mr.id, mr.message_id, mr.user_id, mr.reaction_type, u.display_name "
+                "FROM message_reactions mr "
+                "JOIN users u ON u.id = mr.user_id "
+                "WHERE mr.message_id = {} "
+                "ORDER BY mr.id ASC",
+                message_id),
+            r,
+            asio::use_awaitable
+        );
+
+        std::vector<MessageReaction> reactions;
+        reactions.reserve(r.rows().size());
+        for(auto const& row : r.rows()) {
+            MessageReaction reaction{};
+            reaction.id = row.at(0).as_int64();
+            reaction.message_id = row.at(1).as_int64();
+            reaction.user_id = row.at(2).as_int64();
+            reaction.reaction_type = row.at(3).as_string();
+            reaction.display_name = row.at(4).as_string();
+            reactions.push_back(std::move(reaction));
+        }
+        co_return reactions;
     }
 } // namespace database

@@ -59,7 +59,9 @@ auto MessageCache::appendMessage(
     QString const& content,
     QString const& msgType,
     qint64 serverTimeMs,
-    qint64 seq
+    qint64 seq,
+    QString const& serverMsgId,
+    QJsonObject const& reactions
 ) -> void
 {
     if(user_id_.isEmpty()) {
@@ -91,6 +93,12 @@ auto MessageCache::appendMessage(
     message.insert(QStringLiteral("msgType"), msgType);
     message.insert(QStringLiteral("serverTimeMs"), serverTimeMs);
     message.insert(QStringLiteral("seq"), seq);
+    if(!serverMsgId.isEmpty()) {
+        message.insert(QStringLiteral("serverMsgId"), serverMsgId);
+    }
+    if(!reactions.isEmpty()) {
+        message.insert(QStringLiteral("reactions"), reactions);
+    }
 
     messages.append(message);
 
@@ -133,6 +141,57 @@ auto MessageCache::loadMessages(QString const& conversationId) -> QPair<QJsonArr
     }
 
     return { messages, last_seq };
+}
+
+auto MessageCache::updateMessageReactions(QString const& conversationId, QString const& serverMsgId, QJsonObject const& reactions) -> bool
+{
+    if(user_id_.isEmpty() || conversationId.isEmpty() || serverMsgId.isEmpty()) {
+        return false;
+    }
+
+    auto const path = cacheFilePath(conversationId);
+    QFile file{ path };
+    if(!file.exists() || !file.open(QIODevice::ReadOnly)) {
+        return false;
+    }
+
+    auto const data = file.readAll();
+    file.close();
+
+    auto const doc = QJsonDocument::fromJson(data);
+    if(!doc.isObject()) {
+        return false;
+    }
+
+    auto root = doc.object();
+    auto messages = root.value(QStringLiteral("messages")).toArray();
+    
+    bool found = false;
+    for(int i = 0; i < messages.size(); ++i) {
+        auto msg = messages[i].toObject();
+        if(msg.value(QStringLiteral("serverMsgId")).toString() == serverMsgId) {
+            msg.insert(QStringLiteral("reactions"), reactions);
+            messages[i] = msg;
+            found = true;
+            break;
+        }
+    }
+
+    if(!found) {
+        return false;
+    }
+
+    root.insert(QStringLiteral("messages"), messages);
+    auto const newDoc = QJsonDocument{ root };
+
+    if(!file.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
+        return false;
+    }
+
+    file.write(newDoc.toJson(QJsonDocument::Compact));
+    file.close();
+
+    return true;
 }
 
 auto MessageCache::cacheBasePath() const -> QString

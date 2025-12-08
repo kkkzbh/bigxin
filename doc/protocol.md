@@ -585,13 +585,192 @@ ERROR:{
 
 客户端在收到 `ERROR` 时，可根据 `inCommand` 和 `errorCode` 决定具体提示和恢复策略。
 
-## 12. 未来扩展方向
+## 12. 消息撤回
+
+### 12.1 RECALL_MSG_REQ（C → S）
+
+客户端请求撤回一条消息（自己发送的消息无时限撤回；群主/管理员可撤回群内任意消息）。
+
+格式：
+
+```text
+RECALL_MSG_REQ:{
+  "conversationId": "grp-123",
+  "serverMsgId": "msg-456"
+}\n
+```
+
+字段：
+
+- `conversationId`：会话 ID。
+- `serverMsgId`：要撤回的服务器消息 ID。
+
+### 12.2 RECALL_MSG_RESP（S → C）
+
+服务器返回撤回结果。
+
+格式（成功）：
+
+```text
+RECALL_MSG_RESP:{
+  "ok": true,
+  "conversationId": "grp-123",
+  "serverMsgId": "msg-456"
+}\n
+```
+
+格式（失败）：
+
+```text
+RECALL_MSG_RESP:{
+  "ok": false,
+  "errorCode": "NO_PERMISSION",
+  "errorMsg": "无权撤回该消息"
+}\n
+```
+
+### 12.3 MSG_RECALLED_PUSH（S → C）
+
+服务器向会话内所有成员推送消息撤回通知。
+
+格式：
+
+```text
+MSG_RECALLED_PUSH:{
+  "conversationId": "grp-123",
+  "serverMsgId": "msg-456",
+  "recallerId": "u_001",
+  "recallerName": "张三",
+  "serverTimeMs": 1702000000000
+}\n
+```
+
+字段：
+
+- `conversationId`：会话 ID。
+- `serverMsgId`：被撤回的消息 ID。
+- `recallerId`：撤回操作者的用户 ID。
+- `recallerName`：撤回操作者的昵称。
+- `serverTimeMs`：撤回时间戳。
+
+## 13. 消息反应（点赞/点踩）
+
+### 13.1 MSG_REACTION_REQ（C → S）
+
+客户端为某条消息添加反应（点赞/点踩）。
+
+格式：
+
+```text
+MSG_REACTION_REQ:{
+  "conversationId": "grp-123",
+  "serverMsgId": "msg-456",
+  "reactionType": "LIKE"
+}\n
+```
+
+字段：
+
+- `conversationId`：会话 ID。
+- `serverMsgId`：消息 ID。
+- `reactionType`：反应类型，枚举值 `"LIKE"` 或 `"DISLIKE"`。
+
+### 13.2 MSG_REACTION_RESP（S → C）
+
+服务器返回反应添加结果。
+
+格式（成功）：
+
+```text
+MSG_REACTION_RESP:{
+  "ok": true,
+  "conversationId": "grp-123",
+  "serverMsgId": "msg-456",
+  "reactions": {
+    "LIKE": [{"userId":"u_001","displayName":"张三"},{"userId":"u_002","displayName":"李四"}],
+    "DISLIKE": [{"userId":"u_003","displayName":"王五"}]
+  }
+}\n
+```
+
+格式（失败）：
+
+```text
+MSG_REACTION_RESP:{
+  "ok": false,
+  "errorCode": "ALREADY_REACTED",
+  "errorMsg": "已经点过赞了"
+}\n
+```
+
+字段：
+
+- `reactions`：当前消息的所有反应统计，键为反应类型，值为用户列表（包含 `userId` 和 `displayName`）。
+
+### 13.3 MSG_UNREACTION_REQ（C → S）
+
+客户端取消某条消息的反应。
+
+格式：
+
+```text
+MSG_UNREACTION_REQ:{
+  "conversationId": "grp-123",
+  "serverMsgId": "msg-456",
+  "reactionType": "LIKE"
+}\n
+```
+
+### 13.4 MSG_UNREACTION_RESP（S → C）
+
+服务器返回取消反应结果。
+
+格式（成功）：
+
+```text
+MSG_UNREACTION_RESP:{
+  "ok": true,
+  "conversationId": "grp-123",
+  "serverMsgId": "msg-456",
+  "reactions": {
+    "LIKE": [{"userId":"u_002","displayName":"李四"}],
+    "DISLIKE": [{"userId":"u_003","displayName":"王五"}]
+  }
+}\n
+```
+
+### 13.5 MSG_REACTION_PUSH（S → C）
+
+服务器向会话内所有成员推送反应变化通知。
+
+格式：
+
+```text
+MSG_REACTION_PUSH:{
+  "conversationId": "grp-123",
+  "serverMsgId": "msg-456",
+  "reactions": {
+    "LIKE": [{"userId":"u_001","displayName":"张三"},{"userId":"u_002","displayName":"李四"}],
+    "DISLIKE": [{"userId":"u_003","displayName":"王五"}]
+  }
+}\n
+```
+
+字段：
+
+- `conversationId`：会话 ID。
+- `serverMsgId`：消息 ID。
+- `reactions`：更新后的反应统计。
+
+## 14. 未来扩展方向
 
 本协议已满足：
 
 - 多人群聊消息发送与推送；
 - 消息可靠性（发送确认 + 送达确认 + 重发幂等）；
 - 历史/离线消息拉取；
+- 消息撤回（自己撤回无时限，群主/管理员可撤回任意消息）；
+- 消息反应（点赞/点踩及用户列表）；
 - 长连接心跳保活。
 
 未来可以在保持整体结构不变的前提下扩展：

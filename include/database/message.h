@@ -53,4 +53,33 @@ namespace database
     /// \return 按 seq 递增排序的消息列表。
     auto load_world_history(i64 before_seq, i64 limit)
         -> boost::asio::awaitable<std::vector<LoadedMessage>>;
+
+    /// \brief 撤回指定消息 (设置 is_recalled 标记)。
+    /// \param message_id 消息 ID。
+    /// \param recaller_id 撤回者用户 ID。
+    /// \return 撤回操作结果。
+    auto recall_message(i64 message_id, i64 recaller_id)
+        -> boost::asio::awaitable<RecallMessageResult>;
+
+    /// \brief 添加消息反应 (点赞/踩)。
+    /// \param message_id 消息 ID。
+    /// \param user_id 用户 ID。
+    /// \param reaction_type 反应类型 ("LIKE" / "DISLIKE")。
+    /// \return 操作结果，包含该消息的所有反应列表。
+    auto add_message_reaction(i64 message_id, i64 user_id, std::string const& reaction_type)
+        -> boost::asio::awaitable<MessageReactionResult>;
+
+    /// \brief 移除消息反应。
+    /// \param message_id 消息 ID。
+    /// \param user_id 用户 ID。
+    /// \param reaction_type 反应类型 ("LIKE" / "DISLIKE")。
+    /// \return 操作结果，包含该消息的所有反应列表。
+    auto remove_message_reaction(i64 message_id, i64 user_id, std::string const& reaction_type)
+        -> boost::asio::awaitable<MessageReactionResult>;
+
+    /// \brief 获取指定消息的所有反应。
+    /// \param message_id 消息 ID。
+    /// \return 反应列表。
+    auto get_message_reactions(i64 message_id)
+        -> boost::asio::awaitable<std::vector<MessageReaction>>;
 } // namespace database

@@ -67,7 +67,7 @@ auto ProtocolHandler::loadConversationCache(QString const& conversationId) -> bo
     }
 
     local_last_seq_[conversationId] = last_seq;
-
+    
     for(auto const& item : messages) {
         auto const m = item.toObject();
         auto const sender_id = m.value(QStringLiteral("senderId")).toString();
@@ -76,8 +76,10 @@ auto ProtocolHandler::loadConversationCache(QString const& conversationId) -> bo
         auto const msg_type = m.value(QStringLiteral("msgType")).toString();
         auto const server_time_ms = static_cast<qint64>(m.value(QStringLiteral("serverTimeMs")).toDouble(0.0));
         auto const seq = static_cast<qint64>(m.value(QStringLiteral("seq")).toDouble(0.0));
+        auto const server_msg_id = m.value(QStringLiteral("serverMsgId")).toString();
+        auto const reactions = m.value(QStringLiteral("reactions")).toObject().toVariantMap();
 
-        emit messageReceived(conversationId, sender_id, sender_name, content, msg_type, server_time_ms, seq);
+        emit messageReceived(conversationId, sender_id, sender_name, content, msg_type, server_time_ms, seq, server_msg_id, reactions);
     }
 
     return true;
@@ -141,6 +143,16 @@ void ProtocolHandler::handleCommand(QString command, QJsonObject payload)
         handleGroupJoinAcceptResponse(payload);
     } else if(command == QStringLiteral("RENAME_GROUP_RESP")) {
         handleRenameGroupResponse(payload);
+    } else if(command == QStringLiteral("RECALL_MSG_RESP")) {
+        handleRecallMessageResponse(payload);
+    } else if(command == QStringLiteral("MSG_RECALLED_PUSH")) {
+        handleRecallMessagePush(payload);
+    } else if(command == QStringLiteral("MSG_REACTION_RESP")) {
+        handleReactionResponse(payload);
+    } else if(command == QStringLiteral("MSG_UNREACTION_RESP")) {
+        handleUnreactionResponse(payload);
+    } else if(command == QStringLiteral("MSG_REACTION_PUSH")) {
+        handleReactionPush(payload);
     } else if(command == QStringLiteral("SEND_FAILED")) {
         // 消息发送失败（例如非好友）
         auto const errorCode = payload.value(QStringLiteral("errorCode")).toString();
@@ -160,11 +172,11 @@ void ProtocolHandler::handleCommand(QString command, QJsonObject payload)
                 // 1. 存入本地缓存：原本的消息，但在前端用特殊状态显示
                 // 这里我们使用特殊的 type "FAILED_TEXT" 来标记，方便前端识别
                 message_cache_->appendMessage(conversationId, user_id_, display_name_, content, QStringLiteral("FAILED_TEXT"), nowMs, localSeq);
-                emit messageReceived(conversationId, user_id_, display_name_, content, QStringLiteral("FAILED_TEXT"), nowMs, localSeq);
+                emit messageReceived(conversationId, user_id_, display_name_, content, QStringLiteral("FAILED_TEXT"), nowMs, localSeq, QString(), QVariantMap());
 
                 // 2. 存入本地缓存：系统提示消息
                 message_cache_->appendMessage(conversationId, QStringLiteral("system"), QString(), errorMsg, QStringLiteral("SYSTEM"), nowMs, localSeq + 1);
-                emit messageReceived(conversationId, QStringLiteral("system"), QString(), errorMsg, QStringLiteral("SYSTEM"), nowMs, localSeq + 1);
+                emit messageReceived(conversationId, QStringLiteral("system"), QString(), errorMsg, QStringLiteral("SYSTEM"), nowMs, localSeq + 1, QString(), QVariantMap());
             } else {
                 // Fallback if server didn't send details (old version compatibility)
                 emit messageSendFailed(QString(), errorMsg);
@@ -264,6 +276,8 @@ void ProtocolHandler::handleMessagePush(QJsonObject const& obj)
     auto const msg_type = obj.value(QStringLiteral("msgType")).toString();
     auto const server_time_ms = static_cast<qint64>(obj.value(QStringLiteral("serverTimeMs")).toDouble(0.0));
     auto const seq = static_cast<qint64>(obj.value(QStringLiteral("seq")).toDouble(0.0));
+    auto const server_msg_id = obj.value(QStringLiteral("serverMsgId")).toString();
+    auto const reactions = obj.value(QStringLiteral("reactions")).toObject().toVariantMap();
 
     // 检测 seq 间隙（短暂离线）。
     auto const local_seq = local_last_seq_.value(conversation_id, 0);
@@ -276,10 +290,10 @@ void ProtocolHandler::handleMessagePush(QJsonObject const& obj)
         emit needRequestConversationList();
     }
 
-    emit messageReceived(conversation_id, sender_id, sender_name, content, msg_type, server_time_ms, seq);
+    emit messageReceived(conversation_id, sender_id, sender_name, content, msg_type, server_time_ms, seq, server_msg_id, reactions);
 
     // 追加写入本地缓存。
-    message_cache_->appendMessage(conversation_id, sender_id, sender_name, content, msg_type, server_time_ms, seq);
+    message_cache_->appendMessage(conversation_id, sender_id, sender_name, content, msg_type, server_time_ms, seq, server_msg_id, QJsonObject::fromVariantMap(reactions));
 
     // 更新已知的最新 seq。
     conv_last_seq_[conversation_id] = std::max(conv_last_seq_.value(conversation_id, 0), seq);
@@ -299,8 +313,10 @@ void ProtocolHandler::handleHistoryResponse(QJsonObject const& obj)
         auto const msg_type = message_obj.value(QStringLiteral("msgType")).toString();
         auto const server_time_ms = static_cast<qint64>(message_obj.value(QStringLiteral("serverTimeMs")).toDouble(0.0));
         auto const seq = static_cast<qint64>(message_obj.value(QStringLiteral("seq")).toDouble(0.0));
+        auto const server_msg_id = message_obj.value(QStringLiteral("serverMsgId")).toString();
+        auto const reactions = message_obj.value(QStringLiteral("reactions")).toObject().toVariantMap();
 
-        emit messageReceived(conversation_id, sender_id, sender_name, content, msg_type, server_time_ms, seq);
+        emit messageReceived(conversation_id, sender_id, sender_name, content, msg_type, server_time_ms, seq, server_msg_id, reactions);
 
         if(seq > max_seq) {
             max_seq = seq;
@@ -591,18 +607,15 @@ void ProtocolHandler::handleFriendAddResponse(QJsonObject const& obj)
 
 void ProtocolHandler::handleFriendAcceptResponse(QJsonObject const& obj)
 {
-    qDebug() << "[handleFriendAcceptResponse] 收到响应:" << obj;
     auto const ok = obj.value(QStringLiteral("ok")).toBool(false);
     if(!ok) {
         auto const msg = obj.value(QStringLiteral("errorMsg")).toString(QStringLiteral("同意好友申请失败"));
-        qDebug() << "[handleFriendAcceptResponse] 失败:" << msg;
         if(!msg.isEmpty()) {
             emit errorOccurred(msg);
         }
         return;
     }
 
-    qDebug() << "[handleFriendAcceptResponse] 成功, 发送刷新信号";
     // 同意成功后，刷新"新的朋友"列表和好友列表。
     emit needRequestFriendRequestList();
     emit needRequestFriendList();
@@ -790,6 +803,47 @@ auto ProtocolHandler::markConversationAsRead(QString const& conversationId, qint
     network_manager_->sendCommand(QStringLiteral("MARK_READ_REQ"), obj);
 }
 
+auto ProtocolHandler::recallMessage(QString const& conversationId, QString const& serverMsgId) -> void
+{
+    if(conversationId.isEmpty() || serverMsgId.isEmpty()) {
+        return;
+    }
+
+    QJsonObject obj;
+    obj.insert(QStringLiteral("conversationId"), conversationId);
+    obj.insert(QStringLiteral("serverMsgId"), serverMsgId);
+
+    network_manager_->sendCommand(QStringLiteral("RECALL_MSG_REQ"), obj);
+}
+
+auto ProtocolHandler::reactToMessage(QString const& conversationId, QString const& serverMsgId, QString const& reactionType) -> void
+{
+    if(conversationId.isEmpty() || serverMsgId.isEmpty() || reactionType.isEmpty()) {
+        return;
+    }
+
+    QJsonObject obj;
+    obj.insert(QStringLiteral("conversationId"), conversationId);
+    obj.insert(QStringLiteral("serverMsgId"), serverMsgId);
+    obj.insert(QStringLiteral("reactionType"), reactionType);
+
+    network_manager_->sendCommand(QStringLiteral("MSG_REACTION_REQ"), obj);
+}
+
+auto ProtocolHandler::unreactToMessage(QString const& conversationId, QString const& serverMsgId, QString const& reactionType) -> void
+{
+    if(conversationId.isEmpty() || serverMsgId.isEmpty() || reactionType.isEmpty()) {
+        return;
+    }
+
+    QJsonObject obj;
+    obj.insert(QStringLiteral("conversationId"), conversationId);
+    obj.insert(QStringLiteral("serverMsgId"), serverMsgId);
+    obj.insert(QStringLiteral("reactionType"), reactionType);
+
+    network_manager_->sendCommand(QStringLiteral("MSG_UNREACTION_REQ"), obj);
+}
+
 void ProtocolHandler::handleMarkReadResponse(QJsonObject const& obj)
 {
     auto const ok = obj.value(QStringLiteral("ok")).toBool(false);
@@ -806,4 +860,114 @@ void ProtocolHandler::handleMarkReadResponse(QJsonObject const& obj)
     if(!convId.isEmpty()) {
         emit conversationUnreadCleared(convId);
     }
+}
+
+void ProtocolHandler::handleRecallMessageResponse(QJsonObject const& obj)
+{
+    auto const ok = obj.value(QStringLiteral("ok")).toBool(false);
+    if(!ok) {
+        auto const msg = obj.value(QStringLiteral("errorMsg")).toString();
+        if(!msg.isEmpty()) {
+            emit errorOccurred(msg);
+        }
+        return;
+    }
+    // 撤回成功，等待服务器推送 MSG_RECALLED_PUSH
+}
+
+void ProtocolHandler::handleRecallMessagePush(QJsonObject const& obj)
+{
+    auto const conversationId = obj.value(QStringLiteral("conversationId")).toString();
+    auto const serverMsgId = obj.value(QStringLiteral("serverMsgId")).toString();
+    auto const recallerId = obj.value(QStringLiteral("recallerId")).toString();
+    auto const recallerName = obj.value(QStringLiteral("recallerName")).toString();
+
+    if(conversationId.isEmpty() || serverMsgId.isEmpty()) {
+        return;
+    }
+
+    emit messageRecalled(conversationId, serverMsgId, recallerId, recallerName);
+}
+
+void ProtocolHandler::handleReactionResponse(QJsonObject const& obj)
+{
+    auto const ok = obj.value(QStringLiteral("ok")).toBool(false);
+    if(!ok) {
+        auto const msg = obj.value(QStringLiteral("errorMsg")).toString();
+        if(!msg.isEmpty()) {
+            emit errorOccurred(msg);
+        }
+        return;
+    }
+
+    // 解析反应统计并发送信号
+    auto const conversationId = obj.value(QStringLiteral("conversationId")).toString();
+    auto const serverMsgId = obj.value(QStringLiteral("serverMsgId")).toString();
+    auto const reactionsObj = obj.value(QStringLiteral("reactions")).toObject();
+
+    if(conversationId.isEmpty() || serverMsgId.isEmpty()) {
+        return;
+    }
+
+    QVariantMap reactions;
+    for(auto it = reactionsObj.begin(); it != reactionsObj.end(); ++it) {
+        reactions.insert(it.key(), it.value().toVariant());
+    }
+    
+    // 更新本地缓存
+    message_cache_->updateMessageReactions(conversationId, serverMsgId, reactionsObj);
+    
+    emit messageReactionUpdated(conversationId, serverMsgId, reactions);
+}
+
+void ProtocolHandler::handleUnreactionResponse(QJsonObject const& obj)
+{
+    auto const ok = obj.value(QStringLiteral("ok")).toBool(false);
+    if(!ok) {
+        auto const msg = obj.value(QStringLiteral("errorMsg")).toString();
+        if(!msg.isEmpty()) {
+            emit errorOccurred(msg);
+        }
+        return;
+    }
+
+    // 解析反应统计并发送信号
+    auto const conversationId = obj.value(QStringLiteral("conversationId")).toString();
+    auto const serverMsgId = obj.value(QStringLiteral("serverMsgId")).toString();
+    auto const reactionsObj = obj.value(QStringLiteral("reactions")).toObject();
+
+    if(conversationId.isEmpty() || serverMsgId.isEmpty()) {
+        return;
+    }
+
+    QVariantMap reactions;
+    for(auto it = reactionsObj.begin(); it != reactionsObj.end(); ++it) {
+        reactions.insert(it.key(), it.value().toVariant());
+    }
+    
+    // 更新本地缓存
+    message_cache_->updateMessageReactions(conversationId, serverMsgId, reactionsObj);
+
+    emit messageReactionUpdated(conversationId, serverMsgId, reactions);
+}
+
+void ProtocolHandler::handleReactionPush(QJsonObject const& obj)
+{
+    auto const conversationId = obj.value(QStringLiteral("conversationId")).toString();
+    auto const serverMsgId = obj.value(QStringLiteral("serverMsgId")).toString();
+    auto const reactionsObj = obj.value(QStringLiteral("reactions")).toObject();
+
+    if(conversationId.isEmpty() || serverMsgId.isEmpty()) {
+        return;
+    }
+
+    QVariantMap reactions;
+    for(auto it = reactionsObj.begin(); it != reactionsObj.end(); ++it) {
+        reactions.insert(it.key(), it.value().toVariant());
+    }
+    
+    // 更新本地缓存
+    message_cache_->updateMessageReactions(conversationId, serverMsgId, reactionsObj);
+
+    emit messageReactionUpdated(conversationId, serverMsgId, reactions);
 }

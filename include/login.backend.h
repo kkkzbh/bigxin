@@ -29,6 +29,7 @@ class LoginBackend : public QObject
     Q_PROPERTY(QUrl avatarUrl READ avatarUrl NOTIFY avatarUrlChanged)
 
 public:
+    explicit LoginBackend(QString const& host, quint16 port, QObject* parent = nullptr);
     explicit LoginBackend(QObject* parent = nullptr);
     ~LoginBackend() override;
 
@@ -75,6 +76,9 @@ public:
     Q_INVOKABLE void acceptGroupJoinRequest(QString const& requestId, bool accept = true);
     Q_INVOKABLE void renameGroup(QString const& conversationId, QString const& newName);
     Q_INVOKABLE void markConversationAsRead(QString const& conversationId, qint64 seq);
+    Q_INVOKABLE void recallMessage(QString const& conversationId, QString const& serverMsgId);
+    Q_INVOKABLE void reactToMessage(QString const& conversationId, QString const& serverMsgId, QString const& reactionType);
+    Q_INVOKABLE void unreactToMessage(QString const& conversationId, QString const& serverMsgId, QString const& reactionType);
 
 signals:
     void busyChanged();
@@ -93,7 +97,9 @@ signals:
         QString content,
         QString msgType,
         qint64 serverTimeMs,
-        qint64 seq
+        qint64 seq,
+        QString serverMsgId,
+        QVariantMap reactions
     );
 
     void conversationsReset(QVariantList conversations);
@@ -110,6 +116,8 @@ signals:
     void groupCreated(QString conversationId, QString title);
     void messageSendFailed(QString conversationId, QString errorMessage);
     void conversationUnreadCleared(QString conversationId);
+    void messageRecalled(QString conversationId, QString serverMsgId, QString recallerId, QString recallerName);
+    void messageReactionUpdated(QString conversationId, QString serverMsgId, QVariantMap reactions);
 
 private slots:
     void onNetworkConnected();

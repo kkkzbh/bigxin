@@ -8,6 +8,7 @@
 
 #include <unordered_set>
 #include <vector>
+#include <print>
 
 using nlohmann::json;
 
@@ -250,4 +251,96 @@ auto Server::send_group_join_request_list_to(i64 target_user_id) -> void
         },
         asio::detached
     );
+}
+
+auto Server::broadcast_message_recalled(
+    i64 conversation_id,
+    i64 message_id,
+    i64 recaller_id,
+    std::string const& recaller_name
+) -> void
+{
+    dispatch_on_strand([=, this]() {
+        // 构造撤回推送消息
+        json push;
+        push["conversationId"] = std::to_string(conversation_id);
+        push["serverMsgId"] = std::to_string(message_id);
+        push["recallerId"] = std::to_string(recaller_id);
+        push["recallerName"] = recaller_name;
+
+        auto const line = protocol::make_line("MSG_RECALLED_PUSH", push.dump());
+
+        // 从缓存获取成员列表
+        std::vector<i64> member_ids;
+        if(auto cache = get_conversation_cache(conversation_id)) {
+            member_ids = cache->member_ids;
+        }
+
+        auto const send_line = [&line](std::shared_ptr<Session> const& session) {
+            if(session->is_authenticated()) {
+                session->send_text(line);
+            }
+        };
+
+        if(member_ids.empty()) {
+            for_all_authenticated_sessions(send_line);
+            return;
+        }
+
+        std::unordered_set<i64> member_set{ member_ids.begin(), member_ids.end() };
+        for(auto const uid : member_set) {
+            for_user_sessions(uid, send_line);
+        }
+    });
+}
+
+auto Server::broadcast_message_reaction(
+    i64 conversation_id,
+    i64 message_id,
+    std::vector<database::MessageReaction> const& reactions
+) -> void
+{
+    dispatch_on_strand([=, this]() {
+        // 构造反应对象 {LIKE: [{userId, displayName}, ...], DISLIKE: [...]}
+        json reactions_obj = json::object();
+        reactions_obj["LIKE"] = json::array();
+        reactions_obj["DISLIKE"] = json::array();
+
+        for(auto const& reaction : reactions) {
+            json user_obj;
+            user_obj["userId"] = std::to_string(reaction.user_id);
+            user_obj["displayName"] = reaction.display_name;
+            reactions_obj[reaction.reaction_type].push_back(user_obj);
+        }
+
+        // 构造推送消息
+        json push;
+        push["conversationId"] = std::to_string(conversation_id);
+        push["serverMsgId"] = std::to_string(message_id);
+        push["reactions"] = reactions_obj;
+
+        auto const line = protocol::make_line("MSG_REACTION_PUSH", push.dump());
+
+        // 从缓存获取成员列表
+        std::vector<i64> member_ids;
+        if(auto cache = get_conversation_cache(conversation_id)) {
+            member_ids = cache->member_ids;
+        }
+
+        auto const send_line = [&line](std::shared_ptr<Session> const& session) {
+            if(session->is_authenticated()) {
+                session->send_text(line);
+            }
+        };
+
+        if(member_ids.empty()) {
+            for_all_authenticated_sessions(send_line);
+            return;
+        }
+
+        std::unordered_set<i64> member_set{ member_ids.begin(), member_ids.end() };
+        for(auto const uid : member_set) {
+            for_user_sessions(uid, send_line);
+        }
+    });
 }

@@ -127,6 +127,19 @@ private:
     /// \param content 消息文本内容。
     auto broadcast_world_message(database::StoredMessage const& stored,i64 sender_id,std::string const& content,std::string const& sender_display_name = {}) -> void;
 
+    /// \brief 广播消息撤回通知到会话所有在线成员。
+    /// \param conversation_id 会话 ID。
+    /// \param message_id 消息 ID。
+    /// \param recaller_id 撤回者用户 ID。
+    /// \param recaller_name 撤回者昵称。
+    auto broadcast_message_recalled(i64 conversation_id, i64 message_id, i64 recaller_id, std::string const& recaller_name) -> void;
+
+    /// \brief 广播消息反应更新通知到会话所有在线成员。
+    /// \param conversation_id 会话 ID。
+    /// \param message_id 消息 ID。
+    /// \param reactions 反应列表。
+    auto broadcast_message_reaction(i64 conversation_id, i64 message_id, std::vector<database::MessageReaction> const& reactions) -> void;
+
     asio::ip::tcp::acceptor acceptor_;
     
     /// \brief strand 保证 sessions_ 和 sessions_by_user_ 的线程安全访问。

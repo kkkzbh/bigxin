@@ -205,6 +205,21 @@ namespace database
         std::string msg_type{};
     };
 
+    /// \brief 消息反应信息 (点赞/踩)。
+    struct MessageReaction
+    {
+        /// \brief 反应 ID。
+        i64 id{};
+        /// \brief 消息 ID。
+        i64 message_id{};
+        /// \brief 用户 ID。
+        i64 user_id{};
+        /// \brief 反应类型 (LIKE / DISLIKE)。
+        std::string reaction_type{};
+        /// \brief 用户昵称。
+        std::string display_name{};
+    };
+
     /// \brief 已加载消息的完整信息，用于构建历史消息响应。
     struct LoadedMessage
     {
@@ -224,6 +239,8 @@ namespace database
         std::string content{};
         /// \brief 服务器时间戳（毫秒）。
         i64 server_time_ms{};
+        /// \brief 消息反应列表。
+        std::vector<MessageReaction> reactions{};
     };
 
     /// \brief 群聊搜索结果。
@@ -296,5 +313,41 @@ namespace database
         i64 group_id{};
         /// \brief 群聊名称。
         std::string group_name{};
+    };
+
+    /// \brief 消息反应操作结果。
+    struct MessageReactionResult
+    {
+        /// \brief 是否操作成功。
+        bool ok{};
+        /// \brief 错误码。
+        std::string error_code{};
+        /// \brief 错误信息。
+        std::string error_msg{};
+        /// \brief 会话 ID。
+        i64 conversation_id{};
+        /// \brief 消息 ID。
+        i64 message_id{};
+        /// \brief 该消息的所有反应列表。
+        std::vector<MessageReaction> reactions{};
+    };
+
+    /// \brief 消息撤回结果。
+    struct RecallMessageResult
+    {
+        /// \brief 是否操作成功。
+        bool ok{};
+        /// \brief 错误码 (NO_PERMISSION, MESSAGE_NOT_FOUND 等)。
+        std::string error_code{};
+        /// \brief 错误信息。
+        std::string error_msg{};
+        /// \brief 会话 ID。
+        i64 conversation_id{};
+        /// \brief 消息 ID。
+        i64 message_id{};
+        /// \brief 撤回者用户 ID。
+        i64 recaller_id{};
+        /// \brief 撤回者昵称。
+        std::string recaller_name{};
     };
 } // namespace database

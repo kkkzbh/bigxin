@@ -10,11 +10,6 @@ set(CMAKE_CXX_STANDARD 26)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-# 抑制 stdexec 外部依赖库的 C++26 逗号省略警告
-add_compile_options(-Wno-deprecated-variadic-comma-omission)
-
-set(VCPKG_TARGET_TRIPLET "x64-linux" CACHE STRING "" FORCE)
-
 include(cmake/CPM.cmake)
 
 find_package(Threads REQUIRED)
